@@ -133,3 +133,65 @@ EXIT=0
 - Review 1 T00: Copilot VERDICT: FAIL (pymupdf AGPL via crewai-tools) -> T00fix. Copilot review T00fix: VERDICT: PASS. Orchestrator: PASS (uv lock --check ok; ruff ok; ruff format ok; mypy ok; pytest 2 passed, coverage 100%).
 - Fast-forwarded codex into main. GitHub CI not run yet (no repo; push needs Cd approval).
 
+## T02 规格冻结：ADR 与 JSON Schema（2026-10-28）
+
+基线 `5813dd1`，分支 `codex`。未推送，未改计划书正文。
+
+裁决见 ADR-0001 至 ADR-0005。两处规格冲突：S1 的 schemas 注释是 8 个，T02 与 S16.1 要 9 个，补上 `schemas/models.schema.json`。场景、套件和可恢复性缓存放在仓库根 `bench/`（`bench/scenarios/`、`bench/suites/`、`bench/recoverability.json`），不建 `src/skeptic_agent/bench/`。R0 需把这两条写回计划书副本。
+
+`uv.lock` 中的 `mcp` 为 2.3.0。高层服务器类是 `mcp.server.mcpserver.MCPServer`，高层客户端是 `mcp.Client`（`mode` 默认 `"auto"`）。`import mcp.server.fastmcp` 会失败。
+
+Schema 为 JSON Schema Draft 2020-12，共 9 个。示例里的有效文档取自 S3、S5、S7.1、S8.1、S10.1、S16.1、S16.2；S10.1 的 episode id 用 S5 头里的完整值。报告和 findings 的字段名按 ADR-0003。未跑 live 测试，未跑 `scripts/check.ps1`。
+
+### 命令与输出
+
+```text
+===== uv lock --check =====
+Resolved 195 packages in 0.99ms
+EXIT=0
+
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+16 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 2 source files
+EXIT=0
+
+===== uv run pytest tests/schemas -q =====
+...........................                                              [100%]
+27 passed in 0.45s
+EXIT=0
+
+===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
+.............................                                            [100%]
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.13-final-0 _______________
+
+Name                            Stmts   Miss  Cover
+---------------------------------------------------
+src\skeptic_agent\__init__.py       1      0   100%
+src\skeptic_agent\cli.py            9      0   100%
+---------------------------------------------------
+TOTAL                              10      0   100%
+Required test coverage of 85.0% reached. Total coverage: 100.00%
+29 passed in 0.82s
+EXIT=0
+
+===== schema count =====
+cassette.schema.json
+config.schema.json
+findings.schema.json
+matrix.schema.json
+models.schema.json
+profile.schema.json
+report.schema.json
+result.schema.json
+scenario.schema.json
+COUNT=9
+```
+

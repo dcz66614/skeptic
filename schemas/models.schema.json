@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:skeptic:schema:models:v1",
+  "title": "skeptic.models/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "models"],
+  "properties": {
+    "schema": {"const": "skeptic.models/v1"},
+    "models": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/model"}
+    }
+  },
+  "$defs": {
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "display",
+        "group",
+        "origin",
+        "tier",
+        "price_in_per_mtok",
+        "price_out_per_mtok",
+        "supports_tools",
+        "notes"
+      ],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "display": {"type": "string", "minLength": 1},
+        "group": {
+          "enum": ["closed-frontier", "closed-small", "open-weight"]
+        },
+        "origin": {"enum": ["us", "cn", "eu", "other"]},
+        "tier": {"enum": ["leaderboard", "dev"]},
+        "price_in_per_mtok": {"type": "number", "minimum": 0},
+        "price_out_per_mtok": {"type": "number", "minimum": 0},
+        "supports_tools": {"type": "boolean"},
+        "notes": {"type": "string"}
+      }
+    }
+  }
+}

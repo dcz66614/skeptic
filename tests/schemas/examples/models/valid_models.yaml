@@ -1,0 +1,11 @@
+schema: skeptic.models/v1
+models:
+  - id: openrouter/<vendor>/<model>
+    display: "<显示名>"
+    group: closed-frontier
+    origin: us
+    tier: leaderboard
+    price_in_per_mtok: 0.0
+    price_out_per_mtok: 0.0
+    supports_tools: true
+    notes: ""

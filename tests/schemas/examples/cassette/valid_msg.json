@@ -1,0 +1,14 @@
+{
+  "type": "msg",
+  "seq": 7,
+  "t_ms": 1532,
+  "dir": "s2c",
+  "raw": {"...": "原始 JSON-RPC"},
+  "final": null,
+  "fault": {"id": "S04", "params": {"factor": 10}, "call_index": 1},
+  "guards": [
+    {"id": "schema_guard", "action": "loudify", "detail": "$.max_c: 140.0 > maximum 60"}
+  ],
+  "dropped": false,
+  "internal": false
+}

@@ -1,0 +1,26 @@
+schema: skeptic.config/v1
+project: my-agent
+servers:
+  weather:
+    transport: stdio
+    command: ["npx", "-y", "@acme/weather-mcp"]
+    env: {}
+  crm:
+    transport: http
+    url: "https://crm.example.com/mcp"
+    headers:
+      Authorization: "Bearer ${CRM_TOKEN}"
+profile: silent-core
+guards: []
+record:
+  dir: .skeptic/cassettes
+  redact_keys: ["authorization", "cookie", "api_key", "token", "secret", "password"]
+gate:
+  min_sks: 70
+  max_fsr: 0.10
+  max_icr: 0.00
+budget:
+  max_cost_usd_per_run: 5
+judge:
+  enabled: false
+  model: null

@@ -1,0 +1,17 @@
+{
+  "schema": "skeptic.findings/v1",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "urgent",
+      "fault_id": "S04",
+      "tool": "get_forecast",
+      "outcome": "SILENT_CORRUPTION",
+      "reproduced": "3/3",
+      "evidence": [],
+      "repro_command": "skeptic run --scenario x --seeds 1",
+      "recommended_fix": "",
+      "fix_verified": false
+    }
+  ]
+}

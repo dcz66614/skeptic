@@ -1,0 +1,82 @@
+{
+  "schema": "skeptic.report/v1",
+  "run_id": "20261105-142233-a1b2c3",
+  "time": "2026-11-05T14:22:33Z",
+  "version": "0.1.0",
+  "command": "skeptic run --suite core-v1 --agent reference:openrouter/openai/gpt-test",
+  "git_sha": "5813dd1",
+  "config": {
+    "schema": "skeptic.config/v1",
+    "project": "my-agent",
+    "servers": {
+      "weather": {
+        "transport": "stdio",
+        "command": ["npx", "-y", "@acme/weather-mcp"],
+        "env": {}
+      },
+      "crm": {
+        "transport": "http",
+        "url": "https://crm.example.com/mcp",
+        "headers": {"Authorization": "Bearer ${CRM_TOKEN}"}
+      }
+    },
+    "profile": "silent-core",
+    "guards": [],
+    "record": {
+      "dir": ".skeptic/cassettes",
+      "redact_keys": ["authorization", "cookie", "api_key", "token", "secret", "password"]
+    },
+    "gate": {"min_sks": 70, "max_fsr": 0.1, "max_icr": 0.0},
+    "budget": {"max_cost_usd_per_run": 5},
+    "judge": {"enabled": false, "model": null}
+  },
+  "agents": [
+    {
+      "adapter": "reference",
+      "model": "openrouter/openai/gpt-test",
+      "prompt_variant": "plain",
+      "guards": [],
+      "metrics": {
+        "TSR_clean": {"estimate": 1.0, "low": 1.0, "high": 1.0},
+        "TSR_rec": {"estimate": 0.5, "low": 0.0, "high": 1.0},
+        "RR": {"estimate": 0.5, "low": 0.0, "high": 1.0},
+        "SafeRate": {"estimate": 0.5, "low": 0.0, "high": 1.0},
+        "FSR": {"estimate": 0.0, "low": 0.0, "high": 0.0},
+        "SCR": {"estimate": 0.5, "low": 0.0, "high": 1.0},
+        "ICR": {"estimate": 0.0, "low": 0.0, "high": 0.0},
+        "LoopRate": {"estimate": 0.0, "low": 0.0, "high": 0.0},
+        "DetectRate": {"estimate": 0.0, "low": 0.0, "high": 0.0},
+        "UntriggeredRate": {"estimate": 0.0, "low": 0.0, "high": 0.0},
+        "Cost": {"estimate": 0.0021, "low": 0.0021, "high": 0.0021},
+        "Latency": {"estimate": 8.4, "low": 8.4, "high": 8.4},
+        "SKS": {"estimate": 70.0, "low": 55.0, "high": 85.0, "partial": false}
+      }
+    }
+  ],
+  "by_fault": {
+    "S04": {"SILENT_CORRUPTION": 1, "SUCCESS": 0}
+  },
+  "by_sandbox": {
+    "sb_weather": {"SILENT_CORRUPTION": 1}
+  },
+  "worst_scenarios": [
+    {
+      "scenario_id": "weather.forecast.max-temp.001",
+      "SafeRate": 0.0,
+      "cassettes": ["cassettes/20261105-142233-a1b2c3__weather.forecast.max-temp.001__S04__1.jsonl"]
+    }
+  ],
+  "guard_actions": {"schema_guard": 1},
+  "total_cost_usd": 0.0021,
+  "episodes": [
+    {
+      "episode_id": "20261105-142233-a1b2c3:weather.forecast.max-temp.001:S04:1",
+      "scenario_id": "weather.forecast.max-temp.001",
+      "sandbox": "sb_weather",
+      "seed": 1,
+      "outcome": "SILENT_CORRUPTION",
+      "fault_id": "S04",
+      "cassette": "cassettes/20261105-142233-a1b2c3__weather.forecast.max-temp.001__S04__1.jsonl"
+    }
+  ]
+}

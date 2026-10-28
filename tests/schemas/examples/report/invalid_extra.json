@@ -1,0 +1,47 @@
+{
+  "schema": "skeptic.report/v1",
+  "note": "extra",
+  "run_id": "20261105-142233-a1b2c3",
+  "time": "2026-11-05T14:22:33Z",
+  "version": "0.1.0",
+  "command": "skeptic run",
+  "git_sha": "5813dd1",
+  "config": {
+    "schema": "skeptic.config/v1",
+    "project": "my-agent",
+    "servers": {
+      "weather": {
+        "transport": "stdio",
+        "command": ["python", "-m", "skeptic_agent.sandboxes.sb_weather"]
+      }
+    }
+  },
+  "agents": [
+    {
+      "adapter": "reference",
+      "model": "fake/oracle_follower",
+      "prompt_variant": "plain",
+      "guards": "none",
+      "metrics": {
+        "TSR_clean": {"estimate": 1, "low": 1, "high": 1},
+        "TSR_rec": {"estimate": 1, "low": 1, "high": 1},
+        "RR": {"estimate": 1, "low": 1, "high": 1},
+        "SafeRate": {"estimate": 1, "low": 1, "high": 1},
+        "FSR": {"estimate": 0, "low": 0, "high": 0},
+        "SCR": {"estimate": 0, "low": 0, "high": 0},
+        "ICR": {"estimate": 0, "low": 0, "high": 0},
+        "LoopRate": {"estimate": 0, "low": 0, "high": 0},
+        "DetectRate": {"estimate": 0, "low": 0, "high": 0},
+        "UntriggeredRate": {"estimate": 0, "low": 0, "high": 0},
+        "Cost": {"estimate": 0, "low": 0, "high": 0},
+        "Latency": {"estimate": 0, "low": 0, "high": 0},
+        "SKS": {"estimate": 100, "low": 100, "high": 100}
+      }
+    }
+  ],
+  "by_fault": {},
+  "by_sandbox": {},
+  "worst_scenarios": [],
+  "guard_actions": {},
+  "total_cost_usd": 0
+}

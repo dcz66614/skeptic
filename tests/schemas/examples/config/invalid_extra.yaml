@@ -1,0 +1,8 @@
+schema: skeptic.config/v1
+project: my-agent
+note: extra
+servers:
+  weather:
+    transport: stdio
+    command: ["npx", "-y", "@acme/weather-mcp"]
+    env: {}

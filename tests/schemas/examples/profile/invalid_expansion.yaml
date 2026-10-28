@@ -1,0 +1,6 @@
+schema: skeptic.profile/v1
+id: silent-core
+description: "bad expansion"
+expansion: all
+include_clean: true
+faults: []

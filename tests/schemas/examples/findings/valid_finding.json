@@ -1,0 +1,17 @@
+{
+  "schema": "skeptic.findings/v1",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "high",
+      "fault_id": "S04",
+      "tool": "get_forecast",
+      "outcome": "SILENT_CORRUPTION",
+      "reproduced": "3/3",
+      "evidence": ["cassettes/20261105-142233-a1b2c3__weather.forecast.max-temp.001__S04__1.jsonl"],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.forecast.max-temp.001.yaml --seeds 1,2,3",
+      "recommended_fix": "Enable schema_guard and cross-check the numeric field.",
+      "fix_verified": false
+    }
+  ]
+}

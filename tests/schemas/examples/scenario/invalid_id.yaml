@@ -1,0 +1,22 @@
+schema: skeptic.scenario/v1
+id: not-an-id
+title: "Max temperature in Paris on 2026-11-02"
+sandbox: sb_weather
+language: en
+difficulty: easy
+kind: read
+prompt: |
+  What will the maximum temperature be in Paris on 2026-11-02?
+answer_format: "Reply with the number in °C with one decimal, e.g. 12.3"
+frozen_now: "2026-11-01T09:00:00Z"
+fault_targets:
+  primary: [get_forecast]
+expected:
+  checks:
+    - {type: number_close, value: 14.0, tol: 0.5}
+oracle:
+  steps:
+    - call: get_forecast
+      args: {city: Paris, date: "2026-11-02"}
+  final_answer: "14.0"
+limits: {max_steps: 12, timeout_s: 180}

@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:skeptic:schema:matrix:v1",
+  "title": "skeptic.matrix/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "suite", "profiles", "seeds", "max_cost_usd", "configs"],
+  "properties": {
+    "schema": {"const": "skeptic.matrix/v1"},
+    "id": {"type": "string", "minLength": 1},
+    "suite": {"type": "string", "minLength": 1},
+    "profiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "seeds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "integer"}
+    },
+    "max_cost_usd": {"type": "number", "minimum": 0},
+    "configs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/config"}
+    }
+  },
+  "$defs": {
+    "guard_name": {
+      "enum": [
+        "evidence_contract",
+        "schema_guard",
+        "staleness_guard",
+        "emptiness_guard",
+        "retry_guard",
+        "loop_breaker",
+        "injection_shield",
+        "drift_lock"
+      ]
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent", "prompt_variant", "guards", "models"],
+      "properties": {
+        "agent": {"type": "string", "minLength": 1},
+        "prompt_variant": {"enum": ["plain", "evidence_contract"]},
+        "guards": {
+          "oneOf": [
+            {"enum": ["none", "all", "recommended"]},
+            {"type": "array", "items": {"$ref": "#/$defs/guard_name"}}
+          ]
+        },
+        "models": {
+          "oneOf": [
+            {"const": "leaderboard"},
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            }
+          ]
+        }
+      }
+    }
+  }
+}

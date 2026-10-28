@@ -1,0 +1,13 @@
+schema: skeptic.profile/v1
+id: silent-core
+description: "Ten silent faults on the scenario's primary tools, permanent"
+expansion: per_fault
+samples_per_scenario: 3
+include_clean: true
+faults:
+  - id: S04
+    target: {tool: "$primary"}
+    when: {call_index: 1}
+    persistence: {mode: permanent}
+    params: {factor: 10}
+    weight: 1.0

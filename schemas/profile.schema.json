@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:skeptic:schema:profile:v1",
+  "title": "skeptic.profile/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "description", "expansion", "include_clean", "faults"],
+  "properties": {
+    "schema": {"const": "skeptic.profile/v1"},
+    "id": {"type": "string", "minLength": 1},
+    "description": {"type": "string"},
+    "expansion": {"enum": ["per_fault", "sampled"]},
+    "samples_per_scenario": {"type": "integer", "minimum": 1},
+    "include_clean": {"type": "boolean"},
+    "faults": {"type": "array", "items": {"$ref": "#/$defs/fault"}}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"expansion": {"const": "sampled"}},
+        "required": ["expansion"]
+      },
+      "then": {"required": ["samples_per_scenario"]}
+    }
+  ],
+  "$defs": {
+    "fault_id": {
+      "enum": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "L05",
+        "L06",
+        "L07",
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "A01",
+        "A02",
+        "A03"
+      ]
+    },
+    "fault": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "target"],
+      "properties": {
+        "id": {"$ref": "#/$defs/fault_id"},
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tool"],
+          "properties": {
+            "tool": {"type": "string", "minLength": 1}
+          }
+        },
+        "when": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "call_index": {
+              "oneOf": [
+                {"type": "integer", "minimum": 1},
+                {
+                  "type": "array",
+                  "items": {"type": "integer", "minimum": 1},
+                  "minItems": 1
+                },
+                {"const": "all"}
+              ]
+            },
+            "probability": {"type": "number", "minimum": 0, "maximum": 1}
+          }
+        },
+        "persistence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode"],
+          "properties": {
+            "mode": {
+              "enum": ["permanent", "transient", "intermittent", "mixed"]
+            },
+            "n": {"type": "integer", "minimum": 1},
+            "p": {"type": "number", "minimum": 0, "maximum": 1},
+            "permanent_p": {"type": "number", "minimum": 0, "maximum": 1}
+          }
+        },
+        "params": {"type": "object", "additionalProperties": true},
+        "weight": {"type": "number", "minimum": 0}
+      }
+    }
+  }
+}

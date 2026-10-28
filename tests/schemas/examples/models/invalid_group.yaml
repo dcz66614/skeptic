@@ -1,0 +1,11 @@
+schema: skeptic.models/v1
+models:
+  - id: openrouter/openai/gpt-test
+    display: "Test"
+    group: frontier
+    origin: us
+    tier: leaderboard
+    price_in_per_mtok: 0.0
+    price_out_per_mtok: 0.0
+    supports_tools: true
+    notes: ""

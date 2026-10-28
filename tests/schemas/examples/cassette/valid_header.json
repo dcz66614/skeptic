@@ -1,0 +1,15 @@
+{
+  "type": "header",
+  "schema": "skeptic.cassette/v1",
+  "episode_id": "20261105-142233-a1b2c3:weather.forecast.max-temp.001:S04:1",
+  "created_at": "2026-11-05T14:22:33Z",
+  "skeptic_version": "0.1.0",
+  "transport": "stdio",
+  "upstream": {"command": ["python", "-m", "skeptic_agent.sandboxes.sb_weather"]},
+  "era": "2026-07-28",
+  "seed": 1,
+  "profile": "silent-core",
+  "fault_plan": [{"id": "S04", "target": {"tool": "get_forecast"}}],
+  "guards": ["schema_guard"],
+  "scenario_id": "weather.forecast.max-temp.001"
+}

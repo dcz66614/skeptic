@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:skeptic:schema:config:v1",
+  "title": "skeptic.config/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "project", "servers"],
+  "properties": {
+    "schema": {"const": "skeptic.config/v1"},
+    "project": {"type": "string", "minLength": 1},
+    "servers": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "patternProperties": {
+        "^[A-Za-z0-9_-]+$": {"$ref": "#/$defs/server"}
+      }
+    },
+    "profile": {"type": "string", "minLength": 1},
+    "guards": {"$ref": "#/$defs/guards"},
+    "record": {"$ref": "#/$defs/record"},
+    "gate": {"$ref": "#/$defs/gate"},
+    "budget": {"$ref": "#/$defs/budget"},
+    "judge": {"$ref": "#/$defs/judge"}
+  },
+  "$defs": {
+    "guard_name": {
+      "enum": [
+        "evidence_contract",
+        "schema_guard",
+        "staleness_guard",
+        "emptiness_guard",
+        "retry_guard",
+        "loop_breaker",
+        "injection_shield",
+        "drift_lock"
+      ]
+    },
+    "guards": {
+      "oneOf": [
+        {"type": "array", "items": {"$ref": "#/$defs/guard_name"}},
+        {"enum": ["none", "all", "recommended"]}
+      ]
+    },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transport"],
+      "properties": {
+        "transport": {"enum": ["stdio", "http"]},
+        "command": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "env": {"type": "object", "additionalProperties": true},
+        "url": {"type": "string", "minLength": 1},
+        "headers": {"type": "object", "additionalProperties": true}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"transport": {"const": "stdio"}},
+            "required": ["transport"]
+          },
+          "then": {"required": ["command"]}
+        },
+        {
+          "if": {
+            "properties": {"transport": {"const": "http"}},
+            "required": ["transport"]
+          },
+          "then": {"required": ["url"]}
+        }
+      ]
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dir", "redact_keys"],
+      "properties": {
+        "dir": {"type": "string", "minLength": 1},
+        "redact_keys": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min_sks", "max_fsr", "max_icr"],
+      "properties": {
+        "min_sks": {"type": "number"},
+        "max_fsr": {"type": "number"},
+        "max_icr": {"type": "number"}
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_cost_usd_per_run"],
+      "properties": {
+        "max_cost_usd_per_run": {"type": "number"}
+      }
+    },
+    "judge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "model"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "model": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "msg",
+  "seq": 7,
+  "t_ms": 1532,
+  "dir": "sideways",
+  "raw": {"jsonrpc": "2.0", "method": "tools/call"},
+  "final": null,
+  "fault": null,
+  "guards": [],
+  "dropped": false,
+  "internal": false
+}
