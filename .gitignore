@@ -5,9 +5,15 @@ runs/
 .orchestra/
 .serena/
 *_report.md
+
 __pycache__/
-*.pyc
+*.py[cod]
+*.egg-info/
 .pytest_cache/
-.ruff_cache/
 .mypy_cache/
+.ruff_cache/
 .coverage
+.coverage.*
+htmlcov/
+dist/
+build/

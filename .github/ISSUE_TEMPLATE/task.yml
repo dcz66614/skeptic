@@ -1,0 +1,25 @@
+name: Task
+description: 计划书中的一个任务
+title: "[ID] "
+body:
+  - type: input
+    id: task-id
+    attributes:
+      label: 任务 ID
+      placeholder: T00
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: 完成内容
+      description: 逐条列出交付文件。
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收
+      description: 任务卡中的验收命令。
+    validations:
+      required: true

@@ -1,0 +1,29 @@
+name: ADR
+description: 需要裁决的公共接口变更
+title: "[adr] "
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: 选项（至少 2 个，各写优缺点）
+    validations:
+      required: true
+  - type: textarea
+    id: decision
+    attributes:
+      label: 决定
+      description: 由 R1 填写。提议阶段可留空。
+    validations:
+      required: false
+  - type: textarea
+    id: impact
+    attributes:
+      label: 影响（需要修改的规格条目、代码、文档）
+    validations:
+      required: true

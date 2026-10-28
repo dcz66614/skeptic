@@ -1,0 +1,81 @@
+[project]
+name = "skeptic-agent"
+version = "0.0.0"
+description = "Chaos-test the tool layer. Catch agents that believe bad data."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+dependencies = [
+    "anyio>=4",
+    "httpx>=0.27",
+    "jinja2>=3.1",
+    "jsonpath-ng>=1.6",
+    "jsonschema>=4.21",
+    "mcp>=2.0,<3",
+    "numpy>=1.26",
+    "openai>=1.40",
+    "pydantic>=2.7,<3",
+    "pyyaml>=6",
+    "rich",
+    "starlette",
+    "typer",
+    "uvicorn",
+]
+
+[project.optional-dependencies]
+dev = [
+    "hypothesis",
+    "mypy",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "ruff",
+]
+openai-agents = ["openai-agents"]
+langgraph = [
+    "langchain-mcp-adapters",
+    "langchain-openai",
+    "langgraph",
+]
+crewai = [
+    "crewai",
+    "crewai-tools[mcp]",
+]
+pydantic-ai = ["pydantic-ai"]
+
+[project.scripts]
+skeptic = "skeptic_agent.cli:app"
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# The plan stores specification snippets, not source. Do not reformat them.
+extend-exclude = ["docs/plan"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF", "ASYNC", "PT"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+mypy_path = "src"
+packages = ["skeptic_agent"]
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "unit: pure functions and classes, no I/O and no network",
+    "integration: local subprocesses, no external network",
+    "e2e: full episode with a scripted fake model",
+    "live: real API keys and network; skipped in default CI",
+]
+
+[tool.coverage.run]
+source = ["skeptic_agent"]
+
+[tool.coverage.report]
+fail_under = 85
