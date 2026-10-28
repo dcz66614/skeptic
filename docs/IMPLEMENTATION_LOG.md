@@ -127,3 +127,9 @@ Required test coverage of 85.0% reached. Total coverage: 100.00%
 2 passed in 0.38s
 EXIT=0
 ```
+
+## Merge record T00 + T00fix (orchestrator, 2026-10-28 UTC)
+- Commits: faeb2ab (T00, grok-4.7 high), c7ca525 (T00fix, grok-4.7 high; opencode attempt2 produced no output and was stopped).
+- Review 1 T00: Copilot VERDICT: FAIL (pymupdf AGPL via crewai-tools) -> T00fix. Copilot review T00fix: VERDICT: PASS. Orchestrator: PASS (uv lock --check ok; ruff ok; ruff format ok; mypy ok; pytest 2 passed, coverage 100%).
+- Fast-forwarded codex into main. GitHub CI not run yet (no repo; push needs Cd approval).
+
