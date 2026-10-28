@@ -529,3 +529,10 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 97.28%
 EXIT=0
 ```
+
+## F20fix merge (2026-10-28)
+
+- Merged 096ada3 to main (ff). Reviews: self-review PASS (161 tests), WorkBuddy glm-5.3-flash read-only PASS.
+- Known non-blocking issues:
+  - Intermittent mode draws the RNG twice after the first firing (p, then probability); effective rate is p*probability when probability<1.
+  - FaultEngine.bind() runs once, so a fault covering several tools uses one RNG keyed on the first tool called, not one per tool (S7.3).
