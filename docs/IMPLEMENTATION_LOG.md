@@ -297,3 +297,8 @@ Required test coverage of 85.0% reached. Total coverage: 100.00%
 58 passed in 2.26s
 EXIT=0
 ```
+## Merge record P10 + P10fix (orchestrator, 2026-10-28 UTC)
+- Commits: e411778 (P10), 02ceddd (P10fix). Both by opencode workbuddy/deepseek-v4.1-flash (free, credit 0); Grok not needed.
+- Review P10 (wb deepseek, read-only): VERDICT: FAIL (array params rejected) -> P10fix. Review P10fix: VERDICT: PASS. Worktrees unmodified.
+- Orchestrator: PASS. ruff ok; ruff format ok (20 files); mypy ok (4 files); pytest 58 passed, coverage 100%.
+
