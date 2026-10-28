@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add the fault engine framework: scheduling, profile expansion, JSONPath helpers, and call_index assigned before the fault pre-hook (ADR-0007).
 - Add the interceptor pipeline with fault, guard and recorder mount points, and the per-episode context with pending calls and per-tool call counts.
 - Detect the MCP protocol era (legacy, modern, unknown) from the HTTP header or the first client message.
 - Add the JSON-RPC 2.0 message model, line framing, and canonical JSON hashing.

@@ -65,6 +65,19 @@ python_version = "3.12"
 mypy_path = "src"
 packages = ["skeptic_agent"]
 
+# These libraries ship no py.typed and no usable stubs are vendored.
+# jsonpath-ng is the S6 selector; PyYAML and jsonschema validate profiles.
+[[tool.mypy.overrides]]
+module = [
+    "jsonpath_ng",
+    "jsonpath_ng.*",
+    "jsonschema",
+    "jsonschema.*",
+    "yaml",
+    "yaml.*",
+]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 markers = [

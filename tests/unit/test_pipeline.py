@@ -173,11 +173,49 @@ class ReplyStage(RecorderStage):
         return [ReplyToClient(_result(msg.id, "blocked"))]
 
 
+class FaultReplyStage(FaultStage):
+    """A fault stage that counts attempts itself and answers the client."""
+
+    def __init__(self, seen: list[int]) -> None:
+        """Store the list that collects the attempt numbers it assigns.
+
+        Args:
+            seen: The shared list of attempt numbers.
+        """
+        self.seen = seen
+
+    def counts_attempts(self) -> bool:
+        """Take over attempt counting from the pipeline.
+
+        Returns:
+            ``True``.
+        """
+        return True
+
+    async def on_c2s(self, msg: Message, ctx: EpisodeContext) -> list[object]:
+        """Count the attempt, then answer the client from the fault stage.
+
+        Args:
+            msg: The message.
+            ctx: The episode context.
+
+        Returns:
+            ``[ReplyToClient(...)]``.
+        """
+        assert isinstance(msg, Request)
+        assert isinstance(msg.params, dict)
+        index = ctx.next_call_index(str(msg.params["name"]))
+        ctx.current_call_index[str(msg.params["name"])] = index
+        self.seen.append(index)
+        return [ReplyToClient(_result(msg.id, "faulted"))]
+
+
 def test_context_defaults() -> None:
     """A new context is empty and the scenario defaults to None."""
     ctx = _ctx()
     assert ctx.pending == {}
     assert ctx.call_counts == {}
+    assert ctx.current_call_index == {}
     assert ctx.taint == set()
     assert ctx.tool_defs == {}
     assert ctx.scenario is None
@@ -225,7 +263,7 @@ async def test_notification_is_recorded_and_forwarded() -> None:
 
 @pytest.mark.asyncio
 async def test_stage_can_reply_to_client() -> None:
-    """A stage that stops the chain yields ReplyToClient and no pending call."""
+    """A recorder that stops the chain yields ReplyToClient and no attempt count."""
     ctx = _ctx()
     pipeline = new_pipeline(recorder=ReplyStage())
     actions = await pipeline.on_c2s(_call(1, "echo"), ctx)
@@ -235,6 +273,21 @@ async def test_stage_can_reply_to_client() -> None:
     assert isinstance(action.msg, Response)
     assert ctx.pending == {}
     assert ctx.call_counts == {}
+
+
+@pytest.mark.asyncio
+async def test_fault_stage_reply_is_counted() -> None:
+    """A call answered directly by the counting fault stage advances call_index."""
+    ctx = _ctx()
+    seen: list[int] = []
+    pipeline = new_pipeline(fault=FaultReplyStage(seen))
+    for id_ in (1, 2, 3):
+        actions = await pipeline.on_c2s(_call(id_, "echo"), ctx)
+        assert isinstance(actions[0], ReplyToClient)
+    assert seen == [1, 2, 3]
+    assert ctx.call_counts == {"echo": 3}
+    assert ctx.current_call_index == {"echo": 3}
+    assert ctx.pending == {}
 
 
 @pytest.mark.asyncio
@@ -367,6 +420,38 @@ async def test_call_index_counts_per_tool() -> None:
     assert ctx.call_counts == {"echo": 3, "weather": 1}
     assert ctx.pending[(C2S, 3)].attempt == 1
     assert ctx.pending[(C2S, 4)].attempt == 3
+    assert ctx.current_call_index == {"echo": 3, "weather": 1}
+
+
+@pytest.mark.asyncio
+async def test_call_index_is_assigned_before_the_fault_stage() -> None:
+    """The fault stage sees the attempt number the pipeline just assigned."""
+
+    class Capture(FaultStage):
+        def __init__(self) -> None:
+            self.seen: list[int | None] = []
+
+        async def on_c2s(self, msg: Message, ctx: EpisodeContext) -> list[object]:
+            """Remember the attempt number visible during the pre hooks.
+
+            Args:
+                msg: The message.
+                ctx: The episode context.
+
+            Returns:
+                ``[Forward(msg)]``.
+            """
+            self.seen.append(ctx.current_call_index.get("echo"))
+            return [Forward(msg)]
+
+    ctx = _ctx()
+    fault = Capture()
+    pipeline = new_pipeline(fault=fault)
+    for id_ in (1, 2, 3):
+        await pipeline.on_c2s(_call(id_, "echo"), ctx)
+    assert fault.seen == [1, 2, 3]
+    assert ctx.pending[(C2S, 3)].attempt == 3
+    assert ctx.current_call_index == {"echo": 3}
 
 
 @pytest.mark.asyncio

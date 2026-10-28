@@ -449,3 +449,54 @@ Checks: `ruff check`, `ruff format --check`, `mypy src` clean; `pytest -m
 - Review P12 (wb deepseek): VERDICT: PASS. Orchestrator: FAIL - c2s tools/list ran guard+fault, S4.4 says record only -> P12fix. Review P12fix (wb deepseek): VERDICT: PASS; orchestrator PASS (ruff ok; format ok 26 files; mypy ok 8 files; pytest 93 passed, coverage 98.48%).
 - Open point for F20: call_index is incremented only after the fault pre-hook stage decides to forward; F20 must define how pre-hook faults (S05, S10, L06, L07, L04) see call_index.
 
+## F20 故障引擎框架与调度（2026-10-28）
+
+基线 `aa0b913`，分支 `codex`。未推送，未改计划书正文，未跑 live 测试，未读 TEMP。上一会话的未提交实现保留，并补上四处会让验收失败的行为。
+
+`docs/adr/ADR-0007-call-index.md`（状态：采纳）。S4.3 的 `call_index` 按本 ADR 解释为：一次 `tools/call` 在 G06/G07 放行之后、故障前置钩子运行之前计数。编号同时放在 `ctx.current_call_index[tool]` 和 `PendingCall.attempt`。被 Guard 拦下的尝试不计；G05 重试重新进入第 ④ 步时照常计数。故障阶段直接回复客户端时这次尝试也计入。s2c 链运行期间匹配的 pending 仍留在 `ctx.pending`，后置钩子用它的 `attempt` 回写 `current_call_index`，链返回前再删除。`FaultStage.counts_attempts()` 默认 `False`，返回 `True` 的阶段自己计数。
+
+交付：`faults/base.py`、`faults/schedule.py`、`faults/profiles.py`、`faults/registry.py`、`faults/engine.py`、`jsonsel.py`，以及 `tests/unit/test_schedule.py`、`test_profiles.py`、`test_jsonsel.py`、`test_engine.py`。注册表为空，F21–F24 再填 20 个故障。`load_profile_source` 供以后的 CLI `--profile` 使用，本卡不加新命令。不实现 L01–A03。
+
+调度按测试锁定的 S6 读法：`when.call_index` 先筛尝试；`when.probability` 再对每一次合格尝试掷一次。`permanent` 一直保持；`transient` 只放行前 `n` 次触发（默认 1）；`intermittent` 每一次合格尝试以 `p`（默认 0.5）触发，包括第一次，所以 `p=0` 一次都不触发；`mixed` 在第一次掷骰前以 `permanent_p`（默认 0.6）选定 permanent，否则按 `transient(n=1)`。RNG 只有 `fault_rng`：`random.Random(int(sha256(f"{seed}|{episode_id}|{fault_id}|{tool}").hexdigest()[:16], 16))`。`tools/list` 不是一次 tools/call，走 `Schedule.next_event`，不计 `when.call_index`。
+
+画像展开按 S7.4：`include_clean`、`per_fault` 每个故障一条、`sampled` 用同一个 `Random(sha256(f"{k}|{s.id}|{p.id}"))` 连续抽 `samples_per_scenario` 次（种子取摘要前 64 位，和 S7.3 一样宽，因为 `random.Random` 要的是 int）。静态适用性：L04 要 HTTP，L07 要目标工具至少有一个必填参数（空列表不算），S05 要 `entity_arg` 和 `decoys.entity`，S09 要 `conflict_pair`，S10 要 `write_tools`。不适用的 episode 不生成。
+
+目标：`$primary` 无场景时为 `*`，`$write` 为 `write_tools`，`$conflict_b` 为 `conflict_pair[1]`，工具名按 glob 匹配。
+
+依赖与 schema：
+
+- 不改 `uv.lock`。`jsonpath-ng` 已在 T00 锁定，本卡只是用它。
+- 不增加 `types-jsonschema` / `types-pyyaml`。`jsonpath-ng`、PyYAML、`jsonschema` 都没有 `py.typed`，`pyproject.toml` 用 `ignore_missing_imports` 让 `mypy --strict` 通过。
+- 撤回 `schemas/profile.schema.json` 里 sampled 模式的 `faults.minItems: 1`。S7.1 没有这条，T02 已冻结该 schema。缺少 `samples_per_scenario`、`faults` 不是数组，仍会被现有 schema 拒绝；权重和为 0 时 `expand` 抛 `ProfileError`。
+
+补上的缺陷：引擎命中调度后会调用 `apply`（前置钩子因此能读到 `call_index`）；L07 不再把“没有必填参数”判成适用（`all([])` 在 Python 里是 `True`）；sampled 的多次抽样共用一个 RNG，不再每次用同一个种子重抽到同一条故障。
+
+### 命令与输出
+
+```text
+===== uv lock --check =====
+Resolved 195 packages in 6ms
+EXIT=0
+
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+38 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 15 source files
+EXIT=0
+
+===== uv run pytest tests/unit -q =====
+131 passed in 1.63s
+EXIT=0
+
+===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
+158 passed in 2.54s
+Required test coverage of 85.0% reached. Total coverage: 97.27%
+EXIT=0
+```
+

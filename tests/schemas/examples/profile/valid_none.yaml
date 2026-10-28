@@ -1,0 +1,6 @@
+schema: skeptic.profile/v1
+id: none
+description: "Clean baseline only, no faults"
+expansion: per_fault
+include_clean: true
+faults: []

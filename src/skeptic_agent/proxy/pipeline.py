@@ -6,6 +6,7 @@ which order, and turns their actions into the messages the transports send.
 """
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -115,6 +116,15 @@ class Interceptor(Protocol):
 
 class FaultStage:
     """Mount point for the fault injector (S7)."""
+
+    def counts_attempts(self) -> bool:
+        """Report whether this stage counts ``tools/call`` attempts itself.
+
+        Returns:
+            ``False``: the pipeline assigns ``call_index`` before the stage runs
+            (ADR-0007). A stage that needs to count differently overrides this.
+        """
+        return False
 
     async def on_c2s(self, msg: Message, ctx: EpisodeContext) -> list[Action]:
         """Run the fault pre hooks; by default forward unchanged.
@@ -251,6 +261,7 @@ async def _run(
     ctx: EpisodeContext,
     *,
     c2s: bool,
+    before_fault: Callable[[Message], None] | None = None,
 ) -> list[Action]:
     """Pass a message through the stages until one stops the chain.
 
@@ -263,6 +274,8 @@ async def _run(
         msg: The message entering the chain.
         ctx: The episode context.
         c2s: ``True`` to call ``on_c2s``, ``False`` to call ``on_s2c``.
+        before_fault: Called with the message just before the fault stage runs,
+            after every earlier stage has forwarded it.
 
     Returns:
         The stopping stage's actions, or one ``Forward`` of the final message
@@ -270,6 +283,8 @@ async def _run(
     """
     current = msg
     for stage in stages:
+        if isinstance(stage, FaultStage) and before_fault is not None:
+            before_fault(current)
         if c2s:
             actions = await stage.on_c2s(current, ctx)
         else:
@@ -304,12 +319,14 @@ class Pipeline:
     async def on_c2s(self, msg: Message, ctx: EpisodeContext) -> list[Action]:
         """Process one client-to-server message.
 
-        A ``tools/call`` runs recorder, guard and fault, then forwards; its
-        attempt counter is incremented only when it is actually forwarded. A
-        ``tools/list`` is only recorded and forwarded unchanged, like any other
-        message, but a pending call with ``attempt=0`` is registered so its
-        response still runs fault, guard and recorder. Any other message is only
-        recorded and forwarded unchanged.
+        A ``tools/call`` runs recorder, guard and fault. After the Guard lets it
+        through, and before the fault pre hooks, the pipeline assigns the
+        attempt number (ADR-0007) unless the fault stage counts attempts
+        itself. The same number is stored on ``ctx.current_call_index`` and on
+        the pending call. A ``tools/list`` is only recorded and forwarded
+        unchanged, like any other message, but a pending call with
+        ``attempt=0`` is registered so its response still runs fault, guard and
+        recorder. Any other message is only recorded and forwarded unchanged.
 
         Args:
             msg: The message as the client sent it.
@@ -331,16 +348,41 @@ class Pipeline:
             return await _run((self.recorder,), msg, ctx, c2s=True)
         if msg.method != TOOLS_CALL:
             return await _run((self.recorder,), msg, ctx, c2s=True)
-        actions = await _run((self.recorder, self.guard, self.fault), msg, ctx, c2s=True)
-        if len(actions) == 1 and isinstance(actions[0], Forward):
-            tool = _tool_name(msg)
-            ctx.pending[(C2S, msg.id)] = PendingCall(
-                method=msg.method,
+
+        def count_attempt(current: Message) -> None:
+            """Assign the attempt number of a call entering the fault stage (ADR-0007).
+
+            Args:
+                current: The request as the guard forwarded it.
+            """
+            if not isinstance(current, Request) or self.fault.counts_attempts():
+                return
+            tool = _tool_name(current)
+            if tool is None:
+                return
+            index = ctx.next_call_index(tool)
+            ctx.current_call_index[tool] = index
+            ctx.pending[(C2S, current.id)] = PendingCall(
+                method=current.method,
                 tool_name=tool,
-                arguments=_tool_arguments(msg),
+                arguments=_tool_arguments(current),
                 t_start=time.monotonic(),
-                attempt=ctx.next_call_index(tool) if tool is not None else 0,
+                attempt=index,
             )
+
+        actions = await _run(
+            (self.recorder, self.guard, self.fault), msg, ctx, c2s=True, before_fault=count_attempt
+        )
+        if len(actions) == 1 and isinstance(actions[0], Forward):
+            pending = ctx.pending.get((C2S, msg.id))
+            if pending is None:
+                ctx.pending[(C2S, msg.id)] = PendingCall(
+                    method=msg.method,
+                    tool_name=_tool_name(msg),
+                    arguments=_tool_arguments(msg),
+                    t_start=time.monotonic(),
+                    attempt=0,
+                )
         return actions
 
     async def on_s2c(self, msg: Message, ctx: EpisodeContext) -> list[Action]:
@@ -348,9 +390,11 @@ class Pipeline:
 
         The matching pending c2s request decides the order. A ``tools/call`` or
         ``tools/list`` response runs fault, guard and recorder; the recorder
-        records only the final message. Every other message is recorded and
-        forwarded unchanged, and a response to an internal ``skeptic-`` id is
-        dropped without reaching the client.
+        records only the final message. The pending call stays visible for that
+        chain so the fault post hooks can read its ``attempt`` (ADR-0007), and
+        is removed before this method returns. Every other message is recorded
+        and forwarded unchanged, and a response to an internal ``skeptic-`` id
+        is dropped without reaching the client.
 
         Args:
             msg: The message as the server sent it.
@@ -362,11 +406,13 @@ class Pipeline:
         message_id = _request_id(msg)
         if message_id is not None and str(message_id).startswith(INTERNAL_ID_PREFIX):
             return [Drop()]
-        key = (C2S, message_id)
-        if message_id is None or key not in ctx.pending:
+        if message_id is None or (C2S, message_id) not in ctx.pending:
             return await _run((self.recorder,), msg, ctx, c2s=False)
-        del ctx.pending[key]
-        return await _run((self.fault, self.guard, self.recorder), msg, ctx, c2s=False)
+        key = (C2S, message_id)
+        try:
+            return await _run((self.fault, self.guard, self.recorder), msg, ctx, c2s=False)
+        finally:
+            ctx.pending.pop(key, None)
 
     def send_to_server(self, method: str, params: dict[str, Any]) -> SendToServer:
         """Build a request the proxy sends on its own behalf.
