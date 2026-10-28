@@ -359,3 +359,7 @@ EXIT=0
 ```
 
 
+
+## Merge record P11 (orchestrator, 2026-10-28 UTC)
+- Commit: 3933c96 (P11, opencode workbuddy/deepseek-v4.1-flash, free). Review (wb deepseek, read-only): VERDICT: PASS, worktree unmodified. Orchestrator: PASS (ruff ok; format ok 22 files; mypy ok 5 files; pytest 71 passed, coverage 100%).
+
