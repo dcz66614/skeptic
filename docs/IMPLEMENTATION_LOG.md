@@ -302,3 +302,60 @@ EXIT=0
 - Review P10 (wb deepseek, read-only): VERDICT: FAIL (array params rejected) -> P10fix. Review P10fix: VERDICT: PASS. Worktrees unmodified.
 - Orchestrator: PASS. ruff ok; ruff format ok (20 files); mypy ok (4 files); pytest 58 passed, coverage 100%.
 
+## P11 协议时代识别（2026-10-28）
+
+基线 `9131d5d`，分支 `codex`。未推送，未改计划书正文，未跑 live 测试。
+
+新增 `src/skeptic_agent/protocol.py`：冻结的 `Era(kind, version)`，`kind` 取 `"LEGACY"` / `"MODERN"` / `"UNKNOWN"`，`version` 在 UNKNOWN 时为 `None`；常量 `UNKNOWN`、`MODERN_SINCE = "2026-07-28"`。`detect_era(first_client_message, http_headers=None)` 按 S4.2 伪代码逐条实现：先看 HTTP 头（名字转小写后匹配），`v >= "2026-07-28"` 走字符串比较决定 MODERN / LEGACY；再看首条消息的 `initialize`、`server/discover`、`params._meta["io.modelcontextprotocol/protocolVersion"]`，都不命中返回 UNKNOWN。请求头优先于消息体。
+
+实现取舍：
+
+- 版本比较直接用 `>=`，不做日期解析。计划书说明 `YYYY-MM-DD` 按字典序比较即可。
+- 没有对 `protocolVersion` 做类型转换：消息虽然来自 P10 模型，但 `params` 是 `Any`，这里直接取值赋给 `version`，避免出现伪代码之外的机制。`params` 为 `None` 或数组时当作空对象，因此不会命中 `_meta`。
+- 头名用小写映射查找，不依赖 HTTP 库是否已规范化大小写。
+- 新增 fixture `tests/fixtures/protocol/{legacy_init,modern_discover,modern_meta_call,unknown}.json`，每个文件一条 JSON-RPC 消息，`legacy_init` 用 `2025-11-25`。测试从磁盘读 fixture，不读 TEMP。
+
+### 命令与输出
+
+```text
+===== uv lock --check =====
+Resolved 195 packages in 0.83ms
+EXIT=0
+
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+22 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 5 source files
+EXIT=0
+
+===== uv run pytest tests/unit/test_protocol.py -q =====
+.............                                                            [100%]
+13 passed in 0.91s
+EXIT=0
+
+===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
+.......................................................................  [100%]
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.13-final-0 _______________
+
+Name                             Stmts   Miss  Cover   Missing
+--------------------------------------------------------------
+src\skeptic_agent\__init__.py        1      0   100%
+src\skeptic_agent\canonical.py       7      0   100%
+src\skeptic_agent\cli.py             9      0   100%
+src\skeptic_agent\jsonrpc.py        72      0   100%
+src\skeptic_agent\protocol.py       40      0   100%
+--------------------------------------------------------------
+TOTAL                              129      0   100%
+Required test coverage of 85.0% reached. Total coverage: 100.00%
+71 passed in 1.98s
+EXIT=0
+```
+
+
