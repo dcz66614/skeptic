@@ -443,3 +443,9 @@ is exactly `["recorder:c2s"]` and the s2c response log stays
 
 Checks: `ruff check`, `ruff format --check`, `mypy src` clean; `pytest -m
 "not live" -q --cov=skeptic_agent` 93 passed, 98.48% coverage.
+
+## Merge record P12 + P12fix (orchestrator, 2026-10-28 UTC)
+- Commits: 62f2dc9 (P12), b754706 (P12fix). Both opencode workbuddy/deepseek-v4.1-flash (free).
+- Review P12 (wb deepseek): VERDICT: PASS. Orchestrator: FAIL - c2s tools/list ran guard+fault, S4.4 says record only -> P12fix. Review P12fix (wb deepseek): VERDICT: PASS; orchestrator PASS (ruff ok; format ok 26 files; mypy ok 8 files; pytest 93 passed, coverage 98.48%).
+- Open point for F20: call_index is incremented only after the fault pre-hook stage decides to forward; F20 must define how pre-hook faults (S05, S10, L06, L07, L04) see call_index.
+
