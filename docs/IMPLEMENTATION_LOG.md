@@ -195,3 +195,10 @@ scenario.schema.json
 COUNT=9
 ```
 
+
+## Merge record T02 (orchestrator, 2026-10-28 UTC)
+- Commit: db88e53 (T02, grok-4.7 high; base 5813dd1). 37 files, 9 schemas, ADR-0001..0005.
+- Review 1: opencode workbuddy/deepseek-v4.1-flash (free, credit 0) read-only: attempt1 no verdict (ran out of turns probing); attempt2 VERDICT: PASS, worktree unmodified. Copilot not used (free-models-only rule).
+- Orchestrator: PASS. uv lock --check ok; ruff ok; ruff format ok (16 files); mypy ok; pytest tests/schemas 27 passed; full suite 29 passed, coverage 100%; 9 schema files; negative probes (bad outcome/fault id/run_id/check type/persistence/scenario id) all rejected.
+- Fast-forwarded codex into main.
+
