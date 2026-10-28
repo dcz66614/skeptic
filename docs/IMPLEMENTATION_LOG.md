@@ -258,3 +258,42 @@ Required test coverage of 85.0% reached. Total coverage: 100.00%
 56 passed in 1.71s
 EXIT=0
 ```
+
+## P10fix 接受位置参数（2026-10-28）
+
+基线 `e411778`，分支 `codex`。未推送。
+
+复审指出 `Request` 与 `Notification` 的 `params` 只接受对象，JSON-RPC 2.0 的 `params` 可以是对象或数组。两个模型的 `params` 改为 `dict[str, Any] | list[Any] | None`，其余行为不变：`dump` 在 `params` 为 `None` 时仍然不输出该成员。`tests/unit/test_jsonrpc.py` 补两条测试，分别覆盖请求与通知的数组 `params` 解析与回写。`.gitignore` 加 `.hypothesis/`。未跑 live 测试。
+
+### 命令与输出
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+20 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 4 source files
+EXIT=0
+
+===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
+..........................................................               [100%]
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.13-final-0 _______________
+
+Name                             Stmts   Miss  Cover
+----------------------------------------------------
+src\skeptic_agent\__init__.py        1      0   100%
+src\skeptic_agent\canonical.py       7      0   100%
+src\skeptic_agent\cli.py             9      0   100%
+src\skeptic_agent\jsonrpc.py        72      0   100%
+----------------------------------------------------
+TOTAL                               89      0   100%
+Required test coverage of 85.0% reached. Total coverage: 100.00%
+58 passed in 2.26s
+EXIT=0
+```

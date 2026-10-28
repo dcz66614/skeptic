@@ -77,6 +77,22 @@ def test_parse_notification() -> None:
     assert msg.raw_bytes == line
 
 
+def test_parse_request_with_positional_params() -> None:
+    line = b'{"jsonrpc":"2.0","id":1,"method":"add","params":[1,"a"]}'
+    msg = parse_line(line)
+    assert isinstance(msg, Request)
+    assert msg.params == [1, "a"]
+    assert dump(msg) == line + b"\n"
+
+
+def test_parse_notification_with_positional_params() -> None:
+    line = b'{"jsonrpc":"2.0","method":"notify","params":[1,"a"]}'
+    msg = parse_line(line)
+    assert isinstance(msg, Notification)
+    assert msg.params == [1, "a"]
+    assert dump(msg) == line + b"\n"
+
+
 def test_parse_response() -> None:
     line = b'{"jsonrpc":"2.0","id":5,"result":{"ok":true}}'
     msg = parse_line(line)

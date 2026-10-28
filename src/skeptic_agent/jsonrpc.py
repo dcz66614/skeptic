@@ -46,14 +46,14 @@ class Request(_MessageBase):
 
     id: MessageId
     method: str
-    params: dict[str, Any] | None = None
+    params: dict[str, Any] | list[Any] | None = None
 
 
 class Notification(_MessageBase):
     """A JSON-RPC notification that expects no response."""
 
     method: str
-    params: dict[str, Any] | None = None
+    params: dict[str, Any] | list[Any] | None = None
 
 
 class Response(_MessageBase):
