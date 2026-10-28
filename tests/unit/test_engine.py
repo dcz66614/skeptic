@@ -220,12 +220,12 @@ async def test_no_registered_faults_forwards_unchanged() -> None:
 
 @pytest.mark.asyncio
 async def test_pre_call_fault_sees_call_index() -> None:
-    """A pre_call fault fires on the attempts its schedule names."""
+    """A pre_call fault fires first on the attempt its schedule names, then persists."""
     engine, ctx = engine_for(("T01",), call_index=(2,))
     pipeline = new_pipeline(fault=engine)
     for id_ in (1, 2, 3):
         await pipeline.on_c2s(_call(id_), ctx)
-    assert _recorder(engine, "T01").calls == [2]
+    assert _recorder(engine, "T01").calls == [2, 3]
 
 
 @pytest.mark.asyncio
@@ -300,3 +300,17 @@ def test_bind_uses_the_resolved_target_tool() -> None:
     expression = fault_rng(ctx.seed, ctx.episode_id, "T01", "$primary")
     assert bound == [resolved.random() for _ in range(3)]
     assert bound != [expression.random() for _ in range(3)]
+
+
+def test_bind_keys_multi_tool_targets_per_actual_tool() -> None:
+    """A multi-tool target seeds on the tool of the call, not patterns[0] (S7.3)."""
+    from skeptic_agent.faults.schedule import fault_rng
+
+    engine, _ = engine_for(("T01",), tool="*")
+    first = _ctx()
+    first.current_call_index["other_tool"] = 1
+    engine.bind(first)
+    actual = fault_rng(first.seed, first.episode_id, "T01", "other_tool")
+    assert [engine.planned[0].schedule.rng.random() for _ in range(3)] == [
+        actual.random() for _ in range(3)
+    ]

@@ -2,7 +2,13 @@
 
 import pytest
 
-from skeptic_agent.jsonsel import first_numeric_leaf, get_first, iter_leaves, set_first
+from skeptic_agent.jsonsel import (
+    _key_of,
+    first_numeric_leaf,
+    get_first,
+    iter_leaves,
+    set_first,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -84,6 +90,14 @@ def test_first_numeric_leaf_keeps_array_elements() -> None:
     """Array elements have an index, not a key, so they always count."""
     data = {"id": 1, "points": [30, 40]}
     assert first_numeric_leaf(data) == ("$.points[0]", 30)
+
+
+def test_key_of_array_path_returns_the_keyed_parent() -> None:
+    """$.user_id[0] reports the real key user_id, not the index."""
+    assert _key_of("$.user_id[0]") == "user_id"
+    assert _key_of("$.points[0]") == "points"
+    assert _key_of("$.max_c") == "max_c"
+    assert first_numeric_leaf({"user_id": [7], "value": 3}) == ("$.value", 3)
 
 
 def test_first_numeric_leaf_is_depth_first() -> None:

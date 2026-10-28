@@ -31,7 +31,7 @@ def _sequence(
     tool: str = "get_forecast",
     *,
     attempts: int = 6,
-    call_index: int | tuple[int, ...] | str = "all",
+    call_index: int | tuple[int, ...] | str = 1,
     probability: float = 1.0,
     persistence: str = "permanent",
     n: int = 1,
@@ -101,38 +101,48 @@ def test_fault_rng_is_the_s7_3_formula() -> None:
 
 
 def test_permanent_fires_from_the_first_trigger_forever() -> None:
-    """Permanent fires on every attempt once call_index qualifies."""
+    """Permanent fires from the first qualifying attempt and never stops."""
     assert _sequence(persistence="permanent") == [True] * 6
-    assert _sequence(persistence="permanent", call_index=(2, 6)) == [
+    assert _sequence(persistence="permanent", call_index=1) == [True] * 6
+    assert _sequence(persistence="permanent", call_index=2) == [
         False,
         True,
-        False,
-        False,
-        False,
+        True,
+        True,
+        True,
         True,
     ]
 
 
-def test_transient_fires_exactly_n_times() -> None:
+def test_transient_fires_exactly_n_times_from_the_first_firing() -> None:
     """Transient lasts n consecutive attempts from the first firing."""
     assert _sequence(persistence="transient", n=1) == [True] + [False] * 5
     assert _sequence(persistence="transient", n=3) == [True, True, True, False, False, False]
 
 
-def test_transient_starts_at_the_first_qualifying_index() -> None:
-    """Transient waits for call_index and then runs its n firings without a gap."""
-    flags = _sequence(persistence="transient", n=2, call_index=(3, 5), attempts=9)
-    assert flags == [False, False, True, False, True, False, False, False, False]
-    with_gap = _sequence(persistence="transient", n=3, call_index=2, attempts=6)
-    assert with_gap == [False, True, False, False, False, False]
+def test_transient_waits_for_call_index_then_runs_n_times() -> None:
+    """call_index gates only the first firing; transient then runs n times."""
+    flags = _sequence(persistence="transient", n=3, call_index=2, attempts=6)
+    assert flags == [False, True, True, True, False, False]
 
 
-def test_intermittent_fires_each_attempt_with_probability_p() -> None:
-    """Intermittent keeps firing after the first firing, with chance p."""
+def test_intermittent_fires_each_attempt_after_the_first_firing() -> None:
+    """Before the first firing intermittent fires; then each attempt uses p."""
+    never = _sequence(persistence="intermittent", p=0.0, attempts=20)
+    assert never == [True] + [False] * 19
     flags = _sequence(persistence="intermittent", p=0.5, attempts=200)
     assert 40 <= sum(flags) <= 140
-    never = _sequence(persistence="intermittent", p=0.0, attempts=20)
-    assert never == [False] * 20
+
+
+def test_default_call_index_one_for_all_four_modes() -> None:
+    """With the default call_index=1 every mode fires on attempt 1 (S6)."""
+    assert _sequence(persistence="permanent")[0] is True
+    assert _sequence(persistence="transient", n=3, attempts=3) == [True, True, True]
+    flags = _sequence(persistence="intermittent", p=0.0, attempts=3)
+    assert flags[0] is True
+    assert sum(flags) == 1
+    assert _sequence(persistence="mixed", permanent_p=1.0)[:2] == [True, True]
+    assert _sequence(persistence="mixed", permanent_p=0.0)[:2] == [True, False]
 
 
 def test_intermittent_rate_is_close_to_p() -> None:
@@ -167,18 +177,19 @@ def test_mixed_picks_permanent_about_sixty_percent_of_the_time() -> None:
 
 
 def test_call_index_int_list_and_all() -> None:
-    """call_index as an int, a list or "all" selects the right attempts."""
-    assert _sequence(call_index=2) == [False, True, False, False, False, False]
-    assert _sequence(call_index=(1, 4)) == [True, False, False, True, False, False]
+    """call_index as an int or a list gates the first firing only."""
+    assert _sequence(call_index=2) == [False] + [True] * 5
+    assert _sequence(call_index=(1, 4)) == [True] * 6
+    assert _sequence(call_index=(3,)) == [False, False] + [True] * 4
     assert _sequence(call_index="all") == [True] * 6
 
 
 def test_probability_gates_each_qualifying_attempt() -> None:
-    """Probability 0 never fires; probability 1 fires on every qualifying attempt."""
+    """Probability 0 never fires; probability 1 fires on the first attempt."""
     assert _sequence(probability=0.0) == [False] * 6
     assert _sequence(probability=1.0) == [True] * 6
-    half = [_sequence(seed=seed, probability=0.5) for seed in range(200)]
-    rate = sum(flag for flags in half for flag in flags) / (200 * 6)
+    results = [_sequence(seed=seed, probability=0.5, attempts=1) for seed in range(200)]
+    rate = sum(flags[0] for flags in results) / 200
     assert 0.35 < rate < 0.65
 
 
@@ -192,6 +203,7 @@ def test_call_index_zero_never_fires() -> None:
 def test_unknown_persistence_mode_is_rejected() -> None:
     """An unknown persistence mode raises instead of silently doing nothing."""
     schedule = Schedule(persistence="sometimes")  # type: ignore[arg-type]
+    schedule.triggered = 1
     with pytest.raises(ValueError, match="unknown persistence mode"):
         schedule.next_trigger(1)
 

@@ -102,13 +102,20 @@ class FaultEngine(FaultStage):
     def bind(self, ctx: EpisodeContext) -> None:
         """Seed every schedule with the RNG of this episode and tool (S7.3).
 
+        The key uses the tool name of the call the fault fires in, from
+        ``ctx.current_call_index`` when it has one, otherwise the first
+        resolved target, otherwise the target expression itself.
+
         Args:
             ctx: The episode context.
         """
         scenario = ctx.scenario if ctx.scenario is not None else self.scenario
         for planned in self.planned:
             patterns = resolve_targets(planned.spec.tool, scenario)
-            tool = patterns[0] if patterns else planned.spec.tool
+            tool = next(
+                (name for name in ctx.current_call_index if tool_matches(name, patterns)),
+                patterns[0] if patterns else planned.spec.tool,
+            )
             planned.schedule.rng = fault_rng(ctx.seed, ctx.episode_id, planned.spec.fault_id, tool)
         self._bound = True
 

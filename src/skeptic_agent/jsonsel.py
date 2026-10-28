@@ -136,4 +136,5 @@ def _key_of(path: str) -> str:
     Returns:
         The final key, or the index text for an array element.
     """
-    return path.rsplit(".", 1)[-1].strip("[]")
+    segment = path.rsplit(".", 1)[-1]
+    return segment.split("[", 1)[0] if "[" in segment else segment

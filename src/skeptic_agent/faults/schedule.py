@@ -200,9 +200,9 @@ class Schedule:
         """Decide whether the fault fires on this attempt, and update the state.
 
         A ``mixed`` schedule draws its permanent branch before the first
-        probability check, so every episode takes the same RNG path. A
-        qualifying attempt that fired becomes the first firing of the episode;
-        later attempts are governed by ``is_active_after``.
+        probability check, so every episode takes the same RNG path.
+        ``when.call_index`` only gates the first firing; after it, persistence
+        alone decides (S6).
 
         Args:
             call_index: The attempt number of the current call, from 1.
@@ -211,7 +211,7 @@ class Schedule:
             ``True`` when the fault fires on this attempt.
         """
         self._ensure_mixed()
-        if not self._qualifies(call_index):
+        if self.triggered == 0 and not self._qualifies(call_index):
             return False
         return self._roll()
 
@@ -258,10 +258,12 @@ class Schedule:
             ``True`` when the fault can fire.
         """
         mode = self.persistence
+        if self.triggered == 0:
+            return True
         if mode == "mixed":
             if self.permanent is None:
                 return True
-            return self.triggered < 1 or self.permanent
+            return self.permanent
         if mode == "permanent":
             return True
         if mode == "transient":

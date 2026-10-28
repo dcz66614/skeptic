@@ -500,3 +500,32 @@ Required test coverage of 85.0% reached. Total coverage: 97.27%
 EXIT=0
 ```
 
+
+## F20fix 首次触发后的持续与按工具取 RNG（2026-10-28）
+
+按 `REVIEW_F20_ref.md` 修正 S6 持续规则与 S7.3 RNG 键。
+
+- `schedule.py`：`when.call_index` 现在只在 `triggered == 0`（首次触发前）生效；首次触发后完全由持续模式决定。`transient(n)` 从首次触发起连续 n 次，`intermittent` 首次触发后每次按 p 判定，`mixed` 按已选分支。
+- `schedule.py`：`is_active_after` 在首次触发前对所有模式都返回可用，`intermittent` 的 p 只在首次触发之后参与判定，不再在触发前消耗 RNG。
+- `jsonsel.py`：`_key_of` 对 `$.user_id[0]` 这类数组路径返回真实键 `user_id`，不再返回索引。
+- `engine.py`：`bind()` 的 RNG 键改用实际被调用工具名（优先取 `ctx.current_call_index` 中匹配目标的工具），`patterns[0]` 仅作回退。
+- 测试：默认 `call_index=1` 覆盖四种模式，修正 transient 期望，保留 1000 次确定性测试，新增 `_key_of` 与多工具 `bind` 用例。
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+39 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 15 source files
+EXIT=0
+
+===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
+161 passed in 2.62s
+Required test coverage of 85.0% reached. Total coverage: 97.28%
+EXIT=0
+```
