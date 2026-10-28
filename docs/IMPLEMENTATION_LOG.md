@@ -429,3 +429,17 @@ Required test coverage of 85.0% reached. Total coverage: 98.47%
 93 passed in 2.02s
 EXIT=0
 ```
+
+## P12fix - record-only c2s tools/list (S4.4)
+
+The S4.4 table has no c2s `tools/list` row, so it falls under "all other
+messages: only record, pass through unchanged". `Pipeline.on_c2s` now runs the
+recorder alone for a c2s `tools/list` and no longer runs guard/fault there. It
+still registers the pending call with `attempt=0` before forwarding, so the
+matching s2c response keeps running fault, guard, recorder. `tools/call`
+handling is unchanged. `tests/unit/test_pipeline.py` asserts the c2s stage log
+is exactly `["recorder:c2s"]` and the s2c response log stays
+`["fault:s2c", "guard:s2c", "recorder:s2c"]`.
+
+Checks: `ruff check`, `ruff format --check`, `mypy src` clean; `pytest -m
+"not live" -q --cov=skeptic_agent` 93 passed, 98.48% coverage.

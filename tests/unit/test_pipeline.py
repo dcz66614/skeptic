@@ -297,7 +297,7 @@ async def test_s2c_tools_call_response_order() -> None:
 
 @pytest.mark.asyncio
 async def test_s2c_tools_list_response_order() -> None:
-    """A response to a tools/list runs fault, guard, recorder, then forwards."""
+    """A tools/list is c2s recorded only; its response runs fault, guard, recorder."""
     calls: list[str] = []
     pipeline = new_pipeline(
         recorder=OrderStage("recorder", calls),
@@ -306,7 +306,7 @@ async def test_s2c_tools_list_response_order() -> None:
     )
     ctx = _ctx()
     await pipeline.on_c2s(_list(9), ctx)
-    assert calls == ["recorder:c2s", "guard:c2s", "fault:c2s"]
+    assert calls == ["recorder:c2s"]
     assert ctx.pending[(C2S, 9)].method == "tools/list"
     calls.clear()
     response = _result(9, "[]")

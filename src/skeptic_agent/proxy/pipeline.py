@@ -306,9 +306,10 @@ class Pipeline:
 
         A ``tools/call`` runs recorder, guard and fault, then forwards; its
         attempt counter is incremented only when it is actually forwarded. A
-        ``tools/list`` runs recorder, guard and fault too, but it is not counted
-        as a tool call. Any other message is only recorded and forwarded
-        unchanged.
+        ``tools/list`` is only recorded and forwarded unchanged, like any other
+        message, but a pending call with ``attempt=0`` is registered so its
+        response still runs fault, guard and recorder. Any other message is only
+        recorded and forwarded unchanged.
 
         Args:
             msg: The message as the client sent it.
@@ -319,9 +320,6 @@ class Pipeline:
         """
         if not isinstance(msg, Request):
             return await _run((self.recorder,), msg, ctx, c2s=True)
-        if msg.method not in (TOOLS_CALL, TOOLS_LIST):
-            return await _run((self.recorder,), msg, ctx, c2s=True)
-        actions = await _run((self.recorder, self.guard, self.fault), msg, ctx, c2s=True)
         if msg.method == TOOLS_LIST:
             ctx.pending[(C2S, msg.id)] = PendingCall(
                 method=msg.method,
@@ -330,7 +328,11 @@ class Pipeline:
                 t_start=time.monotonic(),
                 attempt=0,
             )
-        elif len(actions) == 1 and isinstance(actions[0], Forward):
+            return await _run((self.recorder,), msg, ctx, c2s=True)
+        if msg.method != TOOLS_CALL:
+            return await _run((self.recorder,), msg, ctx, c2s=True)
+        actions = await _run((self.recorder, self.guard, self.fault), msg, ctx, c2s=True)
+        if len(actions) == 1 and isinstance(actions[0], Forward):
             tool = _tool_name(msg)
             ctx.pending[(C2S, msg.id)] = PendingCall(
                 method=msg.method,
