@@ -45,3 +45,85 @@ Required test coverage of 85.0% reached. Total coverage: 100.00%
 2 passed in 0.40s
 EXIT=0
 ```
+
+## T00fix 去掉 crewai extra 的 AGPL 依赖（2026-10-28）
+
+基线 `faeb2ab`，分支 `codex`。计划书 1.2 的 `[crewai]` 含 `crewai-tools[mcp]`，锁到 `crewai-tools` 1.6.1，硬依赖 `pymupdf` 2.0（AGPL），与 1.4 冲突。extra 改为 `crewai` + `mcpadapt`。决定见 ADR-0006。未改计划书正文，未推送。
+
+`uv lock` 去掉 `crewai-tools`、`pymupdf` 以及只被这条链拉进来的包。`Select-String uv.lock -Pattern 'name = "pymupdf"'` 无输出。对锁内 195 个包查了 PyPI 的 `license`、`license_expression` 和 License 分类，没有其他 GPL/AGPL，也没有 LGPL，请求无失败。`uv lock` 打印警告：`mcp==2.3.0` 没有名为 `ws` 的 extra。未为此改依赖。
+
+未跑 live 测试，未跑 `scripts/check.ps1`。
+
+### 命令与输出
+
+```text
+===== uv lock =====
+Resolved 195 packages in 5.21s
+warning: The package `mcp==2.3.0` does not have an extra named `ws`
+Removed beautifulsoup4 v4.15.0
+Removed crewai-tools v1.6.1
+Removed defusedxml v0.7.1
+Removed deprecation v2.1.0
+Removed docker v7.2.0
+Removed lance-namespace v0.13.0
+Removed lance-namespace-urllib3-client v0.13.0
+Removed lancedb v0.40.0
+Removed lxml v6.1.3
+Removed networkx v3.7
+Removed psutil v7.2.2
+Removed pyarrow v26.0.0
+Removed pymupdf v2.0
+Removed pymupdf-layout v2.0
+Removed pymupdf4llm v2.0
+Removed python-docx v1.2.0
+Removed pytube v15.0.0
+Removed soupsieve v3.0.4
+Removed tabulate v0.10.0
+Removed youtube-transcript-api v1.2.4
+EXIT=0
+
+===== Select-String uv.lock -Pattern 'name = "pymupdf"' =====
+(no output)
+
+===== PyPI license scan of uv.lock =====
+PACKAGES 195
+HITS 0
+LGPL_ONLY 0
+ERRORS 0
+
+===== uv lock --check =====
+Resolved 195 packages in 0.82ms
+EXIT=0
+
+===== uv sync --extra dev =====
+Resolved 195 packages in 0.79ms
+Checked 65 packages in 4ms
+EXIT=0
+
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+10 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 2 source files
+EXIT=0
+
+===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
+..                                                                       [100%]
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.13-final-0 _______________
+
+Name                            Stmts   Miss  Cover
+---------------------------------------------------
+src\skeptic_agent\__init__.py       1      0   100%
+src\skeptic_agent\cli.py            9      0   100%
+---------------------------------------------------
+TOTAL                              10      0   100%
+Required test coverage of 85.0% reached. Total coverage: 100.00%
+2 passed in 0.38s
+EXIT=0
+```

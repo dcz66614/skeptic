@@ -39,7 +39,7 @@ langgraph = [
 ]
 crewai = [
     "crewai",
-    "crewai-tools[mcp]",
+    "mcpadapt",
 ]
 pydantic-ai = ["pydantic-ai"]
 
