@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add the interceptor pipeline with fault, guard and recorder mount points, and the per-episode context with pending calls and per-tool call counts.
 - Detect the MCP protocol era (legacy, modern, unknown) from the HTTP header or the first client message.
 - Add the JSON-RPC 2.0 message model, line framing, and canonical JSON hashing.
 - Freeze ADRs 0001–0005 and Draft 2020-12 schemas for config, cassette, profile, scenario, result, report, findings, matrix, and models.

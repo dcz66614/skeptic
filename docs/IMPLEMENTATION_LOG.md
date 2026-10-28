@@ -363,3 +363,69 @@ EXIT=0
 ## Merge record P11 (orchestrator, 2026-10-28 UTC)
 - Commit: 3933c96 (P11, opencode workbuddy/deepseek-v4.1-flash, free). Review (wb deepseek, read-only): VERDICT: PASS, worktree unmodified. Orchestrator: PASS (ruff ok; format ok 22 files; mypy ok 5 files; pytest 71 passed, coverage 100%).
 
+
+## P12 拦截管线与 episode 上下文（2026-10-28）
+
+基线 `5684425`，分支 `codex`。未推送，未改计划书正文，未跑 live 测试。
+
+新增 `src/skeptic_agent/proxy/__init__.py`、`proxy/context.py`、`proxy/pipeline.py` 与 `tests/unit/test_pipeline.py`。
+
+`context.py`：冻结的 `PendingCall(method, tool_name, arguments, t_start, attempt)`；`EpisodeContext` 保存 `episode_id`、`seed`、`era`、`scenario`（`Any`，缺省 `None`）、`pending`（键为 `(direction, id)`，按 S4.3）、`call_counts`、`taint`、`tool_defs`（按卡片要求为 `dict[str, Any]`）。`next_call_index(tool)` 先加后取，首次返回 1。`new_internal_id()` 返回 `skeptic-<uuid4>`，前缀常量 `INTERNAL_ID_PREFIX` 同时供管线判断内部响应。
+
+`pipeline.py`：动作类型 `Forward`、`ReplyToClient`、`SendToServer`、`Drop`、`Hold(ms, then)` 都是小 dataclass，`Action` 为五者联合。`Interceptor` 是只有 `on_c2s` / `on_s2c` 两个 async 方法的 Protocol；`FaultStage`、`GuardStage`、`RecorderStage` 是三个挂载点，默认实现都只返回 `[Forward(msg)]`（Recorder 默认什么也不记）。`_run` 依次调用各阶段：阶段返回单个 `Forward(next)` 就把 `next` 交给下一阶段，返回其它动作则结束链条并原样返回。`Pipeline` 按 S4.4 排顺序：c2s 的 `tools/call` 走 recorder → guard → fault；s2c 的 `tools/call`、`tools/list` 响应走 fault → guard → recorder（Recorder 因此只看到最终消息）；其余消息只走 recorder。响应按 pending 表中的 c2s 请求判定，命中即从 pending 删除；`id` 以 `skeptic-` 开头的响应一律 `Drop()`，不会交给客户端。
+
+实现取舍：
+
+- 同一条消息在整条链上只产出一个 `Forward`，链条中每一步用上一阶段的 `Forward.msg` 作为下一阶段的输入。这样改写能被后续阶段看到，透传时返回的仍是同一个消息对象，`raw_bytes` 不变。
+- `Pipeline.__init__` 要求三个阶段，`new_pipeline()` 负责补默认（类似 `dataclasses.field(default_factory=...)`）。这样类型标注直接是具体阶段类，`mypy --strict` 干净。
+- 「c2s 的 `tools/list`」表格里没写顺序，卡片要求 s2c `tools/list` 响应走 fault → guard → recorder，因此请求侧也按 recorder → guard → fault 处理，并记入 pending（`attempt=0`），以便响应能匹配上；`tools/list` 不计入 `call_counts`。
+- `call_index` 只在 `tools/call` 真正被转发时自增；Guard 直接回复、丢弃或 Hold 时不计，符合「转发到上游的第 n 次尝试」。
+- `send_to_server(method, params)` 同步构造内部请求，id 用 `new_internal_id()`；没有做额外机制。
+- 测试用共享列表记录阶段调用顺序，覆盖透传同对象、`ReplyToClient`、内部 id 被丢弃、三个方向的顺序、`call_index` 1/2/3、改写向下传递、Hold/Drop 断链。测试全部用内存构造的消息，不读 TEMP。
+
+### 命令与输出
+
+```text
+===== uv lock --check =====
+Resolved 195 packages in 0.85ms
+EXIT=0
+
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+26 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 8 source files
+EXIT=0
+
+===== uv run pytest tests/unit/test_pipeline.py -q =====
+......................                                                   [100%]
+22 passed in 0.38s
+EXIT=0
+
+===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
+........................................................................ [ 77%]
+.....................                                                    [100%]
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.13-final-0 _______________
+
+Name                                  Stmts   Miss  Cover
+---------------------------------------------------------
+src\skeptic_agent\__init__.py             1      0   100%
+src\skeptic_agent\canonical.py            7      0   100%
+src\skeptic_agent\cli.py                  9      0   100%
+src\skeptic_agent\jsonrpc.py             72      0   100%
+src\skeptic_agent\protocol.py            40      0   100%
+src\skeptic_agent\proxy\__init__.py       0      0   100%
+src\skeptic_agent\proxy\context.py       29      0   100%
+src\skeptic_agent\proxy\pipeline.py     104      4    96%
+---------------------------------------------------------
+TOTAL                                   262      4    98%
+Required test coverage of 85.0% reached. Total coverage: 98.47%
+93 passed in 2.02s
+EXIT=0
+```
