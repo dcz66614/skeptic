@@ -202,3 +202,59 @@ COUNT=9
 - Orchestrator: PASS. uv lock --check ok; ruff ok; ruff format ok (16 files); mypy ok; pytest tests/schemas 27 passed; full suite 29 passed, coverage 100%; 9 schema files; negative probes (bad outcome/fault id/run_id/check type/persistence/scenario id) all rejected.
 - Fast-forwarded codex into main.
 
+
+## P10 JSON-RPC 消息模型与 canonical JSON（2026-10-28）
+
+基线 `b8ff3ce`，分支 `codex`。未推送，未改计划书正文。
+
+新增 `src/skeptic_agent/jsonrpc.py`（pydantic v2 模型 `Request`、`Notification`、`Response`、`ErrorResponse`，`ParseError`，`parse_line`、`dump`）与 `src/skeptic_agent/canonical.py`（`canonical_json`、`stable_hash`）。S4.1 的“未修改消息按原始字节透传”由 `raw_bytes` 字段承载：模型冻结、允许额外字段（透传 `_meta`、`resultType` 等未来成员），`dump` 排除 `raw_bytes`，`None` 的 `params` 不输出，其余成员（含 `"result":null`、`"id":null`、`error.data`）原样保留。
+
+实现中需要写回后续任务的几点：
+
+- `id` 用 `Annotated[int | str, AfterValidator]` 包一层，否则 pydantic 的左优先联合会把 `"7"` 收窄成整数 `7`，回写时改变字节类型。
+- `Message`、`MessageId`、`NullableId` 用旧式 `TypeAlias` 并显式 `# noqa: UP040`。PEP 695 的 `type` 别名在运行时不能被 `isinstance` 使用，P12/P13 的派发需要 `isinstance(msg, Message)`。
+- 不编造 JSON-RPC 错误码（-32600/-32601 等）的自发响应，`ParseError` 只携带 `raw_bytes` 与 `reason`，交给 P12 决定如何透传。
+- `parse_line` 只去掉行尾 `\n` 与 `\r`，保存进 `raw_bytes` 的字节与 S4.1 一致；`dump` 用 `model_dump()`（非 `mode="json"`），避免 `inf`/`nan` 被静默改成 `null`，非法值直接抛 `TypeError`。
+- hypothesis 的数值策略排除 `NaN` 与无穷，它们不是合法 JSON。往返测试比较语义键，不比较 `raw_bytes`；`params` 为 `None` 时显式断言输出里没有 `"params"`。
+
+### 命令与输出
+
+```text
+===== uv lock --check =====
+Resolved 195 packages in 0.78ms
+EXIT=0
+
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+20 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 4 source files
+EXIT=0
+
+===== uv run pytest tests/unit/test_jsonrpc.py tests/unit/test_canonical.py -q =====
+...........................                                              [100%]
+27 passed in 0.81s
+EXIT=0
+
+===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
+........................................................                 [100%]
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.13-final-0 _______________
+
+Name                             Stmts   Miss  Cover
+----------------------------------------------------
+src\skeptic_agent\__init__.py        1      0   100%
+src\skeptic_agent\canonical.py       7      0   100%
+src\skeptic_agent\cli.py             9      0   100%
+src\skeptic_agent\jsonrpc.py        72      0   100%
+----------------------------------------------------
+TOTAL                               89      0   100%
+Required test coverage of 85.0% reached. Total coverage: 100.00%
+56 passed in 1.71s
+EXIT=0
+```
