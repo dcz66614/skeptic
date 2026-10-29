@@ -707,3 +707,7 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 96.35%
 EXIT=0
 ```
+
+## F23 merge (2026-10-29)
+
+- codex 7850036 ff-merged to main. Self-review PASS (328 passed, cov 96.35%); glm-5.3-flash review PASS. Added tests/fixtures/counting_echo_server.py for S10.
