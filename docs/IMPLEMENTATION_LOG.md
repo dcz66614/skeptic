@@ -1005,3 +1005,7 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 96.42%
 EXIT=0
 ```
+
+## P15 merge (2026-10-29)
+
+- codex dfd5c1f ff-merged to main. P15 9c9ee7c + P15fix dfd5c1f (case-insensitive secret redaction at every depth). Self-review PASS (504 passed, cov 96.42%); agy gemini-3.8-flash-high re-review PASS (glm-5.3-flash unavailable, WorkBuddy credits exhausted).
