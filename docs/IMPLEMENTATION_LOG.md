@@ -564,3 +564,8 @@ Required test coverage of 85.0% reached. Total coverage: 95.34%
 EXIT=0
 ```
 
+
+## P13 merge (2026-10-29)
+
+- codex c9a1fbb ff-merged to main. Self-review PASS (189 tests, coverage 95.3%); glm-5.3-flash read-only review PASS.
+- Non-blocking: stdin readline runs in a worker thread; if the upstream exits first, shutdown may wait for client stdin EOF.
