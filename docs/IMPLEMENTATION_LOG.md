@@ -794,3 +794,7 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 96.33%
 EXIT=0
 ```
+
+## F24 merge (2026-10-29)
+
+- codex c9a3512 ff-merged to main. F24 beffdbf (rebased from 3123572) + F24fix c9a3512. Self-review PASS (377 passed, cov 96.33%); glm-5.3-flash re-review PASS (A03 counts only successful calls of the requested tool). e2e harness now feeds messages one at a time (SDK cancels in-flight handlers on stdin EOF).
