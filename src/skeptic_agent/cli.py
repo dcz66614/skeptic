@@ -9,6 +9,7 @@ import typer
 
 from skeptic_agent import __version__
 from skeptic_agent.faults.catalog import FAULT_CLASSES, catalogue
+from skeptic_agent.proxy.http import run_http_proxy
 from skeptic_agent.proxy.stdio import StdioProxy
 
 app = typer.Typer(add_completion=False, invoke_without_command=True)
@@ -116,6 +117,53 @@ def proxy_stdio(
         raise typer.Exit(code=2)
     proxy = StdioProxy(command, episode_id=episode_id or "stdio", seed=seed)
     raise typer.Exit(code=asyncio.run(proxy.run()))
+
+
+@proxy_app.command("http")
+def proxy_http(
+    upstream: Annotated[str, typer.Option("--upstream", help="Upstream MCP endpoint URL.")],
+    config: Annotated[str | None, typer.Option("--config", help="Config file path.")] = None,
+    profile: Annotated[
+        str | None, typer.Option("--profile", help="Fault profile id or path.")
+    ] = None,
+    guards: Annotated[
+        str | None, typer.Option("--guards", help="Guard list or preset name.")
+    ] = None,
+    record: Annotated[
+        str | None, typer.Option("--record", help="Cassette output directory.")
+    ] = None,
+    seed: Annotated[int, typer.Option("--seed", help="Episode seed.")] = 0,
+    episode_id: Annotated[
+        str | None, typer.Option("--episode-id", help="Episode identifier.")
+    ] = None,
+    scenario: Annotated[str | None, typer.Option("--scenario", help="Scenario file.")] = None,
+    state_file: Annotated[str | None, typer.Option("--state-file", help="State file path.")] = None,
+    host: Annotated[str, typer.Option("--host", help="Listen address.")] = "127.0.0.1",
+    port: Annotated[int, typer.Option("--port", help="Listen port.")] = 8000,
+) -> None:
+    """Run the streamable HTTP proxy in front of an upstream MCP endpoint (S4.1).
+
+    Args:
+        upstream: The upstream MCP endpoint URL.
+        config: Config file path.
+        profile: Fault profile id or path.
+        guards: Guard list or preset name.
+        record: Cassette output directory.
+        seed: Episode seed.
+        episode_id: Episode identifier.
+        scenario: Scenario file.
+        state_file: State file path.
+        host: Listen address.
+        port: Listen port.
+    """
+    del config, profile, guards, record, scenario, state_file
+    run_http_proxy(
+        upstream,
+        host=host,
+        port=port,
+        episode_id=episode_id or "http",
+        seed=seed,
+    )
 
 
 if __name__ == "__main__":

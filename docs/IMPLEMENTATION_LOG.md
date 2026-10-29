@@ -840,3 +840,44 @@ EXIT=0
 ## F25 merge (2026-10-29)
 
 - codex e4ea9cd ff-merged to main. Self-review PASS (402 passed, cov 96.46%, faults list --json = 20); agy gemini-3.8-flash-high review PASS (citations all from spec). Built on wb deepseek-v4.1-flash-sg.
+
+## P14 HTTP proxy (2026-10-29)
+
+Base `d333a82`, branch `codex`. Built `src/skeptic_agent/proxy/http.py`, `src/skeptic_agent/proxy/sse.py`, the `skeptic proxy http` CLI command, `tests/integration/test_http_proxy.py`, and the unit tests `tests/unit/test_http.py` / `tests/unit/test_sse.py`. The echo fixture gained an `http PORT` mode.
+
+What was built:
+
+- `HttpProxy` serves one Starlette route, `/mcp`, for `POST`, `GET` and `DELETE` (S4.1). The app's lifespan opens one `httpx.AsyncClient`; every request body is forwarded to `--upstream` and every response body goes back through the same `Pipeline` `stdio.py` uses, with the same c2s/s2c split and the same `EpisodeContext` shared by the whole episode.
+- `POST`: the body is parsed as one message. A `ParseError` body is forwarded untouched, like an unparseable stdio line. Otherwise the c2s actions run and the reply is the upstream response, or a `ReplyToClient` message when a fault answered directly (L02/L03/L06/L07), or `202` when everything was dropped.
+- JSON responses are processed as one s2c message; `text/event-stream` responses are processed event by event. `sse.py` decodes events across chunk boundaries, keeps `id`/`event`, and `encode_event` writes them back; the stream is a `StreamingResponse`, so a long upstream stream is never buffered.
+- Hop-by-hop headers are stripped both ways (`connection`, `keep-alive`, `proxy-authenticate`, `proxy-authorization`, `proxy-connection`, `te`, `trailer`, `trailers`, `transfer-encoding`, `upgrade`). `Authorization` and `Mcp-*` are kept; `Host`/`Content-Length` are dropped on the request because httpx sets them, and `Content-Length` is dropped on the response because the body is re-framed.
+- Era detection reuses `detect_era` with the request headers, falling back to the first message body (S4.2).
+- L04 needs no code: an unreachable upstream is answered `502`, and an upstream HTTP status (503 included) is relayed as is. `tests/unit/test_http.py::test_upstream_failure_is_a_bad_gateway` covers it; an L04-shaped upstream 503 is the same path.
+- L01 still holds via `Hold`; cancellation is confirmed by a later `notifications/cancelled`, as on stdio, because the held POST cannot receive another request on the same exchange.
+
+Spec ambiguities and how they were resolved:
+
+- S4.1 says "GET and DELETE relay (without pipeline body processing)". `GET` streams are still pipeline-processed event by event (that is the point of SSE event-by-event); `DELETE` and any non-SSE `GET` body are relayed without processing.
+- "SSE event by event through the pipeline" only makes sense for s2c; events that are not JSON-RPC messages (keep-alive comments) are relayed untouched.
+- `A02`/`A03` answer `tools/list` by replacing the message with a `ReplyToClient` notification (`ctx.control`). On HTTP there is no second channel on the same exchange, so an extra message is sent upstream in the background rather than merged into the response body.
+- The MCP SDK v2 in the venv rejects a POST without `Content-Type: application/json`, so the raw-HTTP integration tests complete a real initialize first and reuse its `Mcp-Session-Id`.
+- No dependency was added: `starlette`, `httpx` and `uvicorn` were already in `pyproject.toml` (Apache-2.0, BSD-3-Clause), and `uv.lock` is unchanged.
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+65 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 22 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+447 passed in 67.85s
+Required test coverage of 85.0% reached. Total coverage: 96.04%
+EXIT=0
+```

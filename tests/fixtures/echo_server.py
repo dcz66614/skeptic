@@ -1,5 +1,11 @@
-"""Minimal MCP stdio server with one ``echo`` tool, built on the MCP SDK."""
+"""Minimal MCP server with one ``echo`` tool, built on the MCP SDK.
 
+``python echo_server.py`` serves stdio; ``python echo_server.py http PORT``
+serves streamable HTTP on ``127.0.0.1:PORT`` at ``/mcp``, so a test can bind a
+port of its own choosing.
+"""
+
+import sys
 from typing import Any
 
 from mcp.server import MCPServer
@@ -22,4 +28,7 @@ def echo(text: str) -> CallToolResult:
 
 
 if __name__ == "__main__":
-    server.run("stdio")
+    if len(sys.argv) >= 3 and sys.argv[1] == "http":
+        server.run("streamable-http", host="127.0.0.1", port=int(sys.argv[2]))
+    else:
+        server.run("stdio")
