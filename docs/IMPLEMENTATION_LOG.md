@@ -658,3 +658,6 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 96.00%
 EXIT=0
 ```
+## F22 merge (2026-10-29)
+
+- codex 6cad1da ff-merged to main. Self-review PASS (ruff/format/mypy clean, 289 passed, cov 96.0%); glm-5.3-flash review PASS. engine.py now imports loud/silent so faults register in real runs.
