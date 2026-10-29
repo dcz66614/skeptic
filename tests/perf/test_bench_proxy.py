@@ -8,9 +8,11 @@ keeps the marker name honest.
 """
 
 import asyncio
+import contextlib
 import importlib.util
 import json
 import sys
+from collections.abc import AsyncIterator
 from pathlib import Path
 from types import ModuleType
 
@@ -90,10 +92,10 @@ def test_initialize_body_is_a_legacy_handshake() -> None:
 
 
 def test_parse_args_defaults() -> None:
-    """The defaults are the P17 run: 100 samples and 50 clients over 100 calls."""
+    """The defaults are the P17 run: 5000 samples and 50 clients over 100 calls."""
     args = bench.parse_args([])
     assert args.only == ["stdio", "http", "concurrency"]
-    assert (args.count, args.warmup, args.clients, args.calls) == (100, 3, 50, 100)
+    assert (args.count, args.warmup, args.clients, args.calls) == (5000, 3, 50, 100)
     assert args.report is None
 
 
@@ -102,6 +104,32 @@ def test_stdio_samples_are_finite_and_real() -> None:
     samples = asyncio.run(bench.bench_stdio(count=2, warmup=1))
     assert len(samples) == 2
     assert all(abs(value) < 10 for value in samples)
+
+
+def test_stdio_samples_reuse_one_session_pair(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Every sample of one transport runs on the same direct and proxied session."""
+
+    @contextlib.asynccontextmanager
+    async def fake_session(command: list[str]) -> AsyncIterator[object]:
+        sessions.append(command)
+        yield object()
+
+    sessions: list[list[str]] = []
+    monkeypatch.setattr(bench, "_session", fake_session)
+    monkeypatch.setattr(bench, "_call_and_check", _async_noop)
+    samples = asyncio.run(bench.bench_stdio(count=3, warmup=1))
+    assert len(samples) == 3
+    assert sessions == [bench._echo_stdio(), bench._proxy_stdio()]
+
+
+async def _async_noop(session: object, text: str) -> None:
+    """Stand in for a real echo call.
+
+    Args:
+        session: The fake session.
+        text: The text the real call would send.
+    """
+    del session, text
 
 
 def test_http_samples_are_finite_and_real() -> None:

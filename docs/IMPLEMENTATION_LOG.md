@@ -1,4 +1,4 @@
-﻿# 实现记录
+# 实现记录
 
 ## T00 仓库脚手架（2026-10-28）
 
@@ -1148,6 +1148,105 @@ EXIT=0
 ===== uv run python tests/perf/bench_proxy.py --report .tmp/opencode/perf.json =====
 stdio n=100   p50=0.228ms p90=0.392ms p99=0.768ms mean=0.238ms max=1.009ms PASS
 http  n=100   p50=0.804ms p90=1.117ms p99=1.639ms mean=0.811ms max=3.380ms PASS
+concurrency stdio={'sessions': 50, 'calls': 5000, 'errors': 0, 'mismatches': 0}
+concurrency http={'sessions': 50, 'calls': 5000, 'errors': 0, 'mismatches': 0}
+acceptance p50<5.0ms p99<30.0ms: PASS
+EXIT=0
+```
+## P17fix 5,000 paired samples on persistent proxies (2026-10-29)
+
+Base `eadf482`, branch `codex`. Fixes the P17 review finding: the benchmark
+measured one `tools/call` per sample on a process pair started for that sample,
+so it never took the 5,000 calls the card asks for and every sample carried
+process startup. `tests/perf/bench_proxy.py` now measures 5,000 paired calls per
+transport on one long-lived proxy+upstream pair and one long-lived direct
+upstream, and `docs/perf.md` carries the real n=5000 numbers.
+
+What was built:
+
+- `bench_stdio` opens one direct SDK session and one proxied session and keeps
+  both for the whole transport. Each sample times a proxied `tools/call`, then
+  the direct `tools/call` with the same text right after it, and records
+  `proxied - direct`.
+- `bench_http` serves the echo fixture's own `MCPServer` app and the proxy's
+  `HttpProxy.app()` as in-process uvicorn servers on port 0 for the whole run.
+  One `httpx.AsyncClient` opens a direct and a proxied session and times the
+  same request body on both sides per sample.
+- `--count` defaults to 5000. `--warmup` (default 3) is now calls per session at
+  the start of the transport, not per sample.
+- The concurrency runs reuse the same in-process fixture and proxy
+  (`bench_http_concurrency` used to start two child pairs per run); the stdio
+  concurrency run is unchanged (50 SDK sessions x 100 calls through the CLI
+  proxy).
+- `docs/perf.md` method, run instructions and results are rewritten for n=5000;
+  the Windows note is kept.
+- `tests/perf/test_bench_proxy.py`: the defaults test now expects 5000, and a new
+  `test_stdio_samples_reuse_one_session_pair` asserts that `bench_stdio` opens
+  exactly one direct and one proxied session for many samples. The smoke tests
+  still use 2-5 samples and run in about 11 s.
+
+Measured on this machine (2026-10-29; Windows 11 26200, i7-13650HX, Python
+3.12.13, MCP SDK 2.3.0; 5,000 samples per transport, 3 warm-up calls):
+
+| Transport | p50 | p90 | p99 | mean | max | Acceptance |
+| --- | --- | --- | --- | --- | --- | --- |
+| stdio | 0.185 ms | 0.302 ms | 0.563 ms | 0.191 ms | 0.926 ms | PASS |
+| HTTP | 2.042 ms | 2.616 ms | 4.111 ms | 2.151 ms | 21.581 ms | PASS |
+
+Concurrency: stdio 5,000 calls, 0 errors, 0 mismatches; HTTP 5,000 calls,
+0 errors, 0 mismatches. Three more runs the same day (two latency-only) gave
+stdio p50 0.276 / 0.194 / 0.185 ms and HTTP p50 2.231 / 2.072 / 2.042 ms; p99
+stayed at 0.59-0.94 ms (stdio) and 4.1-5.4 ms (HTTP).
+
+Spec ambiguities and how they were resolved:
+
+- "5,000 tools/call per transport" plus "long-lived pair" is read as 5,000 paired
+  proxied/direct calls, not 5,000 proxied plus 5,000 direct. One proxy call is
+  compared to the direct call right after it so the two share the machine state.
+- The card only names 5,000 calls, not where the processes live. Executing each
+  `--count` call against one proxy+upstream pair is the point of the fix, so
+  HTTP serves the fixture and the proxy in-process instead of forking a pair per
+  sample. The proxy under test is the real `HttpProxy` the CLI serves, with the
+  same default pipeline; stdio still goes through the real `skeptic proxy stdio`
+  child because that is the transport being measured.
+- The echo fixture configures root logging and every `httpx`/`uvicorn` call logs
+  an INFO line to stderr, which made a 5,000-call HTTP run unreadable and slow.
+  This is test-only: the benchmark calls the SDK's `configure_logging("WARNING")`
+  before building the fixture app and passes `log_level="error"` to uvicorn. No
+  change under `src/`.
+- The max is an outlier (one 21.6 ms call out of 5,000, and 54 ms in an earlier
+  run); p99 is 4.1 ms, so the acceptance uses the percentiles as before.
+- Ports come from uvicorn with `port=0`, so the benchmark never guesses a free
+  port. It still needs loopback sockets; there is no network dependency beyond
+  localhost.
+- No dependency was added; `uvicorn` and the MCP SDK were already dependencies
+  and `uv.lock` is unchanged.
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+76 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 26 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+536 passed, 12 deselected in 67.16s (0:01:07)
+Required test coverage of 85.0% reached. Total coverage: 95.96%
+EXIT=0
+
+===== uv run pytest tests/perf -m perf -q =====
+12 passed in 10.92s
+EXIT=0
+
+===== uv run python tests/perf/bench_proxy.py --report .tmp/opencode/perf.json =====
+stdio n=5000  p50=0.185ms p90=0.302ms p99=0.563ms mean=0.191ms max=0.926ms PASS
+http  n=5000  p50=2.042ms p90=2.616ms p99=4.111ms mean=2.151ms max=21.581ms PASS
 concurrency stdio={'sessions': 50, 'calls': 5000, 'errors': 0, 'mismatches': 0}
 concurrency http={'sessions': 50, 'calls': 5000, 'errors': 0, 'mismatches': 0}
 acceptance p50<5.0ms p99<30.0ms: PASS

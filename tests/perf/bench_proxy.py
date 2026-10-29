@@ -5,13 +5,15 @@ transports, against ``tests/fixtures/echo_server.py``:
 
 - **stdio**: an SDK client goes direct to the echo server, then a second SDK
   client goes to ``skeptic proxy stdio -- python echo_server.py``.
-- **HTTP**: the echo server is served on streamable HTTP, and a plain ``httpx``
-  client posts the same body direct and then through a ``skeptic proxy http``
-  child process.
+- **HTTP**: the echo fixture and the proxy are served in this process (the
+  proxy is the ``HttpProxy`` the CLI runs), and a plain ``httpx`` client posts
+  the same body direct and then through the proxy.
 
-Each sample is one ``tools/call`` through the proxy minus the next
-``tools/call`` sent direct, both on freshly started processes. p50 and p99 are
-computed over the samples; P17's acceptance is p50 < 5 ms and p99 < 30 ms.
+Each sample is one ``tools/call`` through the proxy minus the ``tools/call``
+before it sent direct. One long-lived proxy and its upstream (and one direct
+upstream for the baseline) serve every sample of a transport, so the samples
+measure the proxy hop rather than process startup. p50 and p99 are computed over
+the samples; P17's acceptance is p50 < 5 ms and p99 < 30 ms.
 
 The default pipeline runs: no faults and no Guards, which is the "proxy with no
 faults, no Guards" overhead P17 asks for. The concurrency check then has 50
@@ -28,24 +30,28 @@ import asyncio
 import contextlib
 import json
 import os
-import socket
 import statistics
-import subprocess
 import sys
 import tempfile
 import time
-from collections.abc import AsyncIterator, Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from pathlib import Path
 from typing import Any
 
 import httpx
+import uvicorn
 from mcp import ClientSession, StdioServerParameters, types
 from mcp.client.stdio import stdio_client
+from mcp.server.mcpserver.utilities.logging import configure_logging
+
+from skeptic_agent.proxy.http import HttpProxy
 
 ROOT = Path(__file__).resolve().parents[2]
 ECHO_SERVER = ROOT / "tests" / "fixtures" / "echo_server.py"
 MCP_PATH: str = "/mcp"
 PAYLOAD: str = "benchmark"
+LISTEN_ADDRESS: str = "127.0.0.1"
+"""The address every benchmark server listens on."""
 STARTUP_SECONDS: float = 60.0
 SESSION_PROTOCOL_VERSION: str = "2025-06-18"
 """The protocol version the HTTP echo fixture negotiates; its session is required
@@ -132,95 +138,95 @@ def _passes(summary: dict[str, float]) -> bool:
     return summary["p50"] < P50_LIMIT_MS and summary["p99"] < P99_LIMIT_MS
 
 
-def _free_port() -> int:
-    """Return a TCP port that is free right now.
-
-    Returns:
-        A port number the OS just handed out.
-    """
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("127.0.0.1", 0))
-        return int(sock.getsockname()[1])
-
-
-def _wait_for_port(port: int, process: subprocess.Popen[bytes]) -> None:
-    """Wait until a child accepts connections on a local port.
+async def _wait_for_listening(server: uvicorn.Server) -> None:
+    """Wait until an in-process server has taken its listen socket.
 
     Args:
-        port: The port to poll.
-        process: The child process that must stay alive.
+        server: The uvicorn server started as a task.
 
     Raises:
-        RuntimeError: When the port does not open in time or the child exits.
+        RuntimeError: When the server does not start in time.
     """
     deadline = time.monotonic() + STARTUP_SECONDS
     while time.monotonic() < deadline:
-        if process.poll() is not None:
-            raise RuntimeError("the server exited before it listened")
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.settimeout(0.2)
-            if sock.connect_ex(("127.0.0.1", port)) == 0:
-                return
-        time.sleep(0.05)
-    raise RuntimeError(f"port {port} did not open")
+        if server.started or server.should_exit:
+            break
+        await asyncio.sleep(0.01)
+    if not server.started:
+        raise RuntimeError("the server did not start")
 
 
-@contextlib.contextmanager
-def _served(args: Sequence[str], port: int) -> Iterator[str]:
-    """Run a child process that listens on ``127.0.0.1:port`` until the block ends.
+@contextlib.asynccontextmanager
+async def _served(upstream: str) -> AsyncIterator[str]:
+    """Serve ``skeptic proxy http`` in this process until the block ends.
 
-    Args:
-        args: The child command and its arguments.
-        port: The port the child is told to listen on.
-
-    Yields:
-        The child's MCP endpoint.
-    """
-    process = subprocess.Popen(
-        list(args), env=_env(), cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-    )
-    try:
-        _wait_for_port(port, process)
-        yield f"http://127.0.0.1:{port}{MCP_PATH}"
-    finally:
-        process.terminate()
-        with contextlib.suppress(subprocess.TimeoutExpired):
-            process.wait(timeout=STARTUP_SECONDS)
-
-
-def _echo_http(port: int) -> list[str]:
-    """Return the command that serves the echo fixture over HTTP.
-
-    Args:
-        port: The listen port.
-
-    Returns:
-        ``[python, echo_server.py, http, port]``.
-    """
-    return [sys.executable, str(ECHO_SERVER), "http", str(port)]
-
-
-def _proxy_http(upstream: str, port: int) -> list[str]:
-    """Return the command that serves ``skeptic proxy http``.
+    Serving the proxy in-process keeps one proxy and one ``httpx.AsyncClient``
+    alive for the whole transport, which is what a real client sees.
 
     Args:
         upstream: The upstream MCP endpoint.
-        port: The listen port.
 
-    Returns:
-        ``[python, -m, skeptic_agent.cli, proxy, http, --upstream, URL, --listen, HOST:PORT]``.
+    Yields:
+        The proxy's MCP endpoint.
     """
-    return [
-        sys.executable,
-        "-m",
-        "skeptic_agent.cli",
-        "proxy",
-        "http",
-        "--upstream",
-        upstream,
-        "--listen",
-        f"127.0.0.1:{port}",
-    ]
+    proxy = HttpProxy(upstream)
+    config = uvicorn.Config(proxy.app(), host=LISTEN_ADDRESS, port=0, log_level="error")
+    server = uvicorn.Server(config)
+    task = asyncio.create_task(server.serve())
+    try:
+        await _wait_for_listening(server)
+        port = server.servers[0].sockets[0].getsockname()[1]
+        yield f"http://{LISTEN_ADDRESS}:{port}{MCP_PATH}"
+    finally:
+        server.should_exit = True
+        await task
+
+
+class _EchoApp:
+    """Serve the echo fixture's streamable-HTTP app.
+
+    The fixture is an MCP SDK ``MCPServer``; serving its own app lets every sample
+    of one transport talk to a single long-lived upstream.
+    """
+
+    def __init__(self) -> None:
+        """Import the echo fixture and keep its server object."""
+        sys.path.insert(0, str(ECHO_SERVER.parent))
+        try:
+            from echo_server import server  # type: ignore[import-not-found]
+        finally:
+            sys.path.remove(str(ECHO_SERVER.parent))
+        self.server = server
+
+    def app(self) -> Any:
+        """Return the fixture's streamable-HTTP ASGI app.
+
+        Returns:
+            The Starlette app of the MCP SDK server.
+        """
+        configure_logging("WARNING")
+        app: Any = self.server.streamable_http_app()
+        return app
+
+
+@contextlib.asynccontextmanager
+async def _echo_http() -> AsyncIterator[str]:
+    """Serve the echo fixture over streamable HTTP until the block ends.
+
+    Yields:
+        The fixture's MCP endpoint.
+    """
+    app = _EchoApp().app()
+    config = uvicorn.Config(app, host=LISTEN_ADDRESS, port=0, log_level="error")
+    server = uvicorn.Server(config)
+    task = asyncio.create_task(server.serve())
+    try:
+        await _wait_for_listening(server)
+        port = server.servers[0].sockets[0].getsockname()[1]
+        yield f"http://{LISTEN_ADDRESS}:{port}{MCP_PATH}"
+    finally:
+        server.should_exit = True
+        await task
 
 
 def _echo_stdio() -> list[str]:
@@ -289,29 +295,51 @@ def _first_text(result: "types.CallToolResult | types.Result") -> str:
     return block.text if isinstance(block, types.TextContent) else ""
 
 
-async def _timed_stdio(command: Sequence[str], warmup: int) -> float:
-    """Time one ``tools/call`` on a fresh, warmed-up session.
+async def _timed_stdio(session: ClientSession, text: str) -> float:
+    """Time one ``tools/call`` on an open session.
 
     Args:
-        command: The server command and its arguments.
-        warmup: The number of untimed calls before the timed one.
+        session: The initialized session.
+        text: The text argument.
 
     Returns:
-        The timed call's wall time in seconds.
+        The call's wall time in seconds.
     """
-    async with _session(command) as session:
+    started = time.perf_counter()
+    await _call_and_check(session, text)
+    return time.perf_counter() - started
+
+
+async def _stdio_pairs(count: int, warmup: int) -> list[float]:
+    """Measure the stdio proxy's added latency on one session pair.
+
+    One direct session and one proxied session stay open for every sample: each
+    sample times a proxied call, then a direct call with the same arguments, and
+    reports their difference (paired samples cancel the run-to-run jitter of
+    the machine).
+
+    Args:
+        count: The number of samples.
+        warmup: The untimed calls at the start of each session.
+
+    Returns:
+        One latency difference in seconds per sample.
+    """
+    samples: list[float] = []
+    async with _session(_echo_stdio()) as direct, _session(_proxy_stdio()) as proxied:
         for index in range(warmup):
-            await _call_and_check(session, f"{PAYLOAD}-warmup-{index}")
-        started = time.perf_counter()
-        await _call_and_check(session, PAYLOAD)
-        return time.perf_counter() - started
+            await _call_and_check(direct, f"{PAYLOAD}-warmup-{index}")
+            await _call_and_check(proxied, f"{PAYLOAD}-warmup-{index}")
+        for index in range(count):
+            text = f"{PAYLOAD}-{index}"
+            through = await _timed_stdio(proxied, text)
+            straight = await _timed_stdio(direct, text)
+            samples.append(through - straight)
+    return samples
 
 
 async def bench_stdio(count: int, warmup: int) -> list[float]:
-    """Measure the stdio proxy's added latency, one sample per pair of calls.
-
-    Each sample starts a direct session and a proxied one; both warm up, then
-    the proxied call is timed and the direct call is timed right after.
+    """Measure the stdio proxy's added latency over ``count`` paired calls.
 
     Args:
         count: The number of samples.
@@ -320,12 +348,7 @@ async def bench_stdio(count: int, warmup: int) -> list[float]:
     Returns:
         One latency difference in seconds per sample.
     """
-    samples: list[float] = []
-    for _ in range(count):
-        proxied = await _timed_stdio(_proxy_stdio(), warmup)
-        direct = await _timed_stdio(_echo_stdio(), warmup)
-        samples.append(proxied - direct)
-    return samples
+    return await _stdio_pairs(count, warmup)
 
 
 def _call_body(request_id: int, text: str) -> dict[str, Any]:
@@ -438,26 +461,28 @@ def _encode(value: dict[str, Any]) -> bytes:
     return json.dumps(value, separators=(",", ":")).encode("utf-8")
 
 
-async def _timed_http(client: httpx.AsyncClient, url: str, warmup: int) -> float:
-    """Time one ``tools/call`` against an HTTP endpoint, on a fresh session.
+async def _timed_http(
+    client: httpx.AsyncClient, headers: dict[str, str], url: str, request_id: int, text: str
+) -> float:
+    """Time one ``tools/call`` against an HTTP endpoint on an open session.
 
     Args:
         client: The HTTP client.
+        headers: The session headers from ``_open_session``.
         url: The MCP endpoint.
-        warmup: The number of untimed calls before the timed one.
+        request_id: The JSON-RPC id.
+        text: The text argument.
 
     Returns:
-        The timed call's wall time in seconds.
+        The call's wall time in seconds.
+
+    Raises:
+        RuntimeError: When the endpoint does not echo ``text``.
     """
-    headers = await _open_session(client, url)
-    for index in range(warmup):
-        await client.post(
-            url, headers=headers, content=_encode(_call_body(index, f"{PAYLOAD}-warmup-{index}"))
-        )
     started = time.perf_counter()
-    reply = await client.post(url, headers=headers, content=_encode(_call_body(warmup, PAYLOAD)))
+    reply = await client.post(url, headers=headers, content=_encode(_call_body(request_id, text)))
     elapsed = time.perf_counter() - started
-    if reply.status_code != 200 or _first_text_http(reply.text) != PAYLOAD:
+    if reply.status_code != 200 or _first_text_http(reply.text) != text:
         raise RuntimeError(f"unexpected HTTP reply: {reply.status_code} {reply.text[:200]}")
     return elapsed
 
@@ -476,11 +501,12 @@ def _first_text_http(body: str) -> str:
 
 
 async def bench_http(count: int, warmup: int) -> list[float]:
-    """Measure the HTTP proxy's added latency, one sample per pair of calls.
+    """Measure the HTTP proxy's added latency over ``count`` paired calls.
 
-    One direct raw-HTTP exchange is timed against the echo server, one against
-    the proxy, per sample. The client sends an untyped ``httpx`` body, so the
-    two measurements differ only by the proxy hop.
+    One direct session and one proxied session stay open for every sample, and
+    both live until the block ends. Each sample times a proxied call,
+    then a direct call with the same body, and reports their difference. The
+    proxy is the same ``HttpProxy`` the CLI serves, in this process.
 
     Args:
         count: The number of samples.
@@ -489,18 +515,23 @@ async def bench_http(count: int, warmup: int) -> list[float]:
     Returns:
         One latency difference in seconds per sample.
     """
-    echo_port = _free_port()
-    proxy_port = _free_port()
     samples: list[float] = []
-    with (
-        _served(_echo_http(echo_port), echo_port) as upstream,
-        _served(_proxy_http(upstream, proxy_port), proxy_port) as proxied_url,
+    async with (
+        _echo_http() as upstream,
+        _served(upstream) as proxied_url,
+        httpx.AsyncClient(timeout=STARTUP_SECONDS) as client,
     ):
-        async with httpx.AsyncClient(timeout=STARTUP_SECONDS) as client:
-            for _ in range(count):
-                proxied = await _timed_http(client, proxied_url, warmup)
-                direct = await _timed_http(client, upstream, warmup)
-                samples.append(proxied - direct)
+        direct_headers = await _open_session(client, upstream)
+        proxied_headers = await _open_session(client, proxied_url)
+        for index in range(warmup):
+            text = f"{PAYLOAD}-warmup-{index}"
+            await _timed_http(client, direct_headers, upstream, index, text)
+            await _timed_http(client, proxied_headers, proxied_url, index, text)
+        for index in range(count):
+            text = f"{PAYLOAD}-{index}"
+            through = await _timed_http(client, proxied_headers, proxied_url, index, text)
+            straight = await _timed_http(client, direct_headers, upstream, index + warmup, text)
+            samples.append(through - straight)
     return samples
 
 
@@ -597,12 +628,7 @@ async def bench_http_concurrency(clients: int, calls: int) -> dict[str, int]:
     Returns:
         ``sessions``, ``calls``, ``errors`` and ``mismatches``.
     """
-    echo_port = _free_port()
-    proxy_port = _free_port()
-    with (
-        _served(_echo_http(echo_port), echo_port) as upstream,
-        _served(_proxy_http(upstream, proxy_port), proxy_port) as url,
-    ):
+    async with _echo_http() as upstream, _served(upstream) as url:
         outcomes = await asyncio.gather(
             *(_run_http_client(index, calls, url) for index in range(clients))
         )
@@ -685,7 +711,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=["stdio", "http", "concurrency"],
         help="The benchmarks to run (default: all).",
     )
-    parser.add_argument("--count", type=int, default=100, help="Latency samples per transport.")
+    parser.add_argument("--count", type=int, default=5000, help="Latency samples per transport.")
     parser.add_argument("--warmup", type=int, default=3, help="Warm-up calls per session.")
     parser.add_argument("--clients", type=int, default=50, help="Concurrent clients.")
     parser.add_argument("--calls", type=int, default=100, help="Calls per client.")
