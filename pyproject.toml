@@ -80,11 +80,14 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
+# P17: the benchmark spawns hundreds of proxy processes, so `perf` is opt-in.
+addopts = "-m 'not perf'"
 markers = [
     "unit: pure functions and classes, no I/O and no network",
     "integration: local subprocesses, no external network",
     "e2e: full episode with a scripted fake model",
     "live: real API keys and network; skipped in default CI",
+    "perf: proxy latency benchmark; opt-in with -m perf",
 ]
 
 [tool.coverage.run]

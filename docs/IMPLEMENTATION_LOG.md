@@ -1053,3 +1053,103 @@ EXIT=0
 ## P16 merge (2026-10-29)
 
 - codex c3e2c45 ff-merged to main. Self-review PASS (536 passed, cov 95.96%); agy gemini-3.8-flash-high review PASS. Note: spec 项目书 line 453 shows 'skeptic replay' without --cassette; implemented --cassette per P16 card and S2.
+
+## P17 Proxy performance benchmark (2026-10-29)
+
+Base `b610132`, branch `codex`. Built `tests/perf/bench_proxy.py` (the benchmark
+script), `tests/perf/test_bench_proxy.py` (11 smoke tests of the harness behind
+the `perf` marker) and `docs/perf.md` (method, how to run, and this machine's
+numbers).
+
+What was built:
+
+- `bench_proxy.py` measures the added latency of one `tools/call` per transport
+  with the default pipeline (no faults, no Guards), against
+  `tests/fixtures/echo_server.py`. Every sample starts a fresh pair of processes,
+  warms each up, then times one proxied call and one direct call; the sample is
+  `proxied - direct`. p50/p90/p99/mean/max are computed over the samples and
+  checked against P17's acceptance (p50 < 5 ms, p99 < 30 ms). Exit code is 1 if
+  either transport fails.
+- stdio: the SDK `ClientSession` goes direct to `echo_server.py`, then to
+  `skeptic proxy stdio -- python echo_server.py`.
+- HTTP: the fixture is served streamable-HTTP; an `httpx` client posts a raw
+  `initialize` (so the session id is real), one `notifications/initialized`, then
+  `tools/call` bodies direct and through a `skeptic proxy http` child.
+- Concurrency: 50 clients x 100 calls per transport (5,000 calls each). Every
+  reply must carry its own id and its own text, so a lost message or a crossed
+  id is an error.
+- `--only`, `--count`, `--warmup`, `--clients`, `--calls`, `--report` select the
+  run and write the raw numbers as JSON.
+- `pyproject.toml` gains the `perf` marker and `addopts = "-m 'not perf'"`, so the
+  benchmark stays out of the default pytest run. The smoke tests run with
+  `uv run pytest tests/perf -m perf`.
+
+Measured on this machine (2026-10-29; Windows 11 26200, i7-13650HX, Python
+3.12.13, MCP SDK 2.3.0; 100 samples per transport, 3 warm-up calls):
+
+| Transport | p50 | p90 | p99 | mean | max | Acceptance |
+| --- | --- | --- | --- | --- | --- | --- |
+| stdio | 0.228 ms | 0.392 ms | 0.768 ms | 0.238 ms | 1.009 ms | PASS |
+| HTTP | 0.804 ms | 1.117 ms | 1.639 ms | 0.811 ms | 3.380 ms | PASS |
+
+Concurrency: stdio 5,000 calls, 0 errors, 0 mismatches; HTTP 5,000 calls,
+0 errors, 0 mismatches. A second latency-only run gave stdio p50 0.205 /
+p99 0.624 ms and HTTP p50 0.764 / p99 1.285 ms. Both transports pass with a
+wide margin.
+
+Spec ambiguities and how they were resolved:
+
+- The card names `docs/drafts/perf.md`; there is no `docs/drafts/` directory in
+  this repo, so the report is `docs/perf.md` (the path the orchestrator's P17
+  brief names).
+- The card says "5,000 `tools/call`" with p50/p99. A latency percentile over
+  5,000 samples would take hours (a fresh process pair per sample is needed to
+  keep sessions from warming up), so the latency part uses 100 samples per
+  transport by default (`--count` raises it) and the 5,000 number is the
+  concurrency run: 50 clients x 100 calls, exactly as the card's second step
+  says. The concurrency run also counts as the "0 errors" acceptance.
+- The card says the acceptance was written for `ubuntu-latest`. No Linux runner
+  was available here and results must not be faked, so the recorded numbers are
+  from this Windows machine and `docs/perf.md` says so.
+- "Compare direct and proxied" on HTTP: the proxy holds one `httpx.AsyncClient`
+  for the whole episode, while the direct side has no session. To compare the
+  same call shape on both sides, both use one plain `httpx` client that sends an
+  untyped body after a real `initialize`; the SDK client is used on stdio only.
+- A sample can be negative when the direct call is slower than the proxied one;
+  percentiles are used instead of per-sample thresholds.
+- The benchmark never runs under `pytest`: it was made a separate script plus
+  `perf`-marked smoke tests because it starts hundreds of processes. The
+  `addopts` marker filter keeps the smoke tests out of the default run too.
+- No dependency was added; `httpx`, `mcp` and `starlette`/`uvicorn` were already
+  present and `uv.lock` is unchanged.
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+76 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 26 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+536 passed, 11 deselected in 67.84s (0:01:07)
+Required test coverage of 85.0% reached. Total coverage: 95.96%
+EXIT=0
+
+===== uv run pytest tests/perf -m perf -q =====
+11 passed in 24.62s
+EXIT=0
+
+===== uv run python tests/perf/bench_proxy.py --report .tmp/opencode/perf.json =====
+stdio n=100   p50=0.228ms p90=0.392ms p99=0.768ms mean=0.238ms max=1.009ms PASS
+http  n=100   p50=0.804ms p90=1.117ms p99=1.639ms mean=0.811ms max=3.380ms PASS
+concurrency stdio={'sessions': 50, 'calls': 5000, 'errors': 0, 'mismatches': 0}
+concurrency http={'sessions': 50, 'calls': 5000, 'errors': 0, 'mismatches': 0}
+acceptance p50<5.0ms p99<30.0ms: PASS
+EXIT=0
+```
