@@ -926,3 +926,44 @@ EXIT=0
 ## P14 merge (2026-10-29)
 
 - codex 00c631b ff-merged to main. P14 16e39bb + P14fix 00c631b (L04 HTTP hook, --upstream/--listen 127.0.0.1:8765, proxy-* stripping). Self-review PASS (467 passed); agy gemini-3.8-flash-high re-review PASS. glm-5.3-flash unavailable (WorkBuddy credits exhausted).
+
+## P15 Cassette recorder (2026-10-29)
+
+Base `bacae4b`, branch `codex`. Built `src/skeptic_agent/record/cassette.py`, `src/skeptic_agent/record/redact.py`, `src/skeptic_agent/record/__init__.py`, `tests/unit/test_cassette.py` (33 tests) and the child-process fixture `tests/fixtures/cassette_child.py`.
+
+What was built:
+
+- `Recorder` writes one JSONL file per episode at `<dir>/<episode_id with ":" -> "__">.jsonl` (S5): a `header` line from `cassette_header`, one `msg` line per recorded message, a `footer` line from `finish`. Every line is `json.dumps(..., ensure_ascii=False, separators=(",", ":"))` plus `\n` and is flushed immediately, so a killed process keeps the lines already written.
+- Header fields follow S5 exactly and in its order: `type`, `schema`, `episode_id`, `created_at` (`YYYY-MM-DDTHH:MM:SSZ`), `skeptic_version` (`__version__`), `transport`, `upstream`, `era`, `seed`, `profile`, `fault_plan`, `guards`, `scenario_id`. `fault_plan` is built from `FaultSpec` and carries only persistence fields that apply (`n` for transient/mixed, `p` for intermittent/mixed, `permanent_p` for mixed, `probability` when not 1).
+- `msg` lines carry the S5 fields: `seq`, `t_ms` (ms since the header), `dir`, `raw`, `final`, `fault`, `guards`, `dropped`, `internal`. `raw`/`final` come from the message bytes when they are still there (verbatim wire form) and from the model fields for a message a fault rebuilt; both are redacted.
+- `CassetteRecorder(RecorderStage)` records in both directions and always returns `[Forward(msg)]`. The S4.4 order means it sees a c2s message first and an s2c message last, so it records what the client sent and what the client receives. `note_fault`/`note_guard` let the fault/Guard stages attach their work to the message they touched; this card does not wire the engine to them (Guards land in M5).
+- Footer: `atexit` plus SIGTERM and SIGINT handlers. The handler writes the footer, restores nothing on purpose, and then replays the previous disposition: a previous callable handler runs, `SIG_IGN` returns, SIGINT raises `KeyboardInterrupt`, SIGTERM raises `SystemExit(128+signum)`. `finish` is idempotent and unregisters the hooks, so a normal exit writes exactly one footer.
+- `redact.py`: `Authorization` and `Cookie` (case-insensitive) in any `headers` object, plus the value of every key matching `(?i)(api[_-]?key|token|secret|password)` anywhere in the object tree, become `***` (1.7). The walk copies and never renames keys.
+
+Spec ambiguities and how they were resolved:
+
+- S5 shows `"final": null` "when the message was not modified". The recorder gets the received message first and the sent one last, and the sent message always differs by `raw_bytes` alone. `final` is therefore written when the recorded message has no bytes left (a fault/Guard rebuilt it, S4.1 compact form) and null otherwise; the s2c `raw` slot keeps the received bytes. A strict "final = sent message whenever the pipeline changed it" reading would need the pre-fault bytes on the s2c line, which the recorder alone never sees.
+- S5's header example has no field for the replay key or the tool name, so a `msg` line holds only what S5 lists; `fault.call_index` comes from `PendingCall.attempt` (ADR-0007) via `note_fault`, not from `ctx`.
+- `scenario_id` is required by `schemas/cassette.schema.json` and must match the scenario id pattern, so it is a required argument with no placeholder: an episode with no scenario cannot be recorded yet (P16 will pass the real one).
+- `internal` is derived from the `skeptic-` id prefix (S4.3) when the caller does not say otherwise; internal `tools/call` messages do not count towards `stats.tool_calls`.
+- S5 does not say what happens when a signal arrives after `finish`; the hooks are removed at the end of `finish`, so a later SIGTERM gets the handler that was installed before the recorder.
+- The `--record` CLI flag already exists in `cli.py`; connecting it to this recorder needs the episode/era/scenario wiring of P13/P16 and is out of scope here.
+
+```text
+===== uv run ruff check =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check =====
+71 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 25 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+500 passed in 61.54s (0:01:01)
+Required test coverage of 85.0% reached. Total coverage: 96.43%
+EXIT=0
+```
