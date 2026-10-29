@@ -9,7 +9,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from skeptic_agent.faults import loud, silent  # noqa: F401  # importing registers the faults
+from skeptic_agent.faults import adversarial, loud, silent  # noqa: F401  # importing registers the faults
 from skeptic_agent.faults.base import Fault, FaultHook, FaultSpec
 from skeptic_agent.faults.profiles import FaultEntry, Profile, ProfileError, load_profile
 from skeptic_agent.faults.registry import get_fault
@@ -158,6 +158,10 @@ class FaultEngine(FaultStage):
         such action ends the chain and is returned with the message that was
         current at that point.
 
+        Only a ``list`` hook rolls ``next_event``. A target-less fault that
+        implements ``post_call`` is listed on a ``tools/list`` response too, but
+        a list event is not its hook, so it does not use up one of its firings.
+
         Args:
             hook: The hook being run.
             tool: The tool name, or ``None`` for ``tools/list``.
@@ -179,11 +183,16 @@ class FaultEngine(FaultStage):
                 tool, resolve_targets(planned.spec.tool, scenario)
             ):
                 continue
-            fired = (
-                planned.schedule.next_event()
-                if index is None
-                else planned.schedule.next_trigger(index)
-            )
+            if index is not None:
+                fired = planned.schedule.next_trigger(index)
+            elif hook == "list":
+                # S4.4 puts every list-hook fault before any Guard, so no Guard
+                # can block the rewrite: the list event counts as a firing.
+                fired = planned.schedule.next_event()
+            else:
+                # ``index is None`` here only happens on a ``tools/list``: a
+                # post_call fault that is never reached keeps its firings.
+                continue
             if not fired:
                 continue
             rewritten = fault.apply(current, planned.spec, ctx)
@@ -196,6 +205,43 @@ class FaultEngine(FaultStage):
                     rewritten = rewritten.model_copy(update={"raw_bytes": b""})
                 current = rewritten
         return current, None
+
+    def _drain_control(self, ctx: EpisodeContext, actions: list[Action]) -> list[Action]:
+        """Append the actions a fault queued on ``ctx.control``.
+
+        Only ``tools/list`` responses are followed this way, which is the one
+        place a fault may ask the proxy to speak on its own (A03's list-changed
+        notification).
+
+        Args:
+            ctx: The episode context.
+            actions: The actions built so far.
+
+        Returns:
+            The actions, with the queued ones last.
+        """
+        if not ctx.control:
+            return actions
+        queued = list(ctx.control)
+        ctx.control.clear()
+        return [*actions, *queued]
+
+    def _run_on_request(self, ctx: EpisodeContext) -> None:
+        """Tell the planned faults that a ``tools/call`` is on its way.
+
+        ``on_request`` runs before the pre hooks, for every planned fault, so a
+        fault can read the attempt number the pipeline just assigned (ADR-0007)
+        even when it does not run on the call itself. A03 uses it to count the
+        target calls; its own schedule is not rolled, because a call is not its
+        firing event.
+
+        Args:
+            ctx: The episode context.
+        """
+        for planned in self.planned:
+            fault = planned.fault
+            if fault is not None:
+                fault.on_request(planned.spec, ctx)
 
     async def on_c2s(self, msg: Message, ctx: EpisodeContext) -> list[Action]:
         """Run the pre_call hooks of a ``tools/call``.
@@ -213,6 +259,7 @@ class FaultEngine(FaultStage):
         """
         self._ensure_bound(ctx)
         if isinstance(msg, Request) and msg.method == TOOLS_CALL and isinstance(msg.params, dict):
+            self._run_on_request(ctx)
             name = msg.params.get("name")
             if isinstance(name, str):
                 msg, action = self._apply(
@@ -247,7 +294,10 @@ class FaultEngine(FaultStage):
         action: FaultAction | None = None
         if pending.method == TOOLS_LIST:
             msg, action = self._apply("list", None, None, ctx, msg)
-        elif pending.tool_name is not None:
+            if action is not None:
+                return self._drain_control(ctx, [action])
+            return self._drain_control(ctx, [Forward(msg)])
+        if pending.tool_name is not None:
             ctx.current_call_index[pending.tool_name] = pending.attempt
             msg, action = self._apply("post_call", pending.tool_name, pending.attempt, ctx, msg)
         if action is not None:

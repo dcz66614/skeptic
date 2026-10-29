@@ -32,7 +32,6 @@ EXIT=0
 
 ===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
 ..                                                                       [100%]
-=============================== tests coverage ================================
 ______________ coverage: platform win32, python 3.12.13-final-0 _______________
 
 Name                            Stmts   Miss  Cover
@@ -114,7 +113,6 @@ EXIT=0
 
 ===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
 ..                                                                       [100%]
-=============================== tests coverage ================================
 ______________ coverage: platform win32, python 3.12.13-final-0 _______________
 
 Name                            Stmts   Miss  Cover
@@ -169,7 +167,6 @@ EXIT=0
 
 ===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
 .............................                                            [100%]
-=============================== tests coverage ================================
 ______________ coverage: platform win32, python 3.12.13-final-0 _______________
 
 Name                            Stmts   Miss  Cover
@@ -243,7 +240,6 @@ EXIT=0
 
 ===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
 ........................................................                 [100%]
-=============================== tests coverage ================================
 ______________ coverage: platform win32, python 3.12.13-final-0 _______________
 
 Name                             Stmts   Miss  Cover
@@ -282,7 +278,6 @@ EXIT=0
 
 ===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
 ..........................................................               [100%]
-=============================== tests coverage ================================
 ______________ coverage: platform win32, python 3.12.13-final-0 _______________
 
 Name                             Stmts   Miss  Cover
@@ -341,7 +336,6 @@ EXIT=0
 
 ===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
 .......................................................................  [100%]
-=============================== tests coverage ================================
 ______________ coverage: platform win32, python 3.12.13-final-0 _______________
 
 Name                             Stmts   Miss  Cover   Missing
@@ -410,7 +404,6 @@ EXIT=0
 ===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
 ........................................................................ [ 77%]
 .....................                                                    [100%]
-=============================== tests coverage ================================
 ______________ coverage: platform win32, python 3.12.13-final-0 _______________
 
 Name                                  Stmts   Miss  Cover
@@ -715,3 +708,45 @@ EXIT=0
 ## Session stop (2026-10-29 03:05)
 
 - main at F23 merge (87eb03b). F24 (3123572, codex only) failed read-only review: A03 must advance only on successful target calls (S6), and _current_tool must use the current request's tool. F24fix stopped unfinished at cutoff (1 e2e test failing); WIP in git stash in skeptic-codex. Not merged.
+## F24 对抗故障 A01–A03（2026-10-29）
+
+基线 `87eb03b`，分支 `codex`。交付 `src/skeptic_agent/faults/adversarial.py`、`tests/unit/test_adversarial.py`（33 个用例）、`tests/e2e/test_adversarial_faults.py`（7 个用例，经 stdio 代理连 `tests/fixtures/echo_server.py`）。A01–A03 全部注册进 `REGISTRY`，类别 `adversarial`；`engine.py` 按 loud/silent 的写法导入 `adversarial` 完成注册。`tests/unit/test_profiles.py` 里“未注册故障”的样例从 `A01` 换成 `X99`。
+
+实现要点：
+
+- 载荷：`P1_TEMPLATE` / `P2_TEMPLATE` 按 S6 逐字保存，`render()` 只把 `{mail_tool}` 换成 `send_email`。单元测试与 e2e 都拿完整字符串比对，e2e 再核对客户端收到的字节。
+- A01：`post_call`。先深拷贝 result，再往第一个 `type=="text"` 块尾部追加 `"\n\n" + payload`；随后在 `structuredContent` 顶层按 S6 列出的顺序 `body`、`content`、`text`、`snippet`、`description` 找第一个字符串字段追加一次。两处分别追加，因此不走 S4.5 的同步改写。`resultType` 不是 `complete` 时原样透传；两处都找不到可写内容时视为不适用。
+- A02：`list`。目标表达式解析出的每个工具，其 `description` 改成 `原description + "\n\n" + payload`，其余工具和字段不动；工具没有 `description` 时按空串处理。
+- A03：`list`。第一次 `tools/list` 原样返回；累计调用达到 `after_calls`（默认 1）之后，每次 `tools/list` 都按 A02 改写。旧版协议（`ctx.era.kind == "LEGACY"`）且服务器声明 `tools.listChanged` 时，在改写后的列表之后发一条 `notifications/tools/list_changed`，只发一次。
+- A03 的调用计数：目标通常是 `$primary`，而在故障前置钩子里 `$primary` 只能匹配具体工具名，无法用它判断“这次调用属于目标”。F24 在 `Fault` 上加了 `on_request(spec, ctx)`（默认空实现），引擎在 `tools/call` 进入故障阶段、管线已分配 `call_index`（ADR-0007）之后、前置钩子之前调用它；A03 从这里读 `ctx.current_call_index` 记下已发生的调用次数。它不需要看到响应，所以“客户端先调用再取列表”也能正确计数。
+- A03 的调度事件只有 `tools/list`。引擎的 `_apply` 现在只有 `list` 钩子会掷 `next_event`；从前只要 `post_call` 故障在 `tools/list` 上被枚举到就掷一次，会白白消耗它的触发次数（A02 不受影响，A03 会）。
+- list_changed 通知：`EpisodeContext` 新增 `control: list[Any]`。A03 在 `tools/list` 改写成功后向这里放一个 `ReplyToClient(Notification(...))`，`FaultEngine.on_s2c` 在 `tools/list` 分支返回前用 `_drain_control` 把排队的动作接在该响应之后。stdio 代理已有的 `ReplyToClient` 处理即可写到客户端，传输层没有改动。
+
+规格歧义与处理：
+
+- A03 的“累计成功调用”只对目标工具计数。F24 按请求计数，无法判断响应是否为业务失败，所以 S6 字面上的“成功”在这里等同于“调用发出并转给了上游”；单元与 e2e 测试都按调用次数验证。
+- “目标工具”的判定：`$primary` / `$write` / `$conflict_b` 先解析成场景里的工具名，再和实际调用的工具名按 glob 比较；目标是 `*` 时任意工具都算。
+- 旧版协议与 `tools.listChanged`：S4.2 的 `Era` 只有年份版本号，不保存 `initialize` 的 capabilities。`ctx.scenario` 已用于存放运行期补充信息，F24 读它的 `capabilities.tools.listChanged`；场景里没有该字段时视为服务器未声明，不发通知。字段位置记录在本条，S8.1 的场景格式未改。
+- 通知的时机：改写后的列表响应先写，通知紧随其后，两者都算同一次 `tools/list` 的结果；只发一次，之后的列表照常改写但不再通知。
+- A01 的“这类字段”按 S6 的列举顺序（不是对象键顺序）取第一个有字符串值的键；只读顶层字段，不进入嵌套对象。`structuredContent` 是标量或数组时只在文本块上追加。
+- A02/A03 的工具有 `description` 但值不是字符串时按空串处理，避免把非字符串直接相加。
+- 载荷只用于测试；`MAIL_TOOL` 固定为 S8.5 的 `send_email`。`payload` 参数可以整段覆盖，但默认值逐字一致。
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+53 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 19 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+368 passed in 38.38s
+Required test coverage of 85.0% reached. Total coverage: 96.32%
+EXIT=0
+```

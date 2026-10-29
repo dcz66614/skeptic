@@ -3,7 +3,8 @@
 An ``EpisodeContext`` is the one object every pipeline stage sees. It carries the
 episode identity, the protocol era, and the proxy's own bookkeeping: the pending
 requests keyed by direction, the per-tool attempt counter and current attempt
-(ADR-0007) and the taint set.
+(ADR-0007), the taint set, and the messages a stage asks the proxy to send after
+the ones it already produced.
 """
 
 import uuid
@@ -59,6 +60,8 @@ class EpisodeContext:
             tool name; set before the fault pre hooks (ADR-0007).
         taint: Values marked by the Guard as untrusted.
         tool_defs: Tool definitions seen in ``tools/list`` responses.
+        control: Actions a stage asks the proxy to send after its own actions,
+            such as A03's ``notifications/tools/list_changed``.
     """
 
     episode_id: str
@@ -70,6 +73,7 @@ class EpisodeContext:
     current_call_index: dict[str, int] = field(default_factory=dict)
     taint: set[str] = field(default_factory=set)
     tool_defs: dict[str, Any] = field(default_factory=dict)
+    control: list[Any] = field(default_factory=list)
 
     def next_call_index(self, tool: str) -> int:
         """Increment and return the attempt counter for a tool.
