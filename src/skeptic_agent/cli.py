@@ -3,6 +3,7 @@
 import asyncio
 import json
 import sys
+from pathlib import Path
 from typing import Annotated
 
 import typer
@@ -11,6 +12,14 @@ from skeptic_agent import __version__
 from skeptic_agent.faults.catalog import FAULT_CLASSES, catalogue
 from skeptic_agent.proxy.http import run_http_proxy
 from skeptic_agent.proxy.stdio import StdioProxy
+from skeptic_agent.record.replay import (
+    ON_MISS_ERROR,
+    ON_MISS_LIVE,
+    ON_MISS_VALUES,
+    Cassette,
+    ReplayError,
+    ReplayServer,
+)
 
 app = typer.Typer(add_completion=False, invoke_without_command=True)
 proxy_app = typer.Typer(no_args_is_help=True)
@@ -171,6 +180,53 @@ def proxy_http(
         episode_id=episode_id or "http",
         seed=seed,
     )
+
+
+@app.command("replay", context_settings={"allow_extra_args": True})
+def replay(
+    ctx: typer.Context,
+    cassette: Annotated[str, typer.Option("--cassette", help="Cassette file to replay.")],
+    on_miss: Annotated[
+        str,
+        typer.Option("--on-miss", help="Answer a match miss with 'error' or send it 'live'."),
+    ] = ON_MISS_ERROR,
+) -> None:
+    """Serve a cassette as a stdio MCP server (S2).
+
+    Everything after ``--`` is the live upstream command; ``--on-miss live``
+    requires it. A match miss is answered with a JSON-RPC error otherwise.
+
+    Args:
+        ctx: The Typer context; ``ctx.args`` holds the live command.
+        cassette: The cassette file to replay.
+        on_miss: ``error`` or ``live``.
+
+    Raises:
+        typer.Exit: With code 2 on a usage error, 3 on an invalid cassette or a
+            failed live upstream start.
+    """
+    if on_miss not in ON_MISS_VALUES:
+        typer.echo(f"error: --on-miss must be one of {', '.join(ON_MISS_VALUES)}", err=True)
+        raise typer.Exit(code=2)
+    command = list(ctx.args)
+    if "--" in sys.argv:
+        command = sys.argv[sys.argv.index("--") + 1 :]
+    if command and command[0] == "--":
+        command = command[1:]
+    if on_miss == ON_MISS_LIVE and not command:
+        typer.echo("error: --on-miss live needs an upstream command after --", err=True)
+        raise typer.Exit(code=2)
+    try:
+        loaded = Cassette.load(Path(cassette))
+    except ReplayError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=3) from exc
+    server = ReplayServer(
+        loaded,
+        on_miss=on_miss,
+        live_command=command if on_miss == ON_MISS_LIVE else None,
+    )
+    raise typer.Exit(code=asyncio.run(server.run()))
 
 
 def parse_listen(value: str) -> tuple[str, int]:

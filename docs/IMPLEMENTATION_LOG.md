@@ -1009,3 +1009,43 @@ EXIT=0
 ## P15 merge (2026-10-29)
 
 - codex dfd5c1f ff-merged to main. P15 9c9ee7c + P15fix dfd5c1f (case-insensitive secret redaction at every depth). Self-review PASS (504 passed, cov 96.42%); agy gemini-3.8-flash-high re-review PASS (glm-5.3-flash unavailable, WorkBuddy credits exhausted).
+
+## P16 Cassette replay (2026-10-29)
+
+Base `8f4a2ce`, branch `codex`. Built `src/skeptic_agent/record/replay.py`, the `skeptic replay` command in `src/skeptic_agent/cli.py`, `tests/integration/test_replay.py` (32 tests: 4 through a real SDK client, 28 unit/CLI) and a small `serve(reader, writer)` split in `src/skeptic_agent/proxy/stdio.py`.
+
+What was built:
+
+- **Loading.** `read_cassette` reads the JSONL and rejects anything whose first record is not a `skeptic.cassette/v1` header. `Cassette.load` pairs every `c2s` `tools/call` with the first non-internal `s2c` reply of the same id, keys it by `request_key(method, tool_name, arguments) = stable_hash([method, tool_name, arguments])`, and queues the reply (`final` when present, else `raw`) in recorded order. A `fault.target.tool` supplies the tool name when the request's own `params.name` is not a plain name. `initialize`, `server/discover` and `tools/list` are kept as one cached reply each, not queued.
+- **Serving.** `ReplayServer.run` serves the process stdin/stdout; `handle_line` answers a request from the cassette and leaves notifications unanswered. A parse error gets `-32700`. A match miss gets a JSON-RPC error (`-32602`, "replay: no recorded reply (...)") under `--on-miss error` (default) or is forwarded to the live upstream under `--on-miss live` and its first answering line is returned.
+- **CLI.** `skeptic replay --cassette FILE [--on-miss {error,live}] [-- CMD]`. Exit 2 for a bad `--on-miss` value or `live` without a command, exit 3 for an unreadable/invalid cassette or a live upstream that cannot start, 0 on a clean EOF.
+- **Acceptance.** `test_replay_returns_the_recorded_results` records two `echo` calls through the real stdio proxy with a `CassetteRecorder`, then replays the file to a second real `ClientSession`; both result lists are equal value for value.
+
+Spec ambiguities and how they were resolved:
+
+- **What "matching on `(method, tool_name, stable_hash(arguments))`" covers.** S2 also names `initialize`, `server/discover` and `tools/list` as answered from the recording, and they have no arguments to queue on. They are served from one cached reply per method (first recorded wins) and are not consumed, so a client that lists tools twice still lists them. Handshake answers are shared between `initialize` and `server/discover`, so a modern client reaches a legacy recording and vice versa; the recorded result is returned with the client's own id.
+- **`final` vs `raw`.** S5 says `final` is null when the message was not modified. Replay takes `final` whenever it is non-null — that is the message the client saw — and `raw` otherwise, for both the request side (the key) and the reply.
+- **Redaction.** 1.7 can replace a value with `***`, so a replayed cassette is no longer word-for-word. `load` refuses such a reply with a `ReplayError` instead of silently serving a wrong value.
+- **Match misses.** S2 does not fix the error shape; it uses S2's exit-code-free JSON-RPC path with `-32602` (the same code L06 uses for an unknown tool). No reply is sent for a notification, matching S5's "notifications get no answer" shape in the proxy.
+- **Live upstream.** The live child is a fresh process with no session, so a forwarded `tools/call` would be rejected as out of session. Each handshake the client sends is also passed to the live upstream (answer discarded) before the cassette's answer is returned; the live process is only started when `--on-miss live` is set. Forwarding is one request at a time, and only the first answering line is returned; other lines the upstream emits meanwhile go to the client.
+- **Proxy test hook.** `StdioProxy.run` was split into `_start` + `serve(reader, writer)` so the recording side of the integration test can drive the real proxy over a socket pair while keeping the recorder's `atexit`/signal hooks in the main thread (`run()` keeps the old behaviour byte for byte). `_StdStream`/`_StdReader` are unchanged; the two new `Protocol`s only widen the parameter types.
+- **Test module name.** `tests/unit` and `tests/integration` have no `__init__.py`, so two `test_replay.py` files collide at import time. The unit and CLI tests live in the same `tests/integration/test_replay.py`, each marked `integration` (the file reaches a subprocess) or unmarked for the in-memory cases; the whole file takes about 24 s.
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+73 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 26 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+536 passed in 362.40s (0:06:02)
+Required test coverage of 85.0% reached. Total coverage: 95.96%
+EXIT=0
+```

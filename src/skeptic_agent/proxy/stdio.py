@@ -10,6 +10,7 @@ import asyncio
 import sys
 from collections.abc import Sequence
 from contextlib import suppress
+from typing import Protocol
 
 from skeptic_agent.jsonrpc import Message, Notification, ParseError, Request, dump, parse_line
 from skeptic_agent.protocol import UNKNOWN, detect_era
@@ -31,6 +32,34 @@ CLOSE_TIMEOUT_SECONDS: float = 5.0
 
 START_FAILED: int = 4
 """The S2 exit code for a failed upstream start."""
+
+
+class _LineSource(Protocol):
+    """The client side the proxy reads protocol lines from."""
+
+    async def readline(self) -> bytes:
+        """Read one line.
+
+        Returns:
+            The line including its terminator, or ``b""`` at EOF.
+        """
+        ...
+
+
+class _LineSink(Protocol):
+    """The client side the proxy writes protocol lines to."""
+
+    def write(self, data: bytes) -> None:
+        """Write bytes without flushing; ``drain`` flushes them.
+
+        Args:
+            data: The bytes to write.
+        """
+        ...
+
+    async def drain(self) -> None:
+        """Flush the buffered bytes."""
+        ...
 
 
 class _StdStream:
@@ -126,7 +155,7 @@ class StdioProxy:
             raise RuntimeError("upstream is not running")
         self.process.stdin.write(data)
 
-    async def _apply_c2s(self, actions: list[Action], client_out: _StdStream) -> None:
+    async def _apply_c2s(self, actions: list[Action], client_out: "_LineSink") -> None:
         """Send the c2s actions to the upstream or answer the client directly.
 
         Args:
@@ -177,7 +206,7 @@ class StdioProxy:
             await asyncio.sleep(remaining)
         return Drop()
 
-    async def _apply_s2c(self, actions: list[Action], client_out: _StdStream) -> None:
+    async def _apply_s2c(self, actions: list[Action], client_out: "_LineSink") -> None:
         """Send the s2c actions to the client or back to the upstream.
 
         Args:
@@ -214,7 +243,7 @@ class StdioProxy:
             return
         self.ctx.era = detect_era(msg)
 
-    async def _client_loop(self, client_in: _StdReader, client_out: _StdStream) -> None:
+    async def _client_loop(self, client_in: "_LineSource", client_out: "_LineSink") -> None:
         """Read client lines, run them through the pipeline and act on the result.
 
         Args:
@@ -240,7 +269,7 @@ class StdioProxy:
             actions = await self.pipeline.on_c2s(msg, self.ctx)
             await self._apply_c2s(actions, client_out)
 
-    async def _upstream_loop(self, client_out: _StdStream) -> None:
+    async def _upstream_loop(self, client_out: "_LineSink") -> None:
         """Read upstream lines, run them through the pipeline and act on the result.
 
         Args:
@@ -306,6 +335,16 @@ class StdioProxy:
         Returns:
             The upstream exit code, or ``START_FAILED`` when it cannot be started.
         """
+        return await self.serve(
+            reader=_StdReader(sys.stdin.buffer), writer=_StdStream(sys.stdout.buffer)
+        )
+
+    async def _start(self) -> bool:
+        """Start the upstream child process.
+
+        Returns:
+            ``True`` when it started, ``False`` when the command cannot run.
+        """
         try:
             self.process = await asyncio.create_subprocess_exec(
                 *self.command,
@@ -314,11 +353,29 @@ class StdioProxy:
                 stderr=asyncio.subprocess.PIPE,
             )
         except OSError:
-            return START_FAILED
-        client_in = _StdReader(sys.stdin.buffer)
-        client_out = _StdStream(sys.stdout.buffer)
+            return False
+        return True
 
-        exit_task: asyncio.Task[int] = asyncio.create_task(self.process.wait())
+    async def serve(self, *, reader: "_LineSource", writer: "_LineSink") -> int:
+        """Relay one client connection from the given streams.
+
+        ``run`` uses the process stdin and stdout; a test can pass another pair
+        that speaks the same two methods.
+
+        Args:
+            reader: The client's line source (an async ``readline``).
+            writer: The client's line sink (``write`` and async ``drain``).
+
+        Returns:
+            The upstream exit code, or ``START_FAILED`` when it cannot be started.
+        """
+        if not await self._start() or self.process is None:
+            return START_FAILED
+        process = self.process
+        client_in = reader
+        client_out = writer
+
+        exit_task: asyncio.Task[int] = asyncio.create_task(process.wait())
         stderr_task = asyncio.create_task(self._stderr_loop())
         upstream_task = asyncio.create_task(self._upstream_loop(client_out))
         client_task = asyncio.create_task(self._client_loop(client_in, client_out))
@@ -336,5 +393,5 @@ class StdioProxy:
             task.cancel()
         await asyncio.gather(upstream_task, client_task, return_exceptions=True)
         await stderr_task
-        code = self.process.returncode
+        code = process.returncode
         return code if code is not None else 0
