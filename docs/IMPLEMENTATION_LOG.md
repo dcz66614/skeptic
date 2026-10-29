@@ -711,3 +711,7 @@ EXIT=0
 ## F23 merge (2026-10-29)
 
 - codex 7850036 ff-merged to main. Self-review PASS (328 passed, cov 96.35%); glm-5.3-flash review PASS. Added tests/fixtures/counting_echo_server.py for S10.
+
+## Session stop (2026-10-29 03:05)
+
+- main at F23 merge (87eb03b). F24 (3123572, codex only) failed read-only review: A03 must advance only on successful target calls (S6), and _current_tool must use the current request's tool. F24fix stopped unfinished at cutoff (1 e2e test failing); WIP in git stash in skeptic-codex. Not merged.
