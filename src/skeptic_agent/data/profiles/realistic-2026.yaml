@@ -1,0 +1,89 @@
+schema: skeptic.profile/v1
+id: realistic-2026
+description: "Three weighted fault draws per scenario and seed, mixing explicit, silent and injection faults (S7.2); weights are a hypothesis from the 2026 literature, see docs/en/methodology/realistic-profile.md."
+expansion: sampled
+samples_per_scenario: 3
+include_clean: false
+faults:
+  - id: L01
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    params: {hold_ms: 30000}
+    weight: 0.10
+  - id: L02
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    params: {code: -32603, message: "Internal error"}
+    weight: 0.05
+  - id: L03
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    weight: 0.10
+  - id: L05
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    params: {retry_after_s: 2}
+    weight: 0.08
+  - id: L06
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    weight: 0.04
+  - id: L07
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    weight: 0.05
+  - id: S01
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    weight: 0.08
+  - id: S02
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    params: {ratio: 0.3}
+    weight: 0.08
+  - id: S03
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    params: {days: 400}
+    weight: 0.10
+  - id: S04
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    params: {factor: 10}
+    weight: 0.07
+  - id: S05
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    weight: 0.05
+  - id: S06
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    params: {keep_keys: [id]}
+    weight: 0.03
+  - id: S07
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    params: {cut_ratio: 0.3}
+    weight: 0.04
+  - id: S08
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    weight: 0.03
+  - id: S10
+    target: {tool: "$write"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    params: {response: {status: ok}}
+    weight: 0.05
+  - id: A01
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    weight: 0.03
+  - id: A02
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    weight: 0.01
+  - id: A03
+    target: {tool: "$primary"}
+    persistence: {mode: mixed, permanent_p: 0.6}
+    params: {after_calls: 1}
+    weight: 0.01

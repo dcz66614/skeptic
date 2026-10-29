@@ -1,4 +1,4 @@
-# 实现记录
+﻿# 实现记录
 
 ## T00 仓库脚手架（2026-10-28）
 
@@ -798,3 +798,41 @@ EXIT=0
 ## F24 merge (2026-10-29)
 
 - codex c9a3512 ff-merged to main. F24 beffdbf (rebased from 3123572) + F24fix c9a3512. Self-review PASS (377 passed, cov 96.33%); glm-5.3-flash re-review PASS (A03 counts only successful calls of the requested tool). e2e harness now feeds messages one at a time (SDK cancels in-flight handlers on stdin EOF).
+
+## F25 内置故障画像与依据文档（2026-10-29）
+
+基线 `0a02fee`，分支 `codex`。交付 `src/skeptic_agent/data/profiles/` 下的 6 个画像（`none`、`loud-core`、`silent-core`、`adversarial-core`、`cross-source`、`realistic-2026`）、`src/skeptic_agent/faults/catalog.py`、`skeptic faults list` 命令、`tests/unit/test_builtin_profiles.py`（25 个用例），以及 `docs/en/methodology/{faults.md,realistic-profile.md}` 与 `docs/zh/methodology/` 下的中文版。`CHANGELOG.md` 的 `Unreleased` 加了一行。
+
+画像按 S7.2 逐行编写：`none` 只有 `include_clean`；`loud-core` 为 L01/L03/L05（transient）+ L02/L06/L07（permanent），不含 L04；`silent-core` 为 S01–S08 与 S10（S10 目标 `$write`）；`adversarial-core` 为 A01–A03；`cross-source` 只有 S09（目标 `$conflict_b`）；`realistic-2026` 为 sampled、每场景 3 次，18 条故障权重逐条等于 S7.2，合计 1.00，全部 `persistence: {mode: mixed, permanent_p: 0.6}`。每个条目把 S6 的默认参数显式写出（`hold_ms`、`code`/`message`、`retry_after_s`、`ratio`、`days`、`factor`、`keep_keys`、`cut_ratio`、`response`、`after_calls`），值直接取实现里的常量。
+
+`catalog.py` 是 S6 故障目录的静态表（id、名称、类别、目标、默认持续、主要参数默认值、正确行为、文献编号），参数默认值从 `loud`/`silent`/`adversarial` 的常量导入，不再另抄一份。`skeptic faults list [--class {loud,silent,adversarial}] [--json]` 读这张表：`--json` 输出一个 20 元素的数组，未知类别按用法错误退出码 2（S2）。
+
+文档：`faults.md` 说明 20 种故障各自做什么、通用与专有参数、例子，并给出与 [28]–[40]、[51] 的逐条对应；`realistic-profile.md` 给出权重表、按类别与逐故障的定性论证，明确写出“权重是依据文献定性判断得出的假设”，并给出用真实事故数据重新校准的 5 步。只引用项目书列出的来源，未扩写任何引用；页中引用的数字均与项目书 2.3 节一致，并注明未回查原文。
+
+规格歧义与处理：
+
+- 交付清单写的是 `docs/en/methodology/realistic-profile.md` 与中文版，`faults.md` 未点名中文版；计划书 1.10 又要求面向用户的文档中英一一对应。因此两份英文文档都在 `docs/zh/methodology/` 下有结构对应的中文版。
+- 6 个画像的 `include_clean` 只有 `none` 为 true。S7.2 对 `loud-core` 等没有明说；理由是 F25 验收要求 6 个画像都能被 `skeptic run --profile <id>` 加载，而 `none` 就是无故障基线，其余画像若也加干净 episode 会重复基线。这属于画像成员级别的选择，与 ADR-0002 记录的内置画像成员不冲突。
+- 当文档说“每个场景”时按 S7.4 理解为每个（种子 × 场景）：`realistic-2026` 的 3 次抽样是“每个场景”，不是“每个种子跨所有场景合计 3 次”。README 与文档按这个读法写。
+- `skeptic faults list --json` 每条记录带 `class` 键（值为 `loud`/`silent`/`adversarial`），与 S6 的类别术语一致；`params` 里给出默认值而不是实现细节，`payload` 类参数同时给出 `template` 原文，方便 `faults explain`（后续卡）复用。
+- 文档中 `faults.md` 的“依据”是定性对应，不声称论文测到了该故障的某个频率；`realistic-profile.md` 的权重同理，二者都按 F25 要求写明这是假设。
+- L04 不在 `realistic-2026` 中：它是 HTTP-only，加入后 stdio 运行会丢掉全部 L04 回合并改变整体分布。需要它的运行用 `loud-core` 或另写画像。
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+60 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 20 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+402 passed in 45.38s
+Required test coverage of 85.0% reached. Total coverage: 96.46%
+EXIT=0
+```

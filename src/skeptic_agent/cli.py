@@ -1,17 +1,21 @@
 """Skeptic command-line interface."""
 
 import asyncio
+import json
 import sys
 from typing import Annotated
 
 import typer
 
 from skeptic_agent import __version__
+from skeptic_agent.faults.catalog import FAULT_CLASSES, catalogue
 from skeptic_agent.proxy.stdio import StdioProxy
 
 app = typer.Typer(add_completion=False, invoke_without_command=True)
 proxy_app = typer.Typer(no_args_is_help=True)
+faults_app = typer.Typer(no_args_is_help=True)
 app.add_typer(proxy_app, name="proxy")
+app.add_typer(faults_app, name="faults")
 
 
 @app.callback()
@@ -29,6 +33,38 @@ def main(
     if version:
         typer.echo(__version__)
         raise typer.Exit
+
+
+@faults_app.command("list")
+def faults_list(
+    fault_class: Annotated[
+        str | None,
+        typer.Option("--class", help="Only show loud, silent or adversarial faults."),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Print the catalogue as JSON.")] = False,
+) -> None:
+    """List the fault catalogue of S6 (S2).
+
+    Args:
+        fault_class: A fault class to filter by.
+        as_json: When true, print one JSON array instead of a table.
+
+    Raises:
+        typer.Exit: With code 2 when ``fault_class`` is not a known class.
+    """
+    wanted = fault_class.lower() if fault_class is not None else None
+    if wanted is not None and wanted not in FAULT_CLASSES:
+        typer.echo(f"error: unknown fault class: {fault_class!r}", err=True)
+        raise typer.Exit(code=2)
+    entries = [entry for entry in catalogue() if wanted is None or entry["class"] == wanted]
+    if as_json:
+        typer.echo(json.dumps(entries, ensure_ascii=False, indent=2))
+        return
+    for entry in entries:
+        typer.echo(
+            f"{entry['id']}  {entry['class']:<11}  {entry['name']:<24}  "
+            f"{entry['persistence']:<11}  {entry['target']}"
+        )
 
 
 @proxy_app.command("stdio", context_settings={"allow_extra_args": True})

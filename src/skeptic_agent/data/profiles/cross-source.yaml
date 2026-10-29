@@ -1,0 +1,10 @@
+schema: skeptic.profile/v1
+id: cross-source
+description: "S09 only: the second source of a conflict pair disagrees with the first (S7.2); only scenarios with conflict_pair get an episode."
+expansion: per_fault
+include_clean: false
+faults:
+  - id: S09
+    target: {tool: "$conflict_b"}
+    persistence: {mode: permanent}
+    params: {factor: 1.5}

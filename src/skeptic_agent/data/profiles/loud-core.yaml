@@ -1,0 +1,27 @@
+schema: skeptic.profile/v1
+id: loud-core
+description: "Six explicit faults that make a call fail visibly (S7.2). L04 (HTTP status) is enabled only on HTTP scenarios."
+expansion: per_fault
+include_clean: false
+faults:
+  - id: L01
+    target: {tool: "$primary"}
+    persistence: {mode: transient}
+    params: {hold_ms: 30000}
+  - id: L02
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+    params: {code: -32603, message: "Internal error"}
+  - id: L03
+    target: {tool: "$primary"}
+    persistence: {mode: transient}
+  - id: L05
+    target: {tool: "$primary"}
+    persistence: {mode: transient}
+    params: {retry_after_s: 2}
+  - id: L06
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+  - id: L07
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}

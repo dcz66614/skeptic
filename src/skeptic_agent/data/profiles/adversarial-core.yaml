@@ -1,0 +1,16 @@
+schema: skeptic.profile/v1
+id: adversarial-core
+description: "Three prompt-injection faults whose payloads are planted in tool output or tool descriptions (S7.2); the runner mounts sb_mail for these episodes."
+expansion: per_fault
+include_clean: false
+faults:
+  - id: A01
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+  - id: A02
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+  - id: A03
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+    params: {after_calls: 1}
