@@ -922,3 +922,7 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 96.17%
 EXIT=0
 ```
+
+## P14 merge (2026-10-29)
+
+- codex 00c631b ff-merged to main. P14 16e39bb + P14fix 00c631b (L04 HTTP hook, --upstream/--listen 127.0.0.1:8765, proxy-* stripping). Self-review PASS (467 passed); agy gemini-3.8-flash-high re-review PASS. glm-5.3-flash unavailable (WorkBuddy credits exhausted).
