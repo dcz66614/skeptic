@@ -1,19 +1,24 @@
-"""Silent faults S01-S05 (S4.5, S6).
+"""Silent faults S01-S10 (S4.5, S6).
 
 A silent fault leaves the response looking successful: ``isError`` stays absent
 or false and every content block keeps its type. Only the data changes.
 
-The four response faults share one writer. When a result carries both
+The response faults share one writer. When a result carries both
 ``structuredContent`` and a text block that parses to the same document, the
 writer rewrites the text block as well (S4.5); otherwise the text block follows
 the fault's own plain-text fallback. A fault that finds nothing to change
 returns the message untouched, and the engine records no firing.
+
+S10 is the one request fault of the group: it answers a write call without
+forwarding it, so the upstream never sees the write.
 """
 
+import copy
 import datetime as dt
 import json
 import math
 import re
+from collections.abc import Iterator
 from typing import Any
 
 from skeptic_agent.faults.base import Fault, FaultSpec
@@ -21,6 +26,7 @@ from skeptic_agent.faults.registry import register
 from skeptic_agent.jsonrpc import Message, Request, Response
 from skeptic_agent.jsonsel import first_numeric_leaf, get_first, set_first
 from skeptic_agent.proxy.context import EpisodeContext
+from skeptic_agent.proxy.pipeline import ReplyToClient
 
 S02_RATIO = 0.3
 """The default S02 ``ratio`` (S6)."""
@@ -31,8 +37,48 @@ S03_DAYS = 400
 S04_FACTOR = 10
 """The default S04 ``factor`` (S6)."""
 
+S06_KEEP_KEYS = ("id",)
+"""The keys S06 leaves unredacted by default (S6)."""
+
+S06_REDACTED = "[REDACTED]"
+"""The value S06 writes over every string it hides (S6)."""
+
+S07_CUT_RATIO = 0.3
+"""The default S07 ``cut_ratio`` (S6)."""
+
+S09_FACTOR = 1.5
+"""The default S09 ``factor`` (S6)."""
+
+S10_STATUS = "ok"
+"""The status S10's default forged response carries (S6)."""
+
 _DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:\d{2})?)?")
 """The S03 date format; it is anchored where S6 anchors it (see ``_shift_dates``)."""
+
+_UNIT_KEYS = frozenset({"unit", "units", "currency", "temp_unit"})
+"""The key names S08 rewrites (S6)."""
+
+_UNIT_SWAPS: dict[str, str] = {
+    "C": "F",
+    "F": "C",
+    "USD": "EUR",
+    "EUR": "USD",
+    "CNY": "USD",
+    "JPY": "USD",
+    "kg": "lb",
+    "lb": "kg",
+    "km": "mi",
+    "mi": "km",
+    "ms": "s",
+    "s": "ms",
+}
+"""The S08 unit mapping (S6).
+
+The pairs are symmetric, so a second S08 firing swaps the value back.
+"""
+
+S08_UNITS: dict[str, str] = _UNIT_SWAPS
+"""The S08 unit mapping, by source unit (S6)."""
 
 _NUMBER_PATTERN = re.compile(r"-?\d+(\.\d+)?")
 """The first number S04 scales in plain text (S6)."""
@@ -496,22 +542,169 @@ def _numeric_path(ctx: EpisodeContext) -> str | None:
     return path if isinstance(path, str) and path else None
 
 
-def _factor(spec: FaultSpec) -> int | float | None:
-    """Read the S04 ``factor``, falling back to the default.
+def _factor(spec: FaultSpec, default: int | float = S04_FACTOR) -> int | float | None:
+    """Read the ``factor`` parameter of S04 or S09, falling back to its default.
 
     Args:
         spec: The scheduled fault.
+        default: The fault's own default factor.
 
     Returns:
         A positive finite number to multiply by, or ``None`` when the parameter
         is not a usable number.
     """
-    value = _params(spec).get("factor", S04_FACTOR)
+    value = _params(spec).get("factor", default)
     if isinstance(value, bool) or not isinstance(value, int | float):
         return None
     if not math.isfinite(value):
         return None
     return value
+
+
+def _iter_entries(value: Any) -> Iterator[tuple[Any, Any, Any]]:
+    """Yield every key/value or index/value pair in insertion-order depth-first order.
+
+    Args:
+        value: A JSON-compatible document.
+
+    Yields:
+        ``(container, key, item)`` for each entry, parents before children, so a
+        yielded container can be assigned to in place.
+    """
+    if isinstance(value, dict):
+        for key, item in value.items():
+            yield value, key, item
+            yield from _iter_entries(item)
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            yield value, index, item
+            yield from _iter_entries(item)
+
+
+def _redact(value: Any, keep_keys: frozenset[str]) -> tuple[Any, bool]:
+    """Replace every string leaf with ``"[REDACTED]"`` except under ``keep_keys`` (S6, S06).
+
+    A string entry whose key is kept is left alone; the values below a kept key
+    are still walked, so ``{"id": "x", "meta": {"id": ..., "name": ...}}`` keeps
+    only the two ``id`` values.
+
+    Args:
+        value: The document whose ``structuredContent`` is rewritten.
+        keep_keys: The key names whose string values stay.
+
+    Returns:
+        The edited copy and whether any string changed.
+    """
+    document = _copy(value)
+    changed = False
+    for container, key, item in list(_iter_entries(document)):
+        if not isinstance(item, str) or (isinstance(key, str) and key in keep_keys):
+            continue
+        if item == S06_REDACTED:
+            continue
+        container[key] = S06_REDACTED
+        changed = True
+    return document, changed
+
+
+def _keep_keys(spec: FaultSpec) -> frozenset[str]:
+    """Read the S06 ``keep_keys`` list, falling back to the default.
+
+    Args:
+        spec: The scheduled fault.
+
+    Returns:
+        The key names whose string values stay, ``{"id"}`` by default.
+    """
+    value = _params(spec).get("keep_keys", S06_KEEP_KEYS)
+    if not isinstance(value, list):
+        return frozenset(S06_KEEP_KEYS)
+    return frozenset(item for item in value if isinstance(item, str))
+
+
+def _cut_text(text: str, cut_ratio: float) -> str:
+    """Return the leading ``floor(len * (1 - cut_ratio))`` characters of a text block (S6, S07).
+
+    Args:
+        text: The text block's text.
+        cut_ratio: The fraction of the text to drop.
+
+    Returns:
+        The shortened text.
+    """
+    return text[: math.floor(len(text) * (1 - cut_ratio))]
+
+
+def _swap_units(value: Any) -> tuple[Any, bool]:
+    """Rewrite the value of every unit-keyed string leaf (S6, S08).
+
+    Args:
+        value: The document whose ``structuredContent`` is rewritten.
+
+    Returns:
+        The edited copy and whether any unit changed.
+    """
+    document = _copy(value)
+    changed = False
+    for container, key, item in list(_iter_entries(document)):
+        if not isinstance(item, str) or not isinstance(key, str) or key not in _UNIT_KEYS:
+            continue
+        swapped = _UNIT_SWAPS.get(item)
+        if swapped is None:
+            continue
+        container[key] = swapped
+        changed = True
+    return document, changed
+
+
+def _conflict_b(ctx: EpisodeContext) -> str | None:
+    """Read the second tool of the scenario's ``fault_targets.conflict_pair``.
+
+    Args:
+        ctx: The episode context.
+
+    Returns:
+        The tool name, or ``None`` when the scenario has no conflict pair.
+    """
+    scenario = ctx.scenario
+    if not isinstance(scenario, dict):
+        return None
+    fault_targets = scenario.get("fault_targets")
+    pair = fault_targets.get("conflict_pair") if isinstance(fault_targets, dict) else None
+    if not isinstance(pair, list) or len(pair) < 2 or not isinstance(pair[1], str):
+        return None
+    return pair[1]
+
+
+def _phantom_text(response: Any) -> dict[str, Any]:
+    """Build a tool result shaped like S10's forged answer (S6).
+
+    The text block is the JSON copy of the response object, so a later read of
+    the same source cannot tell the forged result from a real one.
+
+    Args:
+        response: The ``response`` parameter, for example ``{"status": "ok"}``.
+
+    Returns:
+        ``{"content": [{"type": "text", "text": <json>}], "structuredContent": response}``.
+    """
+    text = json.dumps(response, ensure_ascii=False, sort_keys=True)
+    return {"content": [{"type": "text", "text": text}], "structuredContent": response}
+
+
+def _phantom_response(spec: FaultSpec) -> dict[str, Any]:
+    """Read the S10 ``response`` parameter, falling back to ``{"status": "ok"}``.
+
+    Args:
+        spec: The scheduled fault.
+
+    Returns:
+        The object the forged result reports.
+    """
+    value = _params(spec).get("response", {"status": S10_STATUS})
+    if not isinstance(value, dict):
+        return {"status": S10_STATUS}
+    return copy.deepcopy(value)
 
 
 @register
@@ -764,3 +957,219 @@ class WrongEntity(Fault):
         swapped = {key: value for key, value in arguments.items() if key != entity_arg}
         swapped[entity_arg] = decoy
         return payload.model_copy(update={"params": {**params, "arguments": swapped}})
+
+
+@register
+class Redacted(Fault):
+    """S06: replace every string leaf except ``keep_keys`` with a marker (S6)."""
+
+    id = "S06"
+    cls = "silent"
+    hooks = ("post_call",)
+
+    def apply(self, payload: Any, spec: FaultSpec, ctx: EpisodeContext) -> Any:
+        """Hide the strings of the result.
+
+        With ``structuredContent``, every string leaf loses its value except
+        those under a key in ``keep_keys``. A plain-text block becomes
+        ``"[REDACTED]"``.
+
+        Args:
+            payload: The upstream response.
+            spec: The scheduled fault.
+            ctx: The episode context.
+
+        Returns:
+            The rewritten response, or ``payload`` when there is no string to
+            redact.
+        """
+        del ctx
+        result = _result_of(payload)
+        if result is None:
+            return payload
+        assert isinstance(payload, Response)
+        keep_keys = _keep_keys(spec)
+        if "structuredContent" in result:
+            structured = result["structuredContent"]
+            edited, changed = _redact(structured, keep_keys)
+            if not changed:
+                return payload
+            result["structuredContent"] = edited
+            if _text_is_synced(result, structured):
+                _sync_text(result, edited)
+            elif _text_of(result) is not None:
+                _set_text(result, S06_REDACTED)
+            return _with_result(payload, result)
+        text = _text_of(result)
+        if text is None or text == S06_REDACTED:
+            return payload
+        _set_text(result, S06_REDACTED)
+        return _with_result(payload, result)
+
+
+@register
+class MalformedOk(Fault):
+    """S07: drop ``structuredContent`` and cut the text so it is no longer JSON (S6)."""
+
+    id = "S07"
+    cls = "silent"
+    hooks = ("post_call",)
+
+    def apply(self, payload: Any, spec: FaultSpec, ctx: EpisodeContext) -> Any:
+        """Leave a truncated, unparseable text block behind and no structured data.
+
+        ``isError`` is not touched, so the result keeps looking successful.
+
+        Args:
+            payload: The upstream response.
+            spec: The scheduled fault.
+            ctx: The episode context.
+
+        Returns:
+            The rewritten response, or ``payload`` when it carries neither
+            ``structuredContent`` nor a text block.
+        """
+        del ctx
+        result = _result_of(payload)
+        if result is None:
+            return payload
+        assert isinstance(payload, Response)
+        cut_ratio = float(_params(spec).get("cut_ratio", S07_CUT_RATIO))
+        if "structuredContent" in result:
+            del result["structuredContent"]
+            text = _text_of(result)
+            if text is not None:
+                _set_text(result, _cut_text(text, cut_ratio))
+            return _with_result(payload, result)
+        text = _text_of(result)
+        if text is None or _cut_text(text, cut_ratio) == text:
+            return payload
+        _set_text(result, _cut_text(text, cut_ratio))
+        return _with_result(payload, result)
+
+
+@register
+class UnitSwap(Fault):
+    """S08: swap the units named by ``unit``-style keys (S6)."""
+
+    id = "S08"
+    cls = "silent"
+    hooks = ("post_call",)
+
+    def apply(self, payload: Any, spec: FaultSpec, ctx: EpisodeContext) -> Any:
+        """Rewrite every recognised unit and leave the numbers alone.
+
+        A text-only result has no keys, so there is nothing to swap.
+
+        Args:
+            payload: The upstream response.
+            spec: The scheduled fault.
+            ctx: The episode context.
+
+        Returns:
+            The rewritten response, or ``payload`` when no unit is found.
+        """
+        del spec, ctx
+        result = _result_of(payload)
+        if result is None:
+            return payload
+        assert isinstance(payload, Response)
+        if "structuredContent" not in result:
+            return payload
+        structured = result["structuredContent"]
+        edited, changed = _swap_units(structured)
+        if not changed:
+            return payload
+        result["structuredContent"] = edited
+        if _text_is_synced(result, structured):
+            _sync_text(result, edited)
+        return _with_result(payload, result)
+
+
+@register
+class CrossSourceConflict(Fault):
+    """S09: scale the first number of the ``$conflict_b`` tool (S6)."""
+
+    id = "S09"
+    cls = "silent"
+    hooks = ("post_call",)
+
+    def applicable(self, ctx: EpisodeContext) -> bool:
+        """Report whether the scenario names a conflict pair.
+
+        Args:
+            ctx: The episode context.
+
+        Returns:
+            ``True`` when ``fault_targets.conflict_pair`` has a second tool.
+        """
+        return _conflict_b(ctx) is not None
+
+    def apply(self, payload: Any, spec: FaultSpec, ctx: EpisodeContext) -> Any:
+        """Scale the first numeric leaf so the two sources disagree.
+
+        The first numeric leaf is the one S6 defines; the scenario's
+        ``numeric_path`` does not apply here.
+
+        Args:
+            payload: The upstream response.
+            spec: The scheduled fault.
+            ctx: The episode context.
+
+        Returns:
+            The rewritten response, or ``payload`` when no number is found.
+        """
+        del ctx
+        result = _result_of(payload)
+        if result is None:
+            return payload
+        assert isinstance(payload, Response)
+        factor = _factor(spec, S09_FACTOR)
+        if factor is None:
+            return payload
+        if "structuredContent" in result:
+            structured = result["structuredContent"]
+            edited, changed = _scale_structured(structured, factor, None)
+            if not changed:
+                return payload
+            result["structuredContent"] = edited
+            if _text_is_synced(result, structured):
+                _sync_text(result, edited)
+            else:
+                _set_text(result, _scale_text(_text_of(result) or "", factor)[0])
+            return _with_result(payload, result)
+        text = _text_of(result)
+        if text is None:
+            return payload
+        edited_text, changed = _scale_text(text, factor)
+        if not changed:
+            return payload
+        _set_text(result, edited_text)
+        return _with_result(payload, result)
+
+
+@register
+class PhantomWrite(Fault):
+    """S10: answer a write call with a forged success and never forward it (S6)."""
+
+    id = "S10"
+    cls = "silent"
+    hooks = ("pre_call",)
+
+    def apply(self, payload: Any, spec: FaultSpec, ctx: EpisodeContext) -> Any:
+        """Reply to the client directly, so the upstream state does not change.
+
+        Args:
+            payload: The ``tools/call`` request.
+            spec: The scheduled fault.
+            ctx: The episode context.
+
+        Returns:
+            A ``ReplyToClient`` carrying the forged result, or ``payload`` when
+            it is not a request.
+        """
+        del ctx
+        if not isinstance(payload, Request):
+            return payload
+        result = _phantom_text(_phantom_response(spec))
+        return ReplyToClient(Response(id=payload.id, result=result))

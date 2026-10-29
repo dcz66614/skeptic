@@ -1,4 +1,4 @@
-"""Unit tests for the silent faults S01-S05 (S4.5, S6, F22).
+"""Unit tests for the silent faults S01-S10 (S4.5, S6, F22, F23).
 
 Each fault is driven through the ``FaultEngine`` so the schedule, the hooks and
 the target filter run as they do in a real episode. Every fault is checked with
@@ -9,6 +9,7 @@ spell out.
 """
 
 import json
+import math
 from typing import Any
 
 import pytest
@@ -20,18 +21,34 @@ from skeptic_agent.faults.silent import (
     S02_RATIO,
     S03_DAYS,
     S04_FACTOR,
+    S06_KEEP_KEYS,
+    S06_REDACTED,
+    S07_CUT_RATIO,
+    S09_FACTOR,
+    S10_STATUS,
+    CrossSourceConflict,
     EmptyOk,
+    MalformedOk,
     NumericCorruption,
+    PhantomWrite,
+    Redacted,
     Stale,
     Truncated,
+    UnitSwap,
     WrongEntity,
+    _cut_text,
     _entity_fields,
     _factor,
+    _keep_keys,
     _longest_list,
     _numeric_path,
+    _phantom_response,
+    _phantom_text,
+    _redact,
     _scale_text,
     _shift_date,
     _shift_text_dates,
+    _swap_units,
     _truncate_longest_list,
     _truncate_text,
 )
@@ -220,13 +237,18 @@ async def _rewrite(
 
 
 def test_all_silent_faults_are_registered() -> None:
-    """S01-S05 are registered with the silent class."""
+    """S01-S10 are registered with the silent class."""
     for fault_id, cls in (
         ("S01", EmptyOk),
         ("S02", Truncated),
         ("S03", Stale),
         ("S04", NumericCorruption),
         ("S05", WrongEntity),
+        ("S06", Redacted),
+        ("S07", MalformedOk),
+        ("S08", UnitSwap),
+        ("S09", CrossSourceConflict),
+        ("S10", PhantomWrite),
     ):
         assert get_fault(fault_id) is cls
         assert REGISTRY[fault_id].cls == "silent"
@@ -237,15 +259,30 @@ def test_silent_defaults_match_s6() -> None:
     assert S02_RATIO == 0.3
     assert S03_DAYS == 400
     assert S04_FACTOR == 10
+    assert S06_KEEP_KEYS == ("id",)
+    assert S06_REDACTED == "[REDACTED]"
+    assert S07_CUT_RATIO == 0.3
+    assert S09_FACTOR == 1.5
+    assert S10_STATUS == "ok"
 
 
 def test_silent_faults_keep_is_error_absent_or_false() -> None:
     """Every response fault leaves ``isError`` false (S4.5)."""
-    for cls in (EmptyOk, Truncated, Stale, NumericCorruption):
+    for cls in (
+        EmptyOk,
+        Truncated,
+        Stale,
+        NumericCorruption,
+        Redacted,
+        MalformedOk,
+        UnitSwap,
+        CrossSourceConflict,
+    ):
         assert cls.cls == "silent"
         assert "list" not in cls.hooks
         assert cls.hooks == ("post_call",)
     assert WrongEntity.hooks == ("pre_call",)
+    assert PhantomWrite.hooks == ("pre_call",)
 
 
 def test_s01_to_s04_skip_result_types_other_than_complete() -> None:
@@ -265,12 +302,21 @@ def test_s01_to_s04_skip_result_types_other_than_complete() -> None:
         )
 
 
-def test_s01_to_s04_ignore_error_responses_and_non_objects() -> None:
+def test_response_faults_ignore_error_responses_and_non_objects() -> None:
     """An error response or a non-object result has nothing to rewrite."""
     error = _parse({"jsonrpc": "2.0", "id": 1, "error": {"code": -1, "message": "boom"}})
     scalar = _ok(1, {"content": []})
     spec = FaultSpec("S01", "$primary", "all", 1.0, "permanent")
-    for cls in (EmptyOk, Truncated, Stale, NumericCorruption):
+    for cls in (
+        EmptyOk,
+        Truncated,
+        Stale,
+        NumericCorruption,
+        Redacted,
+        MalformedOk,
+        UnitSwap,
+        CrossSourceConflict,
+    ):
         assert cls().apply(error, spec, _ctx()) is error
         assert cls().apply(scalar, spec, _ctx()) is scalar
     list_result = _parse({"jsonrpc": "2.0", "id": 1, "result": ["not", "an", "object"]})
@@ -734,7 +780,440 @@ def test_entity_fields_helper() -> None:
 
 def test_s01_to_s05_shapes() -> None:
     """A fault never claims a hook it does not implement (S4.4)."""
-    for fault_id in ("S01", "S02", "S03", "S04"):
+    for fault_id in ("S01", "S02", "S03", "S04", "S06", "S07", "S08", "S09"):
         assert get_fault(fault_id).hooks == ("post_call",)  # type: ignore[union-attr]
     assert get_fault("S05").hooks == ("pre_call",)  # type: ignore[union-attr]
-    assert all(get_fault(f).cls == "silent" for f in ("S01", "S02", "S03", "S04", "S05"))  # type: ignore[union-attr]
+    assert get_fault("S10").hooks == ("pre_call",)  # type: ignore[union-attr]
+    assert all(  # type: ignore[union-attr]
+        get_fault(f).cls == "silent"
+        for f in ("S01", "S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S10")
+    )
+
+
+# --- S06: redacted -----------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_s06_redacts_every_string_except_the_kept_keys() -> None:
+    """Only values under ``keep_keys`` survive; the numbers stay as they are."""
+    structured = {"id": "ACME", "ticker": "ACME", "name": "Acme Corp", "volume": 100}
+    rewritten = await _rewrite("S06", _synced(1, structured))
+    assert rewritten.result["structuredContent"] == {
+        "id": "ACME",
+        "ticker": "[REDACTED]",
+        "name": "[REDACTED]",
+        "volume": 100,
+    }
+    assert (
+        json.loads(rewritten.result["content"][0]["text"]) == rewritten.result["structuredContent"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_s06_redacts_nested_strings_and_list_items() -> None:
+    """The walk reaches nested objects and array elements."""
+    structured = {"id": 7, "officers": [{"id": "x", "name": "Ann"}], "notes": ["a", "b"]}
+    rewritten = await _rewrite("S06", _synced(1, structured))
+    assert rewritten.result["structuredContent"] == {
+        "id": 7,
+        "officers": [{"id": "x", "name": "[REDACTED]"}],
+        "notes": ["[REDACTED]", "[REDACTED]"],
+    }
+
+
+@pytest.mark.asyncio
+async def test_s06_keep_keys_parameter() -> None:
+    """``keep_keys`` replaces the default list."""
+    structured = {"id": "ACME", "code": "ACME"}
+    rewritten = await _rewrite("S06", _synced(1, structured), keep_keys=["code"])
+    assert rewritten.result["structuredContent"] == {"id": "[REDACTED]", "code": "ACME"}
+
+
+@pytest.mark.asyncio
+async def test_s06_plain_text_is_fully_redacted() -> None:
+    """A text-only result becomes exactly ``"[REDACTED]"``."""
+    rewritten = await _rewrite("S06", _text_result(1, "Paris 14.0 C"))
+    assert rewritten.result == {"content": [{"type": "text", "text": "[REDACTED]"}]}
+
+
+@pytest.mark.asyncio
+async def test_s06_unsynced_text_falls_back_to_the_text_rule() -> None:
+    """A non-JSON text block next to ``structuredContent`` is redacted as a whole."""
+    response = _ok(
+        1,
+        {
+            "content": [{"type": "text", "text": "Acme Corp, 14.0"}],
+            "structuredContent": {"id": "ACME", "name": "Acme Corp"},
+        },
+    )
+    rewritten = await _rewrite("S06", response)
+    assert rewritten.result["structuredContent"] == {"id": "ACME", "name": "[REDACTED]"}
+    assert rewritten.result["content"][0]["text"] == "[REDACTED]"
+
+
+def test_s06_does_not_apply_without_a_string() -> None:
+    """Numbers only, or text that is already the marker, leave the message alone."""
+    spec = FaultSpec("S06", "$primary", "all", 1.0, "permanent")
+    numbers = _synced(1, {"price": 14.0, "id": 7})
+    assert Redacted().apply(numbers, spec, _ctx()) is numbers
+    marked = _text_result(1, "[REDACTED]")
+    assert Redacted().apply(marked, spec, _ctx()) is marked
+    no_text = _ok(1, {"structuredContent": {"id": "x"}, "content": []})
+    assert Redacted().apply(no_text, spec, _ctx()) is no_text
+
+
+def test_s06_helpers() -> None:
+    """``_keep_keys`` and ``_redact`` reject unusable inputs politely."""
+    assert _keep_keys(_engine_spec("S06")) == frozenset({"id"})
+    assert _keep_keys(
+        FaultSpec("S06", "$primary", "all", 1.0, "permanent", params={"keep_keys": 3})
+    )
+    assert _redact({"id": "x"}, frozenset({"id"})) == ({"id": "x"}, False)
+    edited, changed = _redact({"a": "x", "b": 1}, frozenset())
+    assert edited == {"a": "[REDACTED]", "b": 1}
+    assert changed is True
+
+
+# --- S07: malformed_ok -------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_s07_drops_structured_content_and_cuts_the_text() -> None:
+    """The text is cut to ``floor(len * (1 - cut_ratio))`` and is no longer JSON."""
+    structured = {"ticker": "ACME", "price": 14.0}
+    response = _synced(1, structured, isError=False)
+    rewritten = await _rewrite("S07", response)
+    text = rewritten.result["content"][0]["text"]
+    assert "structuredContent" not in rewritten.result
+    assert len(text) == math.floor(len(json.dumps(structured, sort_keys=True)) * 0.7)
+    try:
+        json.loads(text)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("the cut text is still valid JSON")
+    assert rewritten.result["isError"] is False
+
+
+@pytest.mark.asyncio
+async def test_s07_keeps_is_error_unset() -> None:
+    """``isError`` stays absent when the upstream did not set it."""
+    rewritten = await _rewrite("S07", _synced(1, {"ticker": "ACME"}))
+    assert "isError" not in rewritten.result
+
+
+@pytest.mark.asyncio
+async def test_s07_plain_text_keeps_the_head() -> None:
+    """A text-only result keeps its leading ``floor(len * (1 - cut_ratio))`` characters."""
+    rewritten = await _rewrite("S07", _text_result(1, "abcdefghij"))
+    assert rewritten.result == {"content": [{"type": "text", "text": "abcdefg"}]}
+    shortened = await _rewrite("S07", _text_result(1, "abcdefghij"), cut_ratio=0.5)
+    assert shortened.result["content"][0]["text"] == "abcde"
+
+
+def test_s07_does_not_apply_without_text_or_structured_content() -> None:
+    """Nothing to drop and nothing to cut means the fault does not apply."""
+    spec = FaultSpec("S07", "$primary", "all", 1.0, "permanent")
+    empty = _ok(1, {"content": []})
+    assert MalformedOk().apply(empty, spec, _ctx()) is empty
+    short = _text_result(1, "")
+    assert MalformedOk().apply(short, spec, _ctx()) is short
+    whole = _text_result(1, "abc")
+    assert (
+        MalformedOk().apply(
+            whole,
+            FaultSpec("S07", "$primary", "all", 1.0, "permanent", params={"cut_ratio": 0}),
+            _ctx(),
+        )
+        is whole
+    )
+
+
+def test_s07_cut_text_helper() -> None:
+    """``_cut_text`` uses ``floor`` of the kept fraction."""
+    assert _cut_text("abcdefghij", 0.3) == "abcdefg"
+    assert _cut_text("abc", 0.0) == "abc"
+
+
+# --- S08: unit_swap ----------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_s08_swaps_every_known_unit() -> None:
+    """Each pair of the mapping swaps both ways; the numbers do not move."""
+    structured = {
+        "temp_unit": "C",
+        "currency": "USD",
+        "weight": 10,
+        "unit": "kg",
+        "distance": {"units": "km"},
+        "ms": {"unit": "ms"},
+    }
+    rewritten = await _rewrite("S08", _synced(1, structured))
+    assert rewritten.result["structuredContent"] == {
+        "temp_unit": "F",
+        "currency": "EUR",
+        "weight": 10,
+        "unit": "lb",
+        "distance": {"units": "mi"},
+        "ms": {"unit": "s"},
+    }
+    assert (
+        json.loads(rewritten.result["content"][0]["text"]) == rewritten.result["structuredContent"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_s08_one_way_mappings() -> None:
+    """``CNY`` and ``JPY`` both become ``USD``."""
+    rewritten = await _rewrite(
+        "S08", _synced(1, {"a": {"currency": "CNY"}, "b": {"currency": "JPY"}})
+    )
+    assert rewritten.result["structuredContent"] == {
+        "a": {"currency": "USD"},
+        "b": {"currency": "USD"},
+    }
+
+
+def test_s08_does_not_apply_without_a_known_unit() -> None:
+    """An unknown unit, a number under a unit key, or text only leaves the message alone."""
+    spec = FaultSpec("S08", "$primary", "all", 1.0, "permanent")
+    unknown = _synced(1, {"unit": "parsec"})
+    assert UnitSwap().apply(unknown, spec, _ctx()) is unknown
+    numeric = _synced(1, {"unit": 3})
+    assert UnitSwap().apply(numeric, spec, _ctx()) is numeric
+    text = _text_result(1, "14.0 C")
+    assert UnitSwap().apply(text, spec, _ctx()) is text
+
+
+def test_s08_swap_units_helper() -> None:
+    """``_swap_units`` copies the document and reports whether it changed anything."""
+    assert _swap_units({"unit": "x"}) == ({"unit": "x"}, False)
+    edited, changed = _swap_units({"currency": "EUR"})
+    assert (edited, changed) == ({"currency": "USD"}, True)
+
+
+# --- S09: cross_source_conflict ----------------------------------------------
+
+CONFLICT_SCENARIO: dict[str, Any] = {
+    "id": "weather.forecast.max-temp.002",
+    "fault_targets": {
+        "primary": ["get_forecast"],
+        "conflict_pair": ["get_forecast", "get_forecast_v2"],
+        "numeric_path": "$.price",
+    },
+}
+"""A cross-source scenario; its ``numeric_path`` must not steer S09."""
+
+
+async def _conflict_rewrite(
+    response: Message, *, params: dict[str, Any] | None = None, scenario: Any = None
+) -> Message:
+    """Send one response of the conflict tool through a ``$conflict_b`` S09 engine.
+
+    Args:
+        response: The upstream response.
+        params: The fault parameters.
+        scenario: The scenario, ``CONFLICT_SCENARIO`` by default.
+
+    Returns:
+        The forwarded message.
+    """
+    engine = FaultEngine(
+        [FaultSpec("S09", "$conflict_b", "all", 1.0, "permanent", params=params)],
+        scenario=CONFLICT_SCENARIO,
+    )
+    context = _ctx(CONFLICT_SCENARIO if scenario is None else scenario)
+    assert isinstance(response, Response)
+    await new_pipeline(fault=engine).on_c2s(_call(response.id, "get_forecast_v2", {}), context)
+    actions = await new_pipeline(fault=engine).on_s2c(response, context)
+    assert len(actions) == 1
+    assert isinstance(actions[0], Forward)
+    return actions[0].msg
+
+
+@pytest.mark.asyncio
+async def test_s09_scales_the_first_numeric_leaf_of_the_conflict_tool() -> None:
+    """The conflict tool's first number times ``factor``, the text synced (S6)."""
+    structured = {"id": 7, "max_c": 14.0, "min_c": 8.0}
+    rewritten = await _conflict_rewrite(_synced(2, structured))
+    assert rewritten.result["structuredContent"] == {"id": 7, "max_c": 21.0, "min_c": 8.0}
+    assert (
+        json.loads(rewritten.result["content"][0]["text"]) == rewritten.result["structuredContent"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_s09_factor_defaults_to_one_and_a_half() -> None:
+    """The default ``factor`` is 1.5, and an int leaf becomes a float."""
+    rewritten = await _conflict_rewrite(_synced(2, {"max_c": 10}))
+    assert rewritten.result["structuredContent"] == {"max_c": 15.0}
+
+
+@pytest.mark.asyncio
+async def test_s09_factor_parameter() -> None:
+    """``factor`` overrides the default."""
+    rewritten = await _conflict_rewrite(_synced(2, {"max_c": 10.0}), params={"factor": 2})
+    assert rewritten.result["structuredContent"] == {"max_c": 20.0}
+
+
+@pytest.mark.asyncio
+async def test_s09_plain_text_scales_the_first_number() -> None:
+    """A text-only conflict result has its first number scaled as S04 does."""
+    rewritten = await _conflict_rewrite(_text_result(2, "max 20 C"))
+    assert rewritten.result == {"content": [{"type": "text", "text": "max 30.0 C"}]}
+
+
+@pytest.mark.asyncio
+async def test_s09_unsynced_text_falls_back_to_the_text_rule() -> None:
+    """A non-JSON text block next to ``structuredContent`` is scaled as plain text."""
+    response = _ok(
+        2,
+        {
+            "content": [{"type": "text", "text": "max 20 C"}],
+            "structuredContent": {"max_c": 10.0},
+        },
+    )
+    rewritten = await _conflict_rewrite(response)
+    assert rewritten.result["structuredContent"] == {"max_c": 15.0}
+    assert rewritten.result["content"][0]["text"] == "max 30.0 C"
+
+
+@pytest.mark.asyncio
+async def test_s09_ignores_the_scenarios_numeric_path() -> None:
+    """S09 always uses the first numeric leaf, never ``fault_targets.numeric_path``."""
+    rewritten = await _conflict_rewrite(_synced(2, {"max_c": 10.0, "price": 2.0}))
+    assert rewritten.result["structuredContent"] == {"max_c": 15.0, "price": 2.0}
+
+
+@pytest.mark.asyncio
+async def test_s09_ignores_other_tools() -> None:
+    """The target filter keeps S09 away from the first tool of the pair."""
+    engine = FaultEngine(
+        [FaultSpec("S09", "$conflict_b", "all", 1.0, "permanent")], scenario=CONFLICT_SCENARIO
+    )
+    context = _ctx(CONFLICT_SCENARIO)
+    await new_pipeline(fault=engine).on_c2s(_call(2, "get_forecast", {}), context)
+    response = _synced(2, {"max_c": 10.0})
+    assert await new_pipeline(fault=engine).on_s2c(response, context) == [Forward(response)]
+
+
+def test_s09_needs_a_conflict_pair() -> None:
+    """Without ``conflict_pair`` S09 is not applicable (S7.4)."""
+    assert CrossSourceConflict().applicable(_ctx(CONFLICT_SCENARIO)) is True
+    assert CrossSourceConflict().applicable(_ctx()) is False
+    assert CrossSourceConflict().applicable(_ctx(None)) is False
+    assert (
+        CrossSourceConflict().applicable(_ctx({"fault_targets": {"conflict_pair": ["a"]}})) is False
+    )
+    assert CrossSourceConflict().applicable(_ctx({"fault_targets": "nope"})) is False
+    assert (
+        CrossSourceConflict().applicable(_ctx({"fault_targets": {"conflict_pair": ["a", 2]}}))
+        is False
+    )
+
+
+@pytest.mark.asyncio
+async def test_s09_does_not_fire_when_not_applicable() -> None:
+    """``applicable`` false keeps S09 away from the response."""
+    engine = FaultEngine([_engine_spec("S09")], scenario=None)
+    response = _synced(1, {"max_c": 10.0})
+    context = _ctx(None)
+    await new_pipeline(fault=engine).on_c2s(_call(1, "get_quote", {}), context)
+    assert await new_pipeline(fault=engine).on_s2c(response, context) == [Forward(response)]
+
+
+def test_s09_does_not_apply_without_a_text_block() -> None:
+    """A result with neither ``structuredContent`` nor text has nothing to scale."""
+    spec = FaultSpec("S09", "$conflict_b", "all", 1.0, "permanent")
+    response = _ok(2, {"content": [{"type": "image", "data": "AAAA"}]})
+    assert CrossSourceConflict().apply(response, spec, _ctx(CONFLICT_SCENARIO)) is response
+
+
+def test_s09_does_not_apply_without_a_number() -> None:
+    """No numeric leaf means nothing to scale; a bad factor does too."""
+    spec = FaultSpec("S09", "$conflict_b", "all", 1.0, "permanent")
+    response = _synced(1, {"status": "clear"})
+    assert CrossSourceConflict().apply(response, spec, _ctx(CONFLICT_SCENARIO)) is response
+    bad = FaultSpec("S09", "$conflict_b", "all", 1.0, "permanent", params={"factor": "x"})
+    assert CrossSourceConflict().apply(response, bad, _ctx(CONFLICT_SCENARIO)) is response
+
+
+# --- S10: phantom_write ------------------------------------------------------
+
+WRITE_SCENARIO: dict[str, Any] = {
+    "id": "orders.place-order.001",
+    "fault_targets": {"primary": ["place_order"], "write_tools": ["place_order"]},
+}
+
+
+@pytest.mark.asyncio
+async def test_s10_answers_with_the_forged_result() -> None:
+    """The client gets ``{"status": "ok"}`` without any upstream response (S6)."""
+    engine = _engine("S10", tool="$write")
+    context = _ctx(WRITE_SCENARIO)
+    actions = await new_pipeline(fault=engine).on_c2s(_call(5, "place_order", {"qty": 2}), context)
+    assert len(actions) == 1
+    reply = actions[0]
+    assert isinstance(reply, ReplyToClient)
+    assert dump(reply.msg) == (
+        b'{"jsonrpc":"2.0","id":5,"result":{"content":[{"type":"text",'
+        b'"text":"{\\"status\\": \\"ok\\"}"}],"structuredContent":{"status":"ok"}}}\n'
+    )
+
+
+@pytest.mark.asyncio
+async def test_s10_response_parameter_overrides_the_forgery() -> None:
+    """``response`` replaces the reported object, the text stays its JSON copy."""
+    params = {"response": {"status": "ok", "order_id": "o-1"}}
+    engine = FaultEngine(
+        [FaultSpec("S10", "$write", "all", 1.0, "permanent", params=params)],
+        scenario=WRITE_SCENARIO,
+    )
+    actions = await new_pipeline(fault=engine).on_c2s(
+        _call(6, "place_order", {}), _ctx(WRITE_SCENARIO)
+    )
+    reply = actions[0]
+    assert isinstance(reply, ReplyToClient)
+    assert reply.msg.result == {
+        "content": [{"type": "text", "text": '{"order_id": "o-1", "status": "ok"}'}],
+        "structuredContent": {"status": "ok", "order_id": "o-1"},
+    }
+
+
+@pytest.mark.asyncio
+async def test_s10_ignores_read_calls() -> None:
+    """A call to a tool outside ``write_tools`` is forwarded untouched (S6)."""
+    engine = _engine("S10", tool="$write")
+    call = _call(7, "get_order", {"id": "o-1"})
+    assert await new_pipeline(fault=engine).on_c2s(call, _ctx(WRITE_SCENARIO)) == [Forward(call)]
+
+
+@pytest.mark.asyncio
+async def test_s10_is_not_applicable_without_write_tools() -> None:
+    """A scenario without ``write_tools`` makes ``$write`` name no tool (S7.4)."""
+    scenario = {"fault_targets": {"primary": ["place_order"]}}
+    spec = FaultSpec("S10", "$write", "all", 1.0, "permanent")
+    engine = FaultEngine([spec], scenario=None)
+    call = _call(8, "place_order", {})
+    assert await new_pipeline(fault=engine).on_c2s(call, _ctx(scenario)) == [Forward(call)]
+
+
+def test_s10_helpers() -> None:
+    """``_phantom_response`` falls back to the default and copies the given object."""
+    assert _phantom_response(_engine_spec("S10")) == {"status": "ok"}
+    assert _phantom_response(
+        FaultSpec("S10", "$write", "all", 1.0, "permanent", params={"response": "x"})
+    ) == {"status": "ok"}
+    given = {"status": "ok"}
+    value = _phantom_response(
+        FaultSpec("S10", "$write", "all", 1.0, "permanent", params={"response": given})
+    )
+    assert value == given
+    assert value is not given
+    assert _phantom_text({}) == {
+        "content": [{"type": "text", "text": "{}"}],
+        "structuredContent": {},
+    }
+    non_request = _text_result(1, "x")
+    assert PhantomWrite().apply(non_request, _engine_spec("S10"), _ctx()) is non_request

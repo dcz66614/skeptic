@@ -1,10 +1,14 @@
-"""End-to-end tests: silent faults S01-S05 through the stdio proxy (F22).
+"""End-to-end tests: silent faults S01-S10 through the stdio proxy (F22, F23).
 
 Each test starts the real ``tests/fixtures/echo_server.py`` as the proxy's
 upstream child, schedules one fault on a ``FaultEngine``, and drives the proxy
 over a scripted stdin/stdout. The echo fixture has one required string argument,
 so ``S05`` can swap the entity it echoes and every other fault has data to
 rewrite. Results are checked as the client sees them, after JSON serialization.
+
+S10 runs against ``tests/fixtures/counting_echo_server.py``, which writes one
+line per upstream tool call to a log file; the S10 tests read that log to prove
+the phantom write never reached the server.
 """
 
 import asyncio
@@ -27,6 +31,7 @@ pytestmark = pytest.mark.e2e
 
 ROOT = Path(__file__).resolve().parents[2]
 ECHO_SERVER = ROOT / "tests" / "fixtures" / "echo_server.py"
+COUNTING_ECHO_SERVER = ROOT / "tests" / "fixtures" / "counting_echo_server.py"
 TIMEOUT_SECONDS = 60
 
 SCENARIO: dict[str, Any] = {
@@ -132,6 +137,8 @@ class Session:
         messages: list[dict[str, Any]],
         engine: FaultEngine,
         scenario: dict[str, Any] | None = None,
+        call_log: Path | None = None,
+        server: Path | None = None,
     ) -> None:
         """Queue the client messages.
 
@@ -139,10 +146,15 @@ class Session:
             messages: The messages the client sends, in order.
             engine: The fault engine to mount.
             scenario: The scenario the episode runs, ``SCENARIO`` by default.
+            call_log: A file to record upstream calls in, or ``None`` for the
+                plain echo server.
+            server: The upstream script, ``ECHO_SERVER`` by default.
         """
+        self.server = ECHO_SERVER if server is None else server
         self.messages = messages
         self.engine = engine
         self.scenario = SCENARIO if scenario is None else scenario
+        self.call_log = call_log
         self.lines: list[bytes] = []
         self.scripted = _ScriptedIn()
         self._thread = threading.Thread(target=self._run, daemon=True)
@@ -152,8 +164,12 @@ class Session:
         with pytest.MonkeyPatch.context() as patch:
             patch.setattr(sys, "stdin", self.scripted)
             patch.setattr(sys, "stdout", _CapturedOut(self.lines))
+            if self.call_log is None:
+                command = [sys.executable, str(self.server)]
+            else:
+                command = [sys.executable, str(COUNTING_ECHO_SERVER), "--calls", str(self.call_log)]
             proxy = StdioProxy(
-                [sys.executable, str(ECHO_SERVER)],
+                command,
                 new_pipeline(fault=self.engine),
                 episode_id="run:echo.echo.basic.001:S:1",
                 seed=1,
@@ -284,6 +300,8 @@ async def _run(
     *messages: dict[str, Any],
     wait_ids: bool = True,
     scenario: dict[str, Any] | None = None,
+    call_log: Path | None = None,
+    server: Path | None = None,
 ) -> list[dict[str, Any]]:
     """Run one proxy session to completion and return what the client saw.
 
@@ -292,11 +310,14 @@ async def _run(
         messages: The client messages.
         wait_ids: Whether to wait for every message id before closing stdin.
         scenario: The scenario the episode runs, ``SCENARIO`` by default.
+        call_log: A file to record upstream calls in, or ``None`` for the
+            plain echo server.
+        server: The upstream script, ``ECHO_SERVER`` by default.
 
     Returns:
         The decoded response lines.
     """
-    session = Session(list(messages), engine, scenario)
+    session = Session(list(messages), engine, scenario, call_log, server)
     session.start()
     if wait_ids:
         for message in messages:
@@ -309,6 +330,8 @@ async def _call(
     engine: FaultEngine,
     *messages: dict[str, Any],
     scenario: dict[str, Any] | None = None,
+    call_log: Path | None = None,
+    server: Path | None = None,
 ) -> list[dict[str, Any]]:
     """Run a handshake plus the given client messages.
 
@@ -316,11 +339,16 @@ async def _call(
         engine: The fault engine to mount.
         messages: The extra client messages, after the handshake.
         scenario: The scenario the episode runs, ``SCENARIO`` by default.
+        call_log: A file to record upstream calls in, or ``None`` for the
+            plain echo server.
+        server: The upstream script, ``ECHO_SERVER`` by default.
 
     Returns:
         The decoded response lines.
     """
-    return await _run(engine, *HANDSHAKE, *messages, scenario=scenario)
+    return await _run(
+        engine, *HANDSHAKE, *messages, scenario=scenario, call_log=call_log, server=server
+    )
 
 
 def _by_id(responses: list[dict[str, Any]], message_id: int | str) -> dict[str, Any]:
@@ -446,3 +474,159 @@ async def test_not_applicable_s05_leaves_the_call_alone() -> None:
     engine = FaultEngine([_spec("S05")], scenario=scenario)
     responses = await _call(engine, _call_message(2, "Paris"), scenario=scenario)
     assert _text(_by_id(responses, 2)) == "Paris"
+
+
+WRITE_SCENARIO: dict[str, Any] = {
+    "id": "orders.place-order.001",
+    "fault_targets": {"primary": ["place_order"], "write_tools": ["place_order"]},
+    "tool_defs": {
+        "place_order": {
+            "name": "place_order",
+            "inputSchema": {
+                "type": "object",
+                "properties": {"item": {"type": "string"}},
+                "required": ["item"],
+            },
+        }
+    },
+}
+"""A write scenario for S10, whose target is ``$write``."""
+
+
+def _read_log(path: Path) -> list[str]:
+    """Return the tool names the upstream recorded, in order.
+
+    Args:
+        path: The call log file.
+
+    Returns:
+        One entry per logged call; empty when the file was never written.
+    """
+    if not path.exists():
+        return []
+    return path.read_text(encoding="utf-8").splitlines()
+
+
+def _order_message(message_id: int, item: str = "mug") -> dict[str, Any]:
+    """Build a ``tools/call`` for ``place_order``.
+
+    Args:
+        message_id: The request id.
+        item: The item to order.
+
+    Returns:
+        The request object.
+    """
+    return {
+        "jsonrpc": "2.0",
+        "id": message_id,
+        "method": "tools/call",
+        "params": {"name": "place_order", "arguments": {"item": item}},
+    }
+
+
+@pytest.mark.asyncio
+async def test_s06_redacts_the_echoed_text() -> None:
+    """S06 turns the echoed text into the marker and keeps the result a success."""
+    responses = await _call(_engine("S06"), _call_message(2, "hello"))
+    reply = _by_id(responses, 2)
+    assert reply["result"] == {
+        "content": [{"type": "text", "text": "[REDACTED]"}],
+        "isError": False,
+    }
+
+
+@pytest.mark.asyncio
+async def test_s07_leaves_a_cut_text() -> None:
+    """S07 cuts the text block and keeps `isError` false."""
+    responses = await _call(_engine("S07"), _call_message(2, "abcdefghij"))
+    reply = _by_id(responses, 2)
+    assert _text(reply) == "abcdefg"
+    assert reply["result"]["isError"] is False
+
+
+@pytest.mark.asyncio
+async def test_s08_without_units_leaves_the_text_alone() -> None:
+    """S08 has no keys to read in a text-only result, so the echo is clean."""
+    responses = await _call(_engine("S08"), _call_message(2, "14.0 C"))
+    assert _text(_by_id(responses, 2)) == "14.0 C"
+
+
+@pytest.mark.asyncio
+async def test_s08_swaps_a_unit_in_the_structured_result(tmp_path: Path) -> None:
+    """S08 rewrites the `unit` value the upstream sends in `structuredContent`."""
+    server = tmp_path / "unit_server.py"
+    server.write_text(
+        "import json\n"
+        "from mcp.server import MCPServer\n"
+        "from mcp.types import CallToolResult, TextContent\n"
+        "server = MCPServer('unit')\n"
+        "@server.tool()\n"
+        "def read_temp(city: str) -> CallToolResult:\n"
+        "    text = json.dumps({'city': city, 'unit': 'C', 'value': 14.0}, sort_keys=True)\n"
+        "    return CallToolResult(\n"
+        "        content=[TextContent(type='text', text=text)],\n"
+        "        structuredContent={'city': city, 'unit': 'C', 'value': 14.0},\n"
+        "    )\n"
+        "server.run('stdio')\n",
+        encoding="utf-8",
+    )
+    scenario = {
+        "id": "echo.echo.basic.002",
+        "fault_targets": {"primary": ["read_temp"]},
+    }
+    engine = FaultEngine([FaultSpec("S08", "$primary", "all", 1.0, "permanent")], scenario=scenario)
+    message = {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "method": "tools/call",
+        "params": {"name": "read_temp", "arguments": {"city": "Paris"}},
+    }
+    responses = await _run(engine, *HANDSHAKE, message, scenario=scenario, server=server)
+    reply = _by_id(responses, 2)
+    assert reply["result"]["structuredContent"] == {"city": "Paris", "unit": "F", "value": 14.0}
+    assert json.loads(_text(reply))["unit"] == "F"
+
+
+@pytest.mark.asyncio
+async def test_s09_scales_the_conflict_source(tmp_path: Path) -> None:
+    """S09 scales the echo server's first number on the `$conflict_b` tool."""
+    scenario = {
+        "id": "echo.echo.basic.003",
+        "fault_targets": {"primary": ["echo"], "conflict_pair": ["echo", "echo"]},
+    }
+    engine = FaultEngine(
+        [FaultSpec("S09", "$conflict_b", "all", 1.0, "permanent")], scenario=scenario
+    )
+    responses = await _call(engine, _call_message(2, "max 20 C"), scenario=scenario)
+    assert _text(_by_id(responses, 2)) == "max 30.0 C"
+
+
+@pytest.mark.asyncio
+async def test_s10_answers_the_write_without_reaching_the_upstream(tmp_path: Path) -> None:
+    """The forged success matches S6 and the upstream call log stays empty."""
+    call_log = tmp_path / "calls.log"
+    engine = FaultEngine(
+        [FaultSpec("S10", "$write", "all", 1.0, "permanent")], scenario=WRITE_SCENARIO
+    )
+    responses = await _call(engine, _order_message(2), scenario=WRITE_SCENARIO, call_log=call_log)
+    reply = _by_id(responses, 2)
+    assert reply == {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "result": {
+            "content": [{"type": "text", "text": '{"status": "ok"}'}],
+            "structuredContent": {"status": "ok"},
+        },
+    }
+    assert _read_log(call_log) == []
+
+
+@pytest.mark.asyncio
+async def test_s10_does_not_block_the_write_of_another_scenario(tmp_path: Path) -> None:
+    """A clean write call reaches the upstream exactly once (the control case)."""
+    call_log = tmp_path / "calls.log"
+    engine = FaultEngine([], scenario=WRITE_SCENARIO)
+    responses = await _call(engine, _order_message(2), scenario=WRITE_SCENARIO, call_log=call_log)
+    assert _text(_by_id(responses, 2)) == "placed mug"
+    assert _read_log(call_log) == ["place_order"]
