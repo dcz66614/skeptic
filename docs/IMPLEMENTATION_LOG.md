@@ -536,3 +536,31 @@ EXIT=0
 - Known non-blocking issues:
   - Intermittent mode draws the RNG twice after the first firing (p, then probability); effective rate is p*probability when probability<1.
   - FaultEngine.bind() runs once, so a fault covering several tools uses one RNG keyed on the first tool called, not one per tool (S7.3).
+## P13 stdio proxy (2026-10-29)
+
+- `proxy/stdio.py` relays one MCP stdio connection: `create_subprocess_exec` upstream, one read loop per direction, client stdout flushed per message, upstream stderr mirrored to our stderr, client EOF closes the upstream stdin and waits 5 s before `terminate`.
+- `skeptic proxy stdio [--seed N] -- <upstream command>` in `cli.py`; everything after `--` is the upstream command, and the upstream exit code becomes our exit code (4 when the upstream cannot start).
+- Used a `RecorderStage` hook to observe c2s messages in unit tests: the pipeline only runs the fault stage for `tools/call`, so recorder is the stage that sees every message.
+- `tests/fixtures/echo_server.py` is an SDK `MCPServer` with one `echo` tool; `tests/integration/test_stdio_proxy.py` drives it through the proxy with the SDK client.
+- The installed SDK advertises `2025-11-25` in `HANDSHAKE_PROTOCOL_VERSIONS`, so the pinned-version test does run; the skipif is only a guard for SDKs that drop it.
+- Added `tests/unit/test_stdio.py` (21 tests) for the action application, era detection, blank/parse-error lines, EOF close, upstream exit codes and start failure. stdio.py coverage went 21% -> 94%, total 83.59% -> 95.34%.
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+43 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 16 source files
+EXIT=0
+
+===== uv run pytest -m "not live" -q --cov=skeptic_agent =====
+189 passed in 9.97s
+Required test coverage of 85.0% reached. Total coverage: 95.34%
+EXIT=0
+```
+
