@@ -74,12 +74,16 @@ class Fault(ABC):
     def apply(self, payload: Any, spec: FaultSpec, ctx: EpisodeContext) -> Any:
         """Inject the fault into the payload of the hook that fired.
 
+        A fault normally returns the rewritten payload. It may instead return a
+        ``ReplyToClient`` to answer the client itself, or a ``Hold`` to delay
+        that answer (L01). The engine ends the chain at the first such action.
+
         Args:
             payload: The message fields the hook handed over.
             spec: The scheduled fault.
             ctx: The episode context.
 
         Returns:
-            The rewritten payload.
+            The rewritten payload, or a ``ReplyToClient`` or ``Hold`` action.
         """
         ...

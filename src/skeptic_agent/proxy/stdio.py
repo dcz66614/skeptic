@@ -16,11 +16,13 @@ from skeptic_agent.protocol import UNKNOWN, detect_era
 from skeptic_agent.proxy.context import EpisodeContext
 from skeptic_agent.proxy.pipeline import (
     Action,
+    Drop,
     Forward,
     Hold,
     Pipeline,
     ReplyToClient,
     SendToServer,
+    cancelled_id,
     new_pipeline,
 )
 
@@ -108,6 +110,8 @@ class StdioProxy:
         self.pipeline = pipeline if pipeline is not None else new_pipeline()
         self.ctx = EpisodeContext(episode_id=episode_id, seed=seed, era=UNKNOWN)
         self.process: asyncio.subprocess.Process | None = None
+        self._cancelled: set[int | str] = set()
+        """Request ids the client cancelled while their reply was held (L01)."""
 
     def _write_upstream(self, data: bytes) -> None:
         """Write bytes to the upstream stdin.
@@ -144,6 +148,33 @@ class StdioProxy:
                 client_out.write(dump(action.msg))
                 await client_out.drain()
 
+    async def _wait(self, action: Hold) -> Action:
+        """Sleep out a held action, or stop early when its request is cancelled.
+
+        A ``Hold`` with ``unless_cancelled`` set belongs to one request id. When
+        the client cancels that request before the delay ends, the follow-up is
+        replaced by ``Drop`` so the client gets no reply at all (L01). Every
+        other hold sleeps for its full time and keeps its follow-up.
+
+        Args:
+            action: The hold to wait out.
+
+        Returns:
+            The action to apply after the wait.
+        """
+        request_id = action.unless_cancelled
+        if request_id is None or action.ms <= 0:
+            await asyncio.sleep(action.ms / 1000)
+            return action.then
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + action.ms / 1000
+        while request_id not in self._cancelled:
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                return action.then
+            await asyncio.sleep(remaining)
+        return Drop()
+
     async def _apply_s2c(self, actions: list[Action], client_out: _StdStream) -> None:
         """Send the s2c actions to the client or back to the upstream.
 
@@ -156,10 +187,12 @@ class StdioProxy:
         """
         for action in actions:
             if isinstance(action, Hold):
-                await asyncio.sleep(action.ms / 1000)
-                action = action.then
+                action = await self._wait(action)
             if isinstance(action, Forward):
-                client_out.write(action.msg.raw_bytes + b"\n")
+                # S4.1: verbatim when untouched, compact JSON when a fault or a
+                # Guard rewrote it (the engine clears ``raw_bytes`` on a rewrite).
+                raw = action.msg.raw_bytes
+                client_out.write(raw + b"\n" if raw else dump(action.msg))
                 await client_out.drain()
             elif isinstance(action, SendToServer):
                 self._write_upstream(dump(action.msg))
@@ -199,6 +232,9 @@ class StdioProxy:
                     await self.process.stdin.drain()
                 continue
             self._detect_era(msg)
+            request_id = cancelled_id(msg)
+            if request_id is not None:
+                self._cancelled.add(request_id)
             actions = await self.pipeline.on_c2s(msg, self.ctx)
             await self._apply_c2s(actions, client_out)
 

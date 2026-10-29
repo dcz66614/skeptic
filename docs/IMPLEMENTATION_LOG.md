@@ -569,3 +569,42 @@ EXIT=0
 
 - codex c9a1fbb ff-merged to main. Self-review PASS (189 tests, coverage 95.3%); glm-5.3-flash read-only review PASS.
 - Non-blocking: stdin readline runs in a worker thread; if the upstream exits first, shutdown may wait for client stdin EOF.
+
+## F21 显式故障 L01–L07（2026-10-29）
+
+基线 `5d61598`，分支 `codex`。交付 `src/skeptic_agent/faults/loud.py`、`tests/unit/test_loud.py`（35 个用例）、`tests/e2e/test_loud_faults.py`（10 个用例，经 stdio 代理连 `tests/fixtures/echo_server.py`）。L01–L03、L05–L07 注册进 `REGISTRY`；L04 只在 HTTP 传输下适用，F21 不做 stdio 实现，注册表里没有它。
+
+实现要点：
+
+- 每个故障的 `apply` 直接返回改好的消息，或返回一个动作：`ReplyToClient`（L06/L07 直接回复客户端）或 `Hold`（L01 先扣住）。`FaultEngine._apply` 遇到 `Hold`/`ReplyToClient` 就以该动作结束本条消息的故障链；引擎改写过的消息清空 `raw_bytes`，由 `stdio._apply_s2c` 用 `dump` 紧凑序列化发出（S4.1：未改动的按原字节透传，改动过的重新序列化）。
+- L01：`Hold(ms=hold_ms, then=ReplyToClient(超时错误), unless_cancelled=id)`。`StdioProxy` 记录客户端 `notifications/cancelled` 的 `requestId`；等待中命中该 id 时 `_wait` 立刻结束等待并改为 `Drop`，客户端收不到任何回复（S6 L01 的取消分支）。
+- L03/L05 先做 `resultType` 检查（S4.5）：`resultType` 存在且不是 `complete` 时原样透传。
+- L06/L07 的 `tools/list` 改写只作用于目标表达式匹配到的工具（`resolve_targets` + `tool_matches`），列表里其他工具不动。
+- L07 的 `old` 取自 `inputSchema.required[0]`，`new = old + "_v2"`；`required` 同步改名，`properties` 里的键一并改名。调用时参数有 `old` 没有 `new` → 直接回复 `-32602` 文本 `Invalid arguments: missing required property '<new>'`；有 `new` → 把 `new` 改回 `old` 后转发；两者都有时以 `new` 的值为准。工具没有必填参数时 `applicable` 为假，故障不触发。
+
+规格歧义与处理：
+
+- S6 给出的 `{"error":{"code":-32602,"message":"Unknown tool: <name>"}}` 只写了错误对象这一层。现有 `jsonrpc.ErrorResponse` / `ErrorObject` 会把 `data:null` 一起序列化，所以单元快照按解析后的对象比较（`code`/`message` 逐字一致），e2e 再核对客户端收到的字节。
+- S6 没说 L07 的“参数里有 `old` 没有 `new`”是否只在 `old` 是必填参数时才成立。原文不区分必填，F21 照原文实现：只要该工具被 L07 漂移过，参数里有 `old` 就按错误回复。
+- `<name>` / `<new>` 按实际调用的工具名和改名后的首个必填参数填充。
+- `Hold` 原先只能包 `Forward`/`ReplyToClient`/`SendToServer`/`Drop`，F21 增加 `unless_cancelled` 字段承载 L01 的取消语义，没有引入新机制或新依赖。
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+46 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 17 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+234 passed in 18.69s
+Required test coverage of 85.0% reached. Total coverage: 95.43%
+EXIT=0
+```
+

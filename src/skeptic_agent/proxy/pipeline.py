@@ -10,7 +10,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from skeptic_agent.jsonrpc import ErrorResponse, Message, Request, Response
+from skeptic_agent.jsonrpc import ErrorResponse, Message, Notification, Request, Response
 from skeptic_agent.proxy.context import (
     INTERNAL_ID_PREFIX,
     EpisodeContext,
@@ -76,14 +76,38 @@ class Hold:
     Attributes:
         ms: The delay in milliseconds.
         then: The action to take after the delay.
+        unless_cancelled: A request id. When the client cancels that request
+            before the delay ends, ``then`` is replaced by ``Drop`` (L01).
+            ``None`` always performs ``then``.
     """
 
     ms: int
     then: Forward | ReplyToClient | SendToServer | Drop
+    unless_cancelled: int | str | None = None
 
 
 Action = Forward | ReplyToClient | SendToServer | Drop | Hold
 """One thing the pipeline can do with a message."""
+
+CANCELLED: str = "notifications/cancelled"
+"""The client's request to abandon one call (L01)."""
+
+
+def cancelled_id(msg: Message) -> int | str | None:
+    """Return the request id a ``notifications/cancelled`` message cancels.
+
+    Args:
+        msg: Any message.
+
+    Returns:
+        ``params.requestId`` when ``msg`` cancels a request, else ``None``.
+    """
+    if isinstance(msg, Notification) and msg.method == CANCELLED:
+        params = msg.params if isinstance(msg.params, dict) else {}
+        request_id = params.get("requestId")
+        if isinstance(request_id, int | str) and not isinstance(request_id, bool):
+            return request_id
+    return None
 
 
 class Interceptor(Protocol):

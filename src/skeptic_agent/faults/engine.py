@@ -21,7 +21,19 @@ from skeptic_agent.faults.schedule import (
 )
 from skeptic_agent.jsonrpc import ErrorResponse, Message, Request, Response
 from skeptic_agent.proxy.context import EpisodeContext
-from skeptic_agent.proxy.pipeline import C2S, TOOLS_CALL, TOOLS_LIST, Action, FaultStage, Forward
+from skeptic_agent.proxy.pipeline import (
+    C2S,
+    TOOLS_CALL,
+    TOOLS_LIST,
+    Action,
+    FaultStage,
+    Forward,
+    Hold,
+    ReplyToClient,
+)
+
+FaultAction = Hold | ReplyToClient
+"""An action a fault returns instead of a rewritten message."""
 
 PROFILES_DIR = Path(__file__).resolve().parents[1] / "data" / "profiles"
 """Where the built-in profiles live; F25 fills it."""
@@ -135,12 +147,15 @@ class FaultEngine(FaultStage):
         index: int | None,
         ctx: EpisodeContext,
         payload: Message,
-    ) -> Message:
+    ) -> tuple[Message, FaultAction | None]:
         """Run the faults whose hook and target match, in profile order.
 
         ``applicable`` is checked before the schedule rolls, so a fault that
         cannot run does not consume a firing. ``index is None`` is a
-        ``tools/list`` event and ignores ``when.call_index``.
+        ``tools/list`` event and ignores ``when.call_index``. A firing fault may
+        return an action instead of a message (L01 holds its reply); the first
+        such action ends the chain and is returned with the message that was
+        current at that point.
 
         Args:
             hook: The hook being run.
@@ -150,7 +165,8 @@ class FaultEngine(FaultStage):
             payload: The message handed to ``apply``.
 
         Returns:
-            The message after every firing fault has rewritten it.
+            The message after every firing fault has rewritten it, and the hold
+            a fault asked for, if any.
         """
         scenario = ctx.scenario if ctx.scenario is not None else self.scenario
         current = payload
@@ -170,9 +186,15 @@ class FaultEngine(FaultStage):
             if not fired:
                 continue
             rewritten = fault.apply(current, planned.spec, ctx)
+            if isinstance(rewritten, (Hold, ReplyToClient)):
+                return current, rewritten
             if isinstance(rewritten, Message):
+                if rewritten is not current:
+                    # S4.1: a modified message is serialized in the compact form,
+                    # never forwarded with the upstream bytes it was copied from.
+                    rewritten = rewritten.model_copy(update={"raw_bytes": b""})
                 current = rewritten
-        return current
+        return current, None
 
     async def on_c2s(self, msg: Message, ctx: EpisodeContext) -> list[Action]:
         """Run the pre_call hooks of a ``tools/call``.
@@ -192,7 +214,11 @@ class FaultEngine(FaultStage):
         if isinstance(msg, Request) and msg.method == TOOLS_CALL and isinstance(msg.params, dict):
             name = msg.params.get("name")
             if isinstance(name, str):
-                msg = self._apply("pre_call", name, ctx.current_call_index.get(name, 0), ctx, msg)
+                msg, action = self._apply(
+                    "pre_call", name, ctx.current_call_index.get(name, 0), ctx, msg
+                )
+                if action is not None:
+                    return [action]
         return [Forward(msg)]
 
     async def on_s2c(self, msg: Message, ctx: EpisodeContext) -> list[Action]:
@@ -217,11 +243,14 @@ class FaultEngine(FaultStage):
         pending = ctx.pending.get((C2S, message_id))
         if pending is None:
             return [Forward(msg)]
+        action: FaultAction | None = None
         if pending.method == TOOLS_LIST:
-            msg = self._apply("list", None, None, ctx, msg)
+            msg, action = self._apply("list", None, None, ctx, msg)
         elif pending.tool_name is not None:
             ctx.current_call_index[pending.tool_name] = pending.attempt
-            msg = self._apply("post_call", pending.tool_name, pending.attempt, ctx, msg)
+            msg, action = self._apply("post_call", pending.tool_name, pending.attempt, ctx, msg)
+        if action is not None:
+            return [action]
         return [Forward(msg)]
 
 
