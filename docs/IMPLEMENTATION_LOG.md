@@ -613,3 +613,48 @@ EXIT=0
 
 - codex 1de3c6f ff-merged to main. Self-review PASS (ruff/format/mypy clean, 234 passed, coverage 95.4%); glm-5.3-flash read-only review PASS. L04 not applicable on stdio per S6.
 - Non-blocking: an L01 Hold sleeps its full delay before checking cancellation, and holds run inline in the upstream read loop, so other server replies wait behind a held one.
+
+## F22 静默故障 S01–S05（2026-10-29）
+
+基线 `20d2b0c`，分支 `codex`。交付 `src/skeptic_agent/faults/silent.py`、`tests/unit/test_silent.py`（46 个用例）、`tests/e2e/test_silent_faults.py`（9 个用例，经 stdio 代理连 `tests/fixtures/echo_server.py`）。S01–S05 全部注册进 `REGISTRY`，类别 `silent`。
+
+实现要点：
+
+- 四个响应类故障（S01–S04）都过 `_result_of` 做 S4.5 的 `resultType` 检查：存在且不是 `complete` 时原样透传；`isError` 一律不动，保持缺省或 `false`，`content` 里的块类型不改。
+- S4.5 同步改写规则集中在 `_text_is_synced` / `_sync_text`：只有当第一个 `type=="text"` 块能解析成 JSON 且与 `structuredContent` 深度相等时，才把它重写为 `json.dumps(新值, ensure_ascii=False, sort_keys=True)`；否则该文本块按各故障的“纯文本回退”规则处理。
+- S01：`structuredContent` 是对象 → `{}`，是数组 → `[]`；同步块跟着改成 `{}` / `[]`；非同步的文本块（含只有文本的情形）改成 `""`。
+- S02：在 `structuredContent` 里取元素最多的数组（并列取深度优先先遇到的），只保留前 `ceil(len*ratio)` 个；没有数组时把每个字符串叶子截到 `floor(len*ratio)`。纯文本（或非同步文本块）保留前 `floor(len*ratio)` 个字符。
+- S03：结构化数据里整串匹配 `^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:\d{2})?)?$` 的叶子整体前移 `days` 天，日期部分重算、时间与 `Z`/偏移后缀原样保留；纯文本用同一个正则去掉 `^`/`$` 全局替换。
+- S04：有场景 `fault_targets.numeric_path` 且该处是数字时用它，否则用 `jsonsel.first_numeric_leaf` 的首个数值叶子，乘以 `factor`；两个操作数都是整数时结果仍是整数。纯文本把第一个 `-?\d+(\.\d+)?` 匹配乘以 `factor`。
+- S05：`pre_call` 钩子，`applicable` 要求场景同时有 `entity_arg` 和 `decoys.entity`；命中时把 `params.arguments[entity_arg]` 换成 `decoys.entity` 再转发，响应不动。
+- 改过的消息走引擎既有逻辑清空 `raw_bytes`，由 stdio 代理 `dump` 紧凑序列化；未改动（故障不适用）的消息按原字节透传。
+- `faults/engine.py` 增加 `from skeptic_agent.faults import loud, silent  # noqa: F401`：此前没有任何地方导入 `loud`，F21 的注册只在测试里随导入生效；现在通过代理或 CLI 跑时也会注册全部故障。`test_profiles.py` 里“未注册故障不触发”的用例因此改用尚未实现的 `S06`。
+
+规格歧义与处理：
+
+- S4.5 只说“文本块不是 JSON 时按各故障规定的‘纯文本回退’规则处理”。F22 的读法是：只要有 `structuredContent` 且文本块存在，回退规则就作用于这个文本块，与该文本块是否本身构成“纯文本结果”无关；因此 S01 的“只有文本时替换为 `""`”也覆盖“有结构化数据但文本不同步”的情况。
+- S01 的“同类型的空值”只定义了对象和数组；`structuredContent` 是标量字符串/数字时没有对应的空值，F22 视为不适用（返回原消息，引擎不记触发）。
+- S02 的“没有数组时把所有字符串叶子截断到原长度的 `ratio`”没有给出取整方式，F22 用 `floor`；截断后长度为 0 的叶子保持原样，免得单字符代码（货币符号、等级）直接消失。
+- S02 的“纯文本保留前 `floor(len*ratio)` 个字符”在 `ratio` 使结果不小于原长时等于没变，视为不适用。
+- S03 的日期格式允许带偏移的后缀；F22 前移时保留原分钟/秒与时区后缀，只改日期部分，格式不变。
+- S04 的 `factor` 非数字、布尔或非有限值时视为参数不可用，故障不适用（不抛异常）；`numeric_path` 指向非数字时同样视为不适用，不回退到首个数值叶子。
+- S05 的请求参数里没有 `entity_arg` 时不注入（视为不适用），有则换成诱饵值；S6 说“响应不做修改”，因此 S05 不实现 `post_call`。
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+49 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 18 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+289 passed in 33.59s
+Required test coverage of 85.0% reached. Total coverage: 96.00%
+EXIT=0
+```

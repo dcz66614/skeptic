@@ -347,9 +347,9 @@ def test_spec_from_entry() -> None:
 
 
 def test_engine_leaves_unregistered_faults_inactive() -> None:
-    """With no implementations the engine plans faults but none can fire."""
-    engine = FaultEngine([spec_from_entry(_entry("S04"))], scenario=WEATHER)
-    assert engine.specs[0].fault_id == "S04"
+    """A fault with no implementation yet is planned but can never fire."""
+    engine = FaultEngine([spec_from_entry(_entry("S06"))], scenario=WEATHER)
+    assert engine.specs[0].fault_id == "S06"
     assert engine.planned[0].fault is None
     assert engine.counts_attempts() is False
 

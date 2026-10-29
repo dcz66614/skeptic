@@ -9,6 +9,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
+from skeptic_agent.faults import loud, silent  # noqa: F401  # importing registers the faults
 from skeptic_agent.faults.base import Fault, FaultHook, FaultSpec
 from skeptic_agent.faults.profiles import FaultEntry, Profile, ProfileError, load_profile
 from skeptic_agent.faults.registry import get_fault
