@@ -750,3 +750,47 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 96.32%
 EXIT=0
 ```
+
+## F24fix A03 只计成功的目标调用（2026-10-29）
+
+基线 `beffdbf`，分支 `codex`。修正 F24 审查提出的两点，并处理它暴露出的 e2e 夹具问题。上一会话未完成的改动保留其正确部分：删掉 `Fault.on_request`（以及 `engine._run_on_request`），A03 改为在 `post_call` 里按响应计数。
+
+实现要点：
+
+- A03 的 `hooks` 从 `("list",)` 改为 `("post_call", "list")`。`apply` 先 `_count`，再用同一个 `payload` 判断是不是 `tools/list` 结果；调用响应只参与计数，返回原样。
+- `_count(payload, spec, ctx, tool)`：只有 `tool` 不为 `None`、`_is_success(payload)` 为真、且 `tool` 匹配目标表达式时才 `calls += 1`。`_is_success` 要求是 `Response`、`result` 是对象、`resultType` 缺省或 `complete`、`isError` 不为 `True`；`ErrorResponse` 一律不算。
+- `_current_tool(payload, ctx)` 用响应的 id 查 `ctx.pending[(C2S, id)]`，并且要求 `pending.method == TOOLS_CALL`，返回该 `PendingCall.tool_name`。不再扫描 `ctx.current_call_index`——多目标时那样会按工具名首次出现的顺序取到别的目标。
+- 引擎在 `on_s2c` 里照旧把 `attempt` 回写到 `ctx.current_call_index`，A03 不再用它。
+
+测试：
+
+- 单元（`tests/unit/test_adversarial.py`）：`test_a03_counts_only_successful_calls`、`test_a03_ignores_a_jsonrpc_error`、`test_a03_ignores_an_incomplete_result`、`test_a03_counts_a_successful_call_after_a_failure`（`after_calls=2`，一次 `isError` + 一次成功不够，第二次成功才到 2）、`test_a03_counts_only_when_the_target_was_called`、`test_a03_uses_the_tool_of_the_current_request`。这些用例直接断言 `RugPull.calls`，而不是只看列表有没有被改写——只断言列表会被 `next_event` 的掷骰掩盖，把 `_is_success` 改成恒真也不会失败。已验证：把 `_is_success` 强制为真会让前四个失败；把 `_current_tool` 换回扫描 `ctx.current_call_index` 会让后两个失败。
+- e2e（`tests/e2e/test_adversarial_faults.py`）：新增 `tests/fixtures/faulty_echo_server.py`（`echo` 在 `text == "error"` 时返回 `isError: true`，`echo_other` 恒成功）。`Session`/`_run` 增加 `server` 与 `scenario` 参数；新增 `test_a03_ignores_an_is_error_result`、`test_a03_counts_a_successful_call_after_a_failure`、`test_a03_counts_only_the_tool_that_was_called`。
+
+规格歧义与处理：
+
+- “累计成功调用”是否只算目标工具。S6 的 A03 只写“目标工具累计成功调用 `after_calls` 次”。判定方式是：目标表达式照常解析成工具名模式（`$primary` 等），实际调用的工具名按 glob 匹配；`$primary` 覆盖多个工具时，任一被调用并成功都算。
+- “成功”的判定：`Response` 且 `isError` 不为 `true` 且 `resultType` 为 `complete`。S6 没说 `resultType`，这里沿用 S4.5/F21–F23 对 `resultType` 的处理：非 `complete` 不是一次完成的成功调用。
+- `tools/list` 响应不算调用：它的 pending 是 `method == "tools/list"`，`_current_tool` 返回 `None`，所以列表响应永远不计数；这也让“先调用、后取列表”与“取列表、再调用”两种顺序都正确。
+- e2e 夹具的丢包问题：`Client` / `tools/list` 缓存不是原因。直接跑夹具时，客户端一次写入全部消息再关 stdin，SDK 的 stdio 传输在读到 EOF 后会取消仍在执行的请求（`mcp/server/runner.py` → `jsonrpc_dispatcher.py` 的 `tg.cancel_scope.cancel()`），于是 `echo` 的回复（在 worker 线程里执行）有时来不及写出，`tools/list` 先到。原夹具对每个请求一条一条发送并等待回复，`Session.start` 一次性写入全部消息是这次才暴露的。改法是 `Session.send` 单条写入，`_run` 每发一条（带 id）就 `wait_for_id`；这样上游在 stdin 关闭时没有在途请求。连续跑 3 轮全套 e2e 稳定通过。
+- e2e 的 scenario 覆盖：`Session._run` 原先把 `proxy.ctx.scenario` 硬写成模块级 `SCENARIO`，测试传进去的场景到不了代理。改为 `Session(scenario=...)` 并透传，多目标用例才真正生效。
+- 载荷文本、`after_calls` 默认值、list_changed 通知时机都沿用 F24，未改。
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+54 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 19 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+377 passed in 50.15s
+Required test coverage of 85.0% reached. Total coverage: 96.33%
+EXIT=0
+```

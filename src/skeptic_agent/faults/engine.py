@@ -226,23 +226,6 @@ class FaultEngine(FaultStage):
         ctx.control.clear()
         return [*actions, *queued]
 
-    def _run_on_request(self, ctx: EpisodeContext) -> None:
-        """Tell the planned faults that a ``tools/call`` is on its way.
-
-        ``on_request`` runs before the pre hooks, for every planned fault, so a
-        fault can read the attempt number the pipeline just assigned (ADR-0007)
-        even when it does not run on the call itself. A03 uses it to count the
-        target calls; its own schedule is not rolled, because a call is not its
-        firing event.
-
-        Args:
-            ctx: The episode context.
-        """
-        for planned in self.planned:
-            fault = planned.fault
-            if fault is not None:
-                fault.on_request(planned.spec, ctx)
-
     async def on_c2s(self, msg: Message, ctx: EpisodeContext) -> list[Action]:
         """Run the pre_call hooks of a ``tools/call``.
 
@@ -259,7 +242,6 @@ class FaultEngine(FaultStage):
         """
         self._ensure_bound(ctx)
         if isinstance(msg, Request) and msg.method == TOOLS_CALL and isinstance(msg.params, dict):
-            self._run_on_request(ctx)
             name = msg.params.get("name")
             if isinstance(name, str):
                 msg, action = self._apply(

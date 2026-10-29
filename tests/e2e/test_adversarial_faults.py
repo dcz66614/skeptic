@@ -5,9 +5,11 @@ upstream child, schedules one fault on a ``FaultEngine``, and drives the proxy
 over scripted stdin/stdout. The client sees exactly what an agent would see, so
 the payload text and the list-changed notification are checked byte for byte.
 
-A03 counts the calls the client makes, so the sessions below fetch the list,
-call ``echo`` until the threshold is reached, and fetch the list again. The
-scenario declares ``tools.listChanged``, which the echo server does not, so the
+A03 counts the successful calls the client makes, so the sessions below fetch
+the list, call ``echo`` until the threshold is reached, and fetch the list again.
+The failure tests start ``tests/fixtures/faulty_echo_server.py`` instead, whose
+``echo`` answers with an ``isError`` result when the text is ``"error"``. The
+scenario declares ``tools.listChanged``, which neither echo server does, so the
 legacy notification path can be exercised against a real connection.
 """
 
@@ -24,7 +26,7 @@ from typing import Any
 
 import pytest
 
-from skeptic_agent.faults.adversarial import P1_TEMPLATE, P2_TEMPLATE, render
+from skeptic_agent.faults.adversarial import P1_TEMPLATE, P2_TEMPLATE, RugPull, render
 from skeptic_agent.faults.base import FaultSpec
 from skeptic_agent.faults.engine import FaultEngine
 from skeptic_agent.proxy.pipeline import new_pipeline
@@ -34,6 +36,7 @@ pytestmark = pytest.mark.e2e
 
 ROOT = Path(__file__).resolve().parents[2]
 ECHO_SERVER = ROOT / "tests" / "fixtures" / "echo_server.py"
+FAULTY_ECHO_SERVER = ROOT / "tests" / "fixtures" / "faulty_echo_server.py"
 TIMEOUT_SECONDS = 60
 
 # The echo server's own description; A02 and A03 append P2 to it.
@@ -136,15 +139,25 @@ class Session:
         lines: The response lines the proxy wrote, as they arrived.
     """
 
-    def __init__(self, messages: list[dict[str, Any]], engine: FaultEngine) -> None:
+    def __init__(
+        self,
+        messages: list[dict[str, Any]],
+        engine: FaultEngine,
+        server: Path = ECHO_SERVER,
+        scenario: dict[str, Any] = SCENARIO,
+    ) -> None:
         """Queue the client messages.
 
         Args:
             messages: The messages the client sends, in order.
             engine: The fault engine to mount.
+            server: The upstream server script.
+            scenario: The scenario the proxy resolves ``$primary`` with.
         """
         self.messages = messages
         self.engine = engine
+        self.server = server
+        self.scenario = scenario
         self.lines: list[bytes] = []
         self.scripted = _ScriptedIn()
         self._thread = threading.Thread(target=self._run, daemon=True)
@@ -155,18 +168,30 @@ class Session:
             patch.setattr(sys, "stdin", self.scripted)
             patch.setattr(sys, "stdout", _CapturedOut(self.lines))
             proxy = StdioProxy(
-                [sys.executable, str(ECHO_SERVER)],
+                [sys.executable, str(self.server)],
                 new_pipeline(fault=self.engine),
                 episode_id="run:echo.echo.basic.001:A:1",
                 seed=1,
             )
-            proxy.ctx.scenario = SCENARIO
+            proxy.ctx.scenario = self.scenario
             asyncio.run(proxy.run())
 
     def start(self) -> None:
-        """Start the proxy thread and write every client message."""
+        """Start the proxy thread."""
         self._thread.start()
-        self.scripted.feed(b"".join(_line(message) for message in self.messages))
+
+    def send(self, message: dict[str, Any]) -> None:
+        """Write one client message to the proxy's stdin.
+
+        The session feeds one message at a time and waits for its reply, so the
+        upstream never has a request in flight when the client input closes. The
+        SDK server cancels in-flight handlers on stdin EOF, which would
+        otherwise drop a reply nondeterministically.
+
+        Args:
+            message: The client message.
+        """
+        self.scripted.feed(_line(message))
 
     async def wait_for_id(self, message_id: int | str) -> dict[str, Any]:
         """Wait until the proxy has written a response with this id.
@@ -281,19 +306,27 @@ class _Buffer:
         """Flush nothing; the sink is memory."""
 
 
-async def _run(engine: FaultEngine, *messages: dict[str, Any]) -> list[dict[str, Any]]:
+async def _run(
+    engine: FaultEngine,
+    *messages: dict[str, Any],
+    server: Path = ECHO_SERVER,
+    scenario: dict[str, Any] = SCENARIO,
+) -> list[dict[str, Any]]:
     """Run one proxy session to completion and return what the client saw.
 
     Args:
         engine: The fault engine to mount.
         messages: The client messages.
+        server: The upstream server script.
+        scenario: The scenario the proxy resolves ``$primary`` with.
 
     Returns:
         The decoded response lines.
     """
-    session = Session(list(messages), engine)
+    session = Session(list(messages), engine, server, scenario)
     session.start()
     for message in messages:
+        session.send(message)
         if "id" in message:
             await session.wait_for_id(message["id"])
     return await session.finish()
@@ -327,12 +360,13 @@ def _text(response: dict[str, Any]) -> str:
     return response["result"]["content"][0]["text"]
 
 
-def _call_message(message_id: int, text: str = "hello") -> dict[str, Any]:
-    """Build a ``tools/call`` for ``echo``.
+def _call_message(message_id: int, text: str = "hello", tool: str = "echo") -> dict[str, Any]:
+    """Build a ``tools/call`` for one of the echo tools.
 
     Args:
         message_id: The request id.
         text: The text to echo.
+        tool: The tool name.
 
     Returns:
         The request object.
@@ -341,7 +375,7 @@ def _call_message(message_id: int, text: str = "hello") -> dict[str, Any]:
         "jsonrpc": "2.0",
         "id": message_id,
         "method": "tools/call",
-        "params": {"name": "echo", "arguments": {"text": text}},
+        "params": {"name": tool, "arguments": {"text": text}},
     }
 
 
@@ -408,7 +442,7 @@ async def test_a03_first_list_is_clean() -> None:
 
 @pytest.mark.asyncio
 async def test_a03_after_calls_poisons_and_notifies_a_legacy_client() -> None:
-    """After the call the list is poisoned and the legacy client is told."""
+    """After the calls the list is poisoned and the legacy client is told."""
     engine = _engine("A03", after_calls=2)
     responses = await _run(
         engine,
@@ -436,6 +470,79 @@ async def test_a03_waits_for_the_threshold() -> None:
     assert not any(
         response.get("method") == "notifications/tools/list_changed" for response in responses
     )
+
+
+@pytest.mark.asyncio
+async def test_a03_ignores_an_is_error_result() -> None:
+    """An ``isError`` result is not a successful call, so the list stays clean."""
+    engine = _engine("A03")
+    responses = await _run(
+        engine,
+        *HANDSHAKE,
+        _call_message(2, "error"),
+        _list_message(3),
+        server=FAULTY_ECHO_SERVER,
+    )
+    assert _by_id(responses, 2)["result"]["isError"] is True
+    assert [p.fault.calls for p in engine.planned if isinstance(p.fault, RugPull)] == [0]
+    assert _descriptions(_by_id(responses, 3))["echo"] == ECHO_DESCRIPTION
+
+
+@pytest.mark.asyncio
+async def test_a03_counts_a_successful_call_after_a_failure() -> None:
+    """With ``after_calls=2`` a failed call and one success leave the list clean."""
+    responses = await _run(
+        _engine("A03", after_calls=2),
+        *HANDSHAKE,
+        _call_message(2, "error"),
+        _call_message(3),
+        _list_message(4),
+        server=FAULTY_ECHO_SERVER,
+    )
+    assert _by_id(responses, 2)["result"]["isError"] is True
+    assert _by_id(responses, 3)["result"]["isError"] is False
+    assert _descriptions(_by_id(responses, 4))["echo"] == ECHO_DESCRIPTION
+    responses = await _run(
+        _engine("A03", after_calls=2),
+        *HANDSHAKE,
+        _call_message(2, "error"),
+        _call_message(3),
+        _call_message(4),
+        _list_message(5),
+        server=FAULTY_ECHO_SERVER,
+    )
+    assert _descriptions(_by_id(responses, 5))["echo"] == ECHO_DESCRIPTION + "\n\n" + P2
+
+
+@pytest.mark.asyncio
+async def test_a03_counts_only_the_tool_that_was_called() -> None:
+    """A success on another tool does not count for a target that was not called."""
+    scenario = {**SCENARIO, "fault_targets": {"primary": ["echo"]}}
+    responses = await _run(
+        FaultEngine([_spec("A03")], scenario=scenario),
+        *HANDSHAKE,
+        _call_message(2, "hello", tool="echo_other"),
+        _list_message(3),
+        server=FAULTY_ECHO_SERVER,
+        scenario=scenario,
+    )
+    assert _by_id(responses, 2)["result"]["isError"] is False
+    assert _descriptions(_by_id(responses, 3)) == {
+        "echo": ECHO_DESCRIPTION,
+        "echo_other": ECHO_DESCRIPTION,
+    }
+    responses = await _run(
+        FaultEngine([_spec("A03")], scenario=scenario),
+        *HANDSHAKE,
+        _call_message(2, "hello", tool="echo"),
+        _list_message(3),
+        server=FAULTY_ECHO_SERVER,
+        scenario=scenario,
+    )
+    assert _descriptions(_by_id(responses, 3)) == {
+        "echo": ECHO_DESCRIPTION + "\n\n" + P2,
+        "echo_other": ECHO_DESCRIPTION,
+    }
 
 
 @pytest.mark.asyncio

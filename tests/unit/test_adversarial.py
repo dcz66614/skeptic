@@ -226,6 +226,25 @@ async def _call_first(engine: FaultEngine, ctx: EpisodeContext, id_: int = 1) ->
     return await new_pipeline(fault=engine).on_c2s(call, ctx)
 
 
+async def _successful_call(
+    engine: FaultEngine, ctx: EpisodeContext, id_: int = 1, tool: str = "read_inbox"
+) -> list[Any]:
+    """Send one ``tools/call`` and its successful result through an engine.
+
+    Args:
+        engine: The engine.
+        ctx: The episode context.
+        id_: The request id.
+        tool: The tool to call.
+
+    Returns:
+        The actions for the response.
+    """
+    pipeline = new_pipeline(fault=engine)
+    await pipeline.on_c2s(_call(id_, tool, {}), ctx)
+    return await pipeline.on_s2c(_ok(id_), ctx)
+
+
 async def _list_round_trip(engine: FaultEngine, ctx: EpisodeContext, id_: int = 3) -> list[Any]:
     """Send a ``tools/list`` request and then the upstream response.
 
@@ -240,6 +259,22 @@ async def _list_round_trip(engine: FaultEngine, ctx: EpisodeContext, id_: int = 
     pipeline = new_pipeline(fault=engine)
     await pipeline.on_c2s(_list_request(id_), ctx)
     return await pipeline.on_s2c(_listing(id_), ctx)
+
+
+def _rug_pull(engine: FaultEngine) -> RugPull:
+    """Return the one A03 implementation the engine scheduled.
+
+    Args:
+        engine: The engine with an A03 fault.
+
+    Returns:
+        The fault instance, so a test can read its counter.
+    """
+    faults = [planned.fault for planned in engine.planned]
+    assert len(faults) == 1
+    fault = faults[0]
+    assert isinstance(fault, RugPull)
+    return fault
 
 
 def _result(actions: list[Any]) -> dict[str, Any]:
@@ -477,8 +512,7 @@ async def test_a03_first_list_is_clean() -> None:
 async def test_a03_poisons_after_one_call() -> None:
     """After ``after_calls`` calls the next list is poisoned with P2."""
     engine, ctx = _engine("A03"), _ctx()
-    await _call_first(engine, ctx)
-    await new_pipeline(fault=engine).on_s2c(_ok(1), ctx)
+    await _successful_call(engine, ctx)
     result = _result(await _list_round_trip(engine, ctx, 4))
     assert result["tools"][0]["description"] == f"Read the inbox.\n\n{P2}"
 
@@ -514,20 +548,108 @@ async def test_a03_only_counts_target_tool_calls() -> None:
 async def test_a03_counts_calls_of_any_tool_a_glob_covers() -> None:
     """A glob target counts the calls it covers, here both listed tools."""
     engine, ctx = _engine("A03", tool="*"), _ctx()
+    pipeline = new_pipeline(fault=engine)
     for id_, tool in ((1, "read_inbox"), (2, "send_email")):
-        await new_pipeline(fault=engine).on_c2s(_call(id_, tool, {}), ctx)
+        await pipeline.on_c2s(_call(id_, tool, {}), ctx)
+        await pipeline.on_s2c(_ok(id_), ctx)
     result = _result(await _list_round_trip(engine, ctx, 4))
     assert result["tools"][0]["description"] == f"Read the inbox.\n\n{P2}"
 
 
 @pytest.mark.asyncio
-async def test_a03_counts_calls_not_responses() -> None:
-    """The threshold comes from the calls made, not from their results (S6)."""
+async def test_a03_counts_only_successful_calls() -> None:
+    """An ``isError`` result does not advance the counter (S6)."""
     engine, ctx = _engine("A03"), _ctx()
     pipeline = new_pipeline(fault=engine)
     await pipeline.on_c2s(_call(1, "read_inbox", {}), ctx)
     await pipeline.on_s2c(_ok(1, {"content": [], "isError": True}), ctx)
+    rug_pull = _rug_pull(engine)
+    assert rug_pull.calls == 0
     await pipeline.on_c2s(_call(2, "read_inbox", {}), ctx)
+    await pipeline.on_s2c(_ok(2), ctx)
+    assert rug_pull.calls == 1
+    result = _result(await _list_round_trip(engine, ctx, 4))
+    assert result["tools"][0]["description"] == f"Read the inbox.\n\n{P2}"
+
+
+@pytest.mark.asyncio
+async def test_a03_ignores_a_jsonrpc_error() -> None:
+    """An ``ErrorResponse`` is not a successful call and is not counted (S6)."""
+    engine, ctx = _engine("A03"), _ctx()
+    pipeline = new_pipeline(fault=engine)
+    await pipeline.on_c2s(_call(1, "read_inbox", {}), ctx)
+    error = _parse({"jsonrpc": "2.0", "id": 1, "error": {"code": -32603, "message": "x"}})
+    await pipeline.on_s2c(error, ctx)
+    rug_pull = _rug_pull(engine)
+    assert rug_pull.calls == 0
+    await pipeline.on_c2s(_call(2, "read_inbox", {}), ctx)
+    await pipeline.on_s2c(_ok(2), ctx)
+    assert rug_pull.calls == 1
+
+
+@pytest.mark.asyncio
+async def test_a03_ignores_an_incomplete_result() -> None:
+    """A ``resultType`` other than ``complete`` is not a successful result (S6)."""
+    engine, ctx = _engine("A03"), _ctx()
+    pipeline = new_pipeline(fault=engine)
+    await pipeline.on_c2s(_call(1, "read_inbox", {}), ctx)
+    await pipeline.on_s2c(_ok(1, {"content": [], "resultType": "input_required"}), ctx)
+    assert _rug_pull(engine).calls == 0
+
+
+@pytest.mark.asyncio
+async def test_a03_counts_a_successful_call_after_a_failure() -> None:
+    """With ``after_calls=2`` an ``isError`` call and one success are not enough (S6)."""
+    engine = FaultEngine([_spec("A03", params={"after_calls": 2})], scenario=SCENARIO)
+    ctx = _ctx()
+    pipeline = new_pipeline(fault=engine)
+    await pipeline.on_c2s(_call(1, "read_inbox", {}), ctx)
+    await pipeline.on_s2c(_ok(1, {"content": [], "isError": True}), ctx)
+    await pipeline.on_c2s(_call(2, "read_inbox", {}), ctx)
+    await pipeline.on_s2c(_ok(2), ctx)
+    assert _rug_pull(engine).calls == 1
+    await pipeline.on_c2s(_call(3, "read_inbox", {}), ctx)
+    await pipeline.on_s2c(_ok(3), ctx)
+    assert _rug_pull(engine).calls == 2
+
+
+@pytest.mark.asyncio
+async def test_a03_counts_only_when_the_target_was_called() -> None:
+    """A call to a non-target tool never advances the counter."""
+    engine, ctx = _engine("A03"), _ctx()
+    pipeline = new_pipeline(fault=engine)
+    await pipeline.on_c2s(_call(1, "send_email", {}), ctx)
+    await pipeline.on_s2c(_ok(1), ctx)
+    assert _rug_pull(engine).calls == 0
+    await pipeline.on_c2s(_call(2, "read_inbox", {}), ctx)
+    await pipeline.on_s2c(_ok(2), ctx)
+    assert _rug_pull(engine).calls == 1
+
+
+@pytest.mark.asyncio
+async def test_a03_uses_the_tool_of_the_current_request() -> None:
+    """The counter follows each response's own request, not a scan over counters."""
+    scenario = {**SCENARIO, "fault_targets": {"primary": ["read_inbox"]}}
+    engine = FaultEngine([_spec("A03", params={"after_calls": 2})], scenario=scenario)
+    ctx = _ctx(scenario)
+    pipeline = new_pipeline(fault=engine)
+    await pipeline.on_c2s(_call(1, "send_email", {}), ctx)
+    await pipeline.on_s2c(_ok(1), ctx)
+    await pipeline.on_c2s(_call(2, "read_inbox", {}), ctx)
+    await pipeline.on_s2c(_ok(2), ctx)
+    assert _rug_pull(engine).calls == 1
+    await pipeline.on_c2s(_call(3, "read_inbox", {}), ctx)
+    await pipeline.on_s2c(_ok(3), ctx)
+    assert _rug_pull(engine).calls == 2
+
+
+@pytest.mark.asyncio
+async def test_a03_counts_a_call_before_the_first_list() -> None:
+    """A successful call made before any ``tools/list`` still counts (S6)."""
+    engine, ctx = _engine("A03"), _ctx()
+    pipeline = new_pipeline(fault=engine)
+    await pipeline.on_c2s(_call(1, "read_inbox", {}), ctx)
+    await pipeline.on_s2c(_ok(1), ctx)
     result = _result(await _list_round_trip(engine, ctx, 4))
     assert result["tools"][0]["description"] == f"Read the inbox.\n\n{P2}"
 
@@ -536,7 +658,7 @@ async def test_a03_counts_calls_not_responses() -> None:
 async def test_a03_sends_list_changed_on_a_legacy_era() -> None:
     """A legacy client gets the rewritten list and then the notification."""
     engine, ctx = _engine("A03"), _ctx()
-    await _call_first(engine, ctx)
+    await _successful_call(engine, ctx)
     actions = await _list_round_trip(engine, ctx, 4)
     assert len(actions) == 2
     forwarded, notification = actions
@@ -551,7 +673,7 @@ async def test_a03_sends_list_changed_on_a_legacy_era() -> None:
 async def test_a03_notifies_once() -> None:
     """A second poisoned list does not repeat the notification."""
     engine, ctx = _engine("A03"), _ctx()
-    await _call_first(engine, ctx)
+    await _successful_call(engine, ctx)
     await _list_round_trip(engine, ctx, 4)
     second = await _list_round_trip(engine, ctx, 5)
     assert len(second) == 1
@@ -562,7 +684,7 @@ async def test_a03_notifies_once() -> None:
 async def test_a03_does_not_notify_a_modern_client() -> None:
     """A modern client discovers the change itself, so no notification is sent."""
     engine, ctx = _engine("A03"), _ctx(era=MODERN)
-    await _call_first(engine, ctx)
+    await _successful_call(engine, ctx)
     actions = await _list_round_trip(engine, ctx, 4)
     assert len(actions) == 1
     assert _result(actions)["tools"][0]["description"] == f"Read the inbox.\n\n{P2}"
@@ -574,7 +696,7 @@ async def test_a03_does_not_notify_without_the_capability() -> None:
     scenario = {**SCENARIO, "capabilities": {"tools": {"listChanged": False}}}
     engine = FaultEngine([_spec("A03")], scenario=scenario)
     ctx = _ctx(scenario)
-    await _call_first(engine, ctx)
+    await _successful_call(engine, ctx)
     actions = await _list_round_trip(engine, ctx, 4)
     assert len(actions) == 1
 
@@ -583,7 +705,7 @@ async def test_a03_does_not_notify_without_the_capability() -> None:
 async def test_a03_payload_parameter() -> None:
     """The ``payload`` parameter replaces P2 in the poisoned description."""
     engine, ctx = _engine("A03", params={"payload": "HIJACK"}), _ctx()
-    await _call_first(engine, ctx)
+    await _successful_call(engine, ctx)
     result = _result(await _list_round_trip(engine, ctx, 4))
     assert result["tools"][0]["description"] == "Read the inbox.\n\nHIJACK"
 

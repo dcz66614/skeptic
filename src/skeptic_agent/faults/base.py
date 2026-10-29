@@ -70,20 +70,6 @@ class Fault(ABC):
         """
         return True
 
-    def on_request(self, spec: FaultSpec, ctx: EpisodeContext) -> None:
-        """Notice a ``tools/call`` the client is about to send.
-
-        The engine calls this after the pipeline assigned the attempt number and
-        before the pre hooks run, for every planned fault, whichever tools it
-        targets. A fault that does not run on the call but must count calls to
-        the whole scenario (A03) counts them here.
-
-        Args:
-            spec: The scheduled fault.
-            ctx: The episode context.
-        """
-        del spec, ctx
-
     @abstractmethod
     def apply(self, payload: Any, spec: FaultSpec, ctx: EpisodeContext) -> Any:
         """Inject the fault into the payload of the hook that fired.
