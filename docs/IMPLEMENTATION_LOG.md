@@ -608,3 +608,8 @@ Required test coverage of 85.0% reached. Total coverage: 95.43%
 EXIT=0
 ```
 
+
+## F21 merge (2026-10-29)
+
+- codex 1de3c6f ff-merged to main. Self-review PASS (ruff/format/mypy clean, 234 passed, coverage 95.4%); glm-5.3-flash read-only review PASS. L04 not applicable on stdio per S6.
+- Non-blocking: an L01 Hold sleeps its full delay before checking cancellation, and holds run inline in the upstream read loop, so other server replies wait behind a held one.
