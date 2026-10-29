@@ -1049,3 +1049,7 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 95.96%
 EXIT=0
 ```
+
+## P16 merge (2026-10-29)
+
+- codex c3e2c45 ff-merged to main. Self-review PASS (536 passed, cov 95.96%); agy gemini-3.8-flash-high review PASS. Note: spec 项目书 line 453 shows 'skeptic replay' without --cassette; implemented --cassette per P16 card and S2.
