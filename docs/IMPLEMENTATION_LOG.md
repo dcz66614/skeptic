@@ -836,3 +836,7 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 96.46%
 EXIT=0
 ```
+
+## F25 merge (2026-10-29)
+
+- codex e4ea9cd ff-merged to main. Self-review PASS (402 passed, cov 96.46%, faults list --json = 20); agy gemini-3.8-flash-high review PASS (citations all from spec). Built on wb deepseek-v4.1-flash-sg.
