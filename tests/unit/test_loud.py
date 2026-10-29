@@ -17,8 +17,10 @@ from skeptic_agent.faults.loud import (
     L02_CODE,
     L02_MESSAGE,
     L03_TEXT,
+    L04_STATUS,
     L05_RETRY_AFTER_S,
     RENAME_SUFFIX,
+    HttpStatus,
     JsonRpcError,
     RateLimited,
     SchemaDrift,
@@ -41,7 +43,14 @@ from skeptic_agent.jsonrpc import (
 )
 from skeptic_agent.protocol import Era
 from skeptic_agent.proxy.context import EpisodeContext
-from skeptic_agent.proxy.pipeline import Forward, Hold, ReplyToClient, cancelled_id, new_pipeline
+from skeptic_agent.proxy.pipeline import (
+    Forward,
+    Hold,
+    ReplyToClient,
+    ReplyWithStatus,
+    cancelled_id,
+    new_pipeline,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -183,12 +192,13 @@ async def _respond(engine: FaultEngine, ctx: EpisodeContext, msg: Message):
 
 
 def test_all_loud_faults_are_registered() -> None:
-    """L01-L07 are the loud half of the catalogue and are now registered."""
+    """L01-L07 are the loud half of the catalogue and are all registered."""
     assert FAULT_IDS[:7] == ("L01", "L02", "L03", "L04", "L05", "L06", "L07")
     for fault_id, cls in (
         ("L01", Timeout),
         ("L02", JsonRpcError),
         ("L03", ToolError),
+        ("L04", HttpStatus),
         ("L05", RateLimited),
         ("L06", ToolMissing),
         ("L07", SchemaDrift),
@@ -197,9 +207,36 @@ def test_all_loud_faults_are_registered() -> None:
         assert REGISTRY[fault_id].cls == "loud"
 
 
-def test_l04_is_not_registered_in_stdio() -> None:
-    """L04 only applies to HTTP, so F21 ships no stdio implementation."""
-    assert get_fault("L04") is None
+def test_l04_is_applicable_only_over_http() -> None:
+    """L04 needs HTTP; a stdio scenario (or none) rules it out (S6, S7.4)."""
+    assert not HttpStatus().applicable(_ctx())
+    assert not HttpStatus().applicable(_ctx({"transport": "stdio"}))
+    assert not HttpStatus().applicable(_ctx(None))
+    assert HttpStatus().applicable(_ctx({"transport": "http"}))
+
+
+@pytest.mark.asyncio
+async def test_l04_answers_with_the_status_and_forwards_nothing() -> None:
+    """L04 stops a ``tools/call`` and asks for the configured HTTP status."""
+    engine = _engine("L04")
+    ctx = _ctx({"transport": "http"})
+    assert await _call_through(engine, ctx) == [ReplyWithStatus(503)]
+
+
+@pytest.mark.asyncio
+async def test_l04_status_comes_from_params() -> None:
+    """The ``status`` parameter overrides the S6 default of 503."""
+    engine = _engine("L04", params={"status": 429})
+    ctx = _ctx({"transport": "http"})
+    assert await _call_through(engine, ctx) == [ReplyWithStatus(429)]
+
+
+@pytest.mark.asyncio
+async def test_l04_does_not_fire_on_stdio() -> None:
+    """On stdio L04 is not applicable, so the call is forwarded unchanged."""
+    engine = _engine("L04")
+    call = _call(1, "get_forecast", {"city": "Paris"})
+    assert await new_pipeline(fault=engine).on_c2s(call, _ctx()) == [Forward(call)]
 
 
 def test_defaults_match_s6() -> None:
@@ -207,6 +244,7 @@ def test_defaults_match_s6() -> None:
     assert L01_HOLD_MS == 30000
     assert (L02_CODE, L02_MESSAGE) == (-32603, "Internal error")
     assert L03_TEXT == "Error: upstream service unavailable (HTTP 503). Please retry later."
+    assert L04_STATUS == 503
     assert L05_RETRY_AFTER_S == 2
     assert RENAME_SUFFIX == "_v2"
 

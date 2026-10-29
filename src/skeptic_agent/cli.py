@@ -18,6 +18,9 @@ faults_app = typer.Typer(no_args_is_help=True)
 app.add_typer(proxy_app, name="proxy")
 app.add_typer(faults_app, name="faults")
 
+DEFAULT_LISTEN: str = "127.0.0.1:8765"
+"""The default ``--listen`` of ``skeptic proxy http`` (S2)."""
+
 
 @app.callback()
 def main(
@@ -122,6 +125,9 @@ def proxy_stdio(
 @proxy_app.command("http")
 def proxy_http(
     upstream: Annotated[str, typer.Option("--upstream", help="Upstream MCP endpoint URL.")],
+    listen: Annotated[
+        str, typer.Option("--listen", help="Listen address as HOST:PORT.")
+    ] = DEFAULT_LISTEN,
     config: Annotated[str | None, typer.Option("--config", help="Config file path.")] = None,
     profile: Annotated[
         str | None, typer.Option("--profile", help="Fault profile id or path.")
@@ -138,13 +144,12 @@ def proxy_http(
     ] = None,
     scenario: Annotated[str | None, typer.Option("--scenario", help="Scenario file.")] = None,
     state_file: Annotated[str | None, typer.Option("--state-file", help="State file path.")] = None,
-    host: Annotated[str, typer.Option("--host", help="Listen address.")] = "127.0.0.1",
-    port: Annotated[int, typer.Option("--port", help="Listen port.")] = 8000,
 ) -> None:
-    """Run the streamable HTTP proxy in front of an upstream MCP endpoint (S4.1).
+    """Run the streamable HTTP proxy in front of an upstream MCP endpoint (S2, S4.1).
 
     Args:
         upstream: The upstream MCP endpoint URL.
+        listen: The listen address as ``HOST:PORT``.
         config: Config file path.
         profile: Fault profile id or path.
         guards: Guard list or preset name.
@@ -153,10 +158,12 @@ def proxy_http(
         episode_id: Episode identifier.
         scenario: Scenario file.
         state_file: State file path.
-        host: Listen address.
-        port: Listen port.
+
+    Raises:
+        typer.Exit: With code 2 when ``listen`` is not ``HOST:PORT``.
     """
     del config, profile, guards, record, scenario, state_file
+    host, port = parse_listen(listen)
     run_http_proxy(
         upstream,
         host=host,
@@ -164,6 +171,30 @@ def proxy_http(
         episode_id=episode_id or "http",
         seed=seed,
     )
+
+
+def parse_listen(value: str) -> tuple[str, int]:
+    """Split a ``HOST:PORT`` option value.
+
+    Args:
+        value: The ``--listen`` value.
+
+    Returns:
+        The host and the port.
+
+    Raises:
+        typer.BadParameter: When the value has no port or no host.
+    """
+    host, separator, port = value.rpartition(":")
+    if not separator or not host:
+        raise typer.BadParameter(f"expected HOST:PORT, got {value!r}")
+    try:
+        number = int(port)
+    except ValueError:
+        raise typer.BadParameter(f"expected a numeric port, got {port!r}") from None
+    if not 0 < number < 65536:
+        raise typer.BadParameter(f"port out of range: {number}")
+    return host, number
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ answers the JSON-RPC message itself from a hook. ``L06`` and ``L07`` also read
 the tool definitions of the scenario, so they keep no state either.
 """
 
+from collections.abc import Mapping
 from typing import Any
 
 from skeptic_agent.faults.base import Fault, FaultSpec
@@ -12,7 +13,7 @@ from skeptic_agent.faults.registry import register
 from skeptic_agent.faults.schedule import resolve_targets, tool_matches
 from skeptic_agent.jsonrpc import ErrorObject, ErrorResponse, Message, Request, Response
 from skeptic_agent.proxy.context import EpisodeContext
-from skeptic_agent.proxy.pipeline import Hold, ReplyToClient
+from skeptic_agent.proxy.pipeline import Hold, ReplyToClient, ReplyWithStatus
 
 L01_HOLD_MS = 30000
 """The default L01 hold (S6)."""
@@ -25,6 +26,9 @@ L02_MESSAGE = "Internal error"
 
 L03_TEXT = "Error: upstream service unavailable (HTTP 503). Please retry later."
 """The L03 tool-error text (S6)."""
+
+L04_STATUS = 503
+"""The default L04 HTTP status (S6)."""
 
 L05_RETRY_AFTER_S = 2
 """The default L05 ``retry_after_s`` (S6)."""
@@ -321,6 +325,47 @@ class ToolError(Fault):
 
 
 @register
+class HttpStatus(Fault):
+    """L04: answer the HTTP request with a status and an empty body (S6).
+
+    The fault never sees a list or a response, only the client's request on its
+    way to the upstream. The proxy stops there and never forwards the call; the
+    stdio proxy has no status to write, so it drops the action as S6 says L04 is
+    not applicable there.
+    """
+
+    id = "L04"
+    cls = "loud"
+    hooks = ("pre_call",)
+
+    def applicable(self, ctx: EpisodeContext) -> bool:
+        """Report whether the episode runs over HTTP.
+
+        Args:
+            ctx: The episode context.
+
+        Returns:
+            ``True`` when the scenario records the HTTP transport (S7.4).
+        """
+        return _transport(ctx.scenario) == "http"
+
+    def apply(self, payload: Any, spec: FaultSpec, ctx: EpisodeContext) -> Any:
+        """Stop the call and answer with the configured status.
+
+        Args:
+            payload: The ``tools/call`` request.
+            spec: The scheduled fault.
+            ctx: The episode context.
+
+        Returns:
+            A ``ReplyWithStatus``, or ``payload`` when the fault cannot apply.
+        """
+        if not isinstance(payload, Request) or not self.applicable(ctx):
+            return payload
+        return ReplyWithStatus(int(_params(spec).get("status", L04_STATUS)))
+
+
+@register
 class RateLimited(Fault):
     """L05: return an ``isError`` rate-limit result (S6)."""
 
@@ -558,4 +603,19 @@ def _field(value: object, name: str) -> Any:
     Returns:
         The value, or `None`.
     """
-    return value.get(name) if isinstance(value, dict) else None
+    return value.get(name) if isinstance(value, Mapping) else None
+
+
+def _transport(scenario: object) -> str:
+    """Return the transport a scenario runs on, from a mapping or a model.
+
+    Args:
+        scenario: The scenario, or ``None`` when none is loaded.
+
+    Returns:
+        The transport, ``"stdio"`` when the scenario does not record one.
+    """
+    transport = _field(scenario, "transport")
+    if transport is None:
+        transport = getattr(scenario, "transport", None)
+    return str(transport or "stdio").lower()

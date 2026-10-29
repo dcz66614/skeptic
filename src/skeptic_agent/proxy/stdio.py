@@ -147,6 +147,8 @@ class StdioProxy:
             elif isinstance(action, ReplyToClient):
                 client_out.write(dump(action.msg))
                 await client_out.drain()
+            # A ReplyWithStatus (L04) has no stdio form; S6 marks L04 not
+            # applicable here, and the fault itself refuses a non-HTTP episode.
 
     async def _wait(self, action: Hold) -> Action:
         """Sleep out a held action, or stop early when its request is cancelled.

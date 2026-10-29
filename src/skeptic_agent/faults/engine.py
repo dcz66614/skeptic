@@ -31,9 +31,10 @@ from skeptic_agent.proxy.pipeline import (
     Forward,
     Hold,
     ReplyToClient,
+    ReplyWithStatus,
 )
 
-FaultAction = Hold | ReplyToClient
+FaultAction = Hold | ReplyToClient | ReplyWithStatus
 """An action a fault returns instead of a rewritten message."""
 
 PROFILES_DIR = Path(__file__).resolve().parents[1] / "data" / "profiles"
@@ -196,7 +197,7 @@ class FaultEngine(FaultStage):
             if not fired:
                 continue
             rewritten = fault.apply(current, planned.spec, ctx)
-            if isinstance(rewritten, (Hold, ReplyToClient)):
+            if isinstance(rewritten, (Hold, ReplyToClient, ReplyWithStatus)):
                 return current, rewritten
             if isinstance(rewritten, Message):
                 if rewritten is not current:

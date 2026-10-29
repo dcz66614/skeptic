@@ -25,6 +25,7 @@ from mcp import Client, types
 from skeptic_agent.faults.base import FaultSpec
 from skeptic_agent.faults.engine import FaultEngine
 from skeptic_agent.faults.loud import L02_CODE, L02_MESSAGE, L03_TEXT
+from skeptic_agent.faults.profiles import FaultEntry, statically_applicable
 from skeptic_agent.proxy.http import MCP_PATH, HttpProxy
 from skeptic_agent.proxy.pipeline import Pipeline, new_pipeline
 
@@ -152,7 +153,7 @@ class _Proxy:
             upstream: The upstream MCP endpoint.
             pipeline: The pipeline to serve, or ``None`` for the default one.
         """
-        self.proxy = HttpProxy(upstream, pipeline)
+        self.proxy = HttpProxy(upstream, pipeline, scenario={**SCENARIO, "transport": "http"})
         self.port = _free_port()
         self._thread: threading.Thread | None = None
         self._server: uvicorn.Server | None = None
@@ -202,11 +203,12 @@ class _Proxy:
             self._thread.join(timeout=TIMEOUT_SECONDS)
 
 
-def _engine(fault_id: str, **params: object) -> FaultEngine:
+def _engine(fault_id: str, scenario: dict[str, object] = SCENARIO, **params: object) -> FaultEngine:
     """Build an engine with one permanent fault on the echo tool.
 
     Args:
         fault_id: The S6 fault id.
+        scenario: The scenario the episode runs against.
         params: The fault parameters.
 
     Returns:
@@ -220,12 +222,15 @@ def _engine(fault_id: str, **params: object) -> FaultEngine:
         persistence="permanent",
         params=dict(params) or None,
     )
-    return FaultEngine([spec], scenario=SCENARIO)
+    return FaultEngine([spec], scenario=scenario)
 
 
 @contextlib.contextmanager
 def _served(fault_id: str | None = None, **params: object) -> Iterator[_Proxy]:
     """Serve the echo fixture behind a proxy.
+
+    Every episode runs over HTTP, so the scenario says so: L04 is applicable
+    only then (S7.4).
 
     Args:
         fault_id: A fault to schedule on ``echo``, or ``None`` for a clean run.
@@ -234,7 +239,11 @@ def _served(fault_id: str | None = None, **params: object) -> Iterator[_Proxy]:
     Yields:
         The serving proxy.
     """
-    pipeline = new_pipeline(fault=_engine(fault_id, **params)) if fault_id else None
+    pipeline = (
+        new_pipeline(fault=_engine(fault_id, {**SCENARIO, "transport": "http"}, **params))
+        if fault_id
+        else None
+    )
     with _EchoServer() as upstream, _Proxy(upstream.url, pipeline) as proxy:
         yield proxy
 
@@ -376,6 +385,58 @@ async def test_l03_rewrites_an_event() -> None:
             assert reply.status_code == 200
             assert L03_TEXT in reply.text
             assert '"isError":true' in reply.text
+
+
+@pytest.mark.asyncio
+async def test_l04_needs_an_http_scenario() -> None:
+    """A scenario without ``transport: http`` is statically ruled out (S7.4)."""
+    entry = FaultEntry(
+        id="L04",
+        target="$primary",
+        call_index="all",
+        probability=1.0,
+        persistence="transient",
+    )
+    assert not statically_applicable(entry, SCENARIO)
+    assert statically_applicable(entry, {**SCENARIO, "transport": "http"})
+
+
+@pytest.mark.asyncio
+async def test_l04_answers_503_and_never_reaches_the_upstream() -> None:
+    """L04 answers the HTTP call with 503 and an empty body (S6, P14)."""
+    with _served("L04") as proxy:
+        async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
+            init = await _initialize(client, proxy.url)
+            started = time.monotonic()
+            reply = await client.post(
+                proxy.url,
+                headers=init,
+                content=(
+                    b'{"jsonrpc":"2.0","id":11,"method":"tools/call",'
+                    b'"params":{"name":"echo","arguments":{"text":"x"}}}'
+                ),
+            )
+            assert reply.status_code == 503
+            assert reply.content == b""
+            assert time.monotonic() - started < 5
+
+
+@pytest.mark.asyncio
+async def test_l04_status_comes_from_the_params() -> None:
+    """The ``status`` parameter is the one the client sees."""
+    with _served("L04", status=418) as proxy:
+        async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
+            headers = await _initialize(client, proxy.url)
+            reply = await client.post(
+                proxy.url,
+                headers=headers,
+                content=(
+                    b'{"jsonrpc":"2.0","id":12,"method":"tools/call",'
+                    b'"params":{"name":"echo","arguments":{"text":"x"}}}'
+                ),
+            )
+            assert reply.status_code == 418
+            assert reply.content == b""
 
 
 @pytest.mark.asyncio

@@ -852,7 +852,7 @@ What was built:
 - JSON responses are processed as one s2c message; `text/event-stream` responses are processed event by event. `sse.py` decodes events across chunk boundaries, keeps `id`/`event`, and `encode_event` writes them back; the stream is a `StreamingResponse`, so a long upstream stream is never buffered.
 - Hop-by-hop headers are stripped both ways (`connection`, `keep-alive`, `proxy-authenticate`, `proxy-authorization`, `proxy-connection`, `te`, `trailer`, `trailers`, `transfer-encoding`, `upgrade`). `Authorization` and `Mcp-*` are kept; `Host`/`Content-Length` are dropped on the request because httpx sets them, and `Content-Length` is dropped on the response because the body is re-framed.
 - Era detection reuses `detect_era` with the request headers, falling back to the first message body (S4.2).
-- L04 needs no code: an unreachable upstream is answered `502`, and an upstream HTTP status (503 included) is relayed as is. `tests/unit/test_http.py::test_upstream_failure_is_a_bad_gateway` covers it; an L04-shaped upstream 503 is the same path.
+- ~~L04 needs no code: an unreachable upstream is answered `502`, and an upstream HTTP status (503 included) is relayed as is.~~ Superseded by P14fix: an L04 fault now answers the call itself with the configured status. An unreachable upstream still answers `502`; that is a different failure, not L04.
 - L01 still holds via `Hold`; cancellation is confirmed by a later `notifications/cancelled`, as on stdio, because the held POST cannot receive another request on the same exchange.
 
 Spec ambiguities and how they were resolved:
@@ -879,5 +879,46 @@ EXIT=0
 ===== uv run pytest -q --cov=skeptic_agent =====
 447 passed in 67.85s
 Required test coverage of 85.0% reached. Total coverage: 96.04%
+EXIT=0
+```
+
+## P14fix L04 hook, S2 CLI flags, proxy-* stripping (2026-10-29)
+
+Base `16e39bb`, branch `codex`. Three review findings against P14 are fixed. Files touched: `src/skeptic_agent/faults/loud.py`, `src/skeptic_agent/proxy/pipeline.py`, `src/skeptic_agent/proxy/http.py`, `src/skeptic_agent/proxy/stdio.py`, `src/skeptic_agent/faults/engine.py`, `src/skeptic_agent/cli.py`; tests `tests/unit/test_loud.py`, `tests/unit/test_http.py`, new `tests/unit/test_cli.py`, `tests/integration/test_http_proxy.py`.
+
+What was built:
+
+- **L04 hook.** `loud.HttpStatus` (`id="L04"`, `hooks=("pre_call",)`, default `L04_STATUS = 503`) is registered. It sits at c2s step 4 of S4.4, so it runs after recording and the G06/G07 guards and before the forward. `apply` returns a new `ReplyWithStatus(status)` pipeline action; `_collect` in `proxy/http.py` turns it into `HttpResponse(status_code=status)` with an empty body and never calls `_send`, so the call does not reach the upstream. `FaultEngine._apply` treats it like `Hold`/`ReplyToClient`: it ends the chain for that message.
+- **Static applicability.** `HttpStatus.applicable` is true only when the context's scenario records `transport: http`, the same rule `profiles.statically_applicable` already applies at expansion time (S7.4). `HttpProxy` now takes an optional `scenario` and stores it on `EpisodeContext`; without that the fault could never see the transport. `run_http_proxy` passes it through.
+- **stdio.** L04 stays registered but `applicable` is false on a stdio episode, so the call is forwarded unchanged. `stdio._apply_c2s` has an explicit "no stdio form" branch that ignores `ReplyWithStatus` rather than silently swallowing the message, matching S6 ("stdio ä¸‹è§†ä¸ºä¸é€‚ç”¨").
+- **CLI.** `skeptic proxy http` now takes `--upstream URL` (required, as before) and `--listen HOST:PORT` with default `127.0.0.1:8765` (S2). `--host`/`--port` are gone. `cli.parse_listen` splits at the last colon (so `[::1]:9000` works) and raises `typer.BadParameter` â€” exit code 2 â€” for a missing host or port, a non-numeric port, or one outside 1â€“65535.
+- **Header stripping.** `proxy/http.py` gained `_is_hop_by_hop`: a header is dropped when it is one of the listed hop-by-hop names or when its lower-cased name starts with `proxy-`. Both `forwarded_request_headers` and `forwarded_response_headers` use it, so `Proxy-Authorization`-style names, `PROXY-Connection` and any other `proxy-*` header leave both directions; `Authorization`, `Mcp-*` and other headers are still relayed.
+
+Spec ambiguities and how they were resolved:
+
+- S6 says L04 is "HTTP transport only"; the plan does not say where the transport is recorded. The existing `profiles.statically_applicable` already reads `scenario.transport == "http"`, so the runtime check reads the same field, and the HTTP proxy sets its scenario as HTTP by construction. A stdio episode with no scenario therefore never fires L04.
+- S4.4 places L04 on the `tools/call` c2s path, so L04 fires for `tools/call` only. `initialize`, `tools/list` and notifications are forwarded normally; a fault that also failed the handshake would make the episode unrunnable rather than test "retry".
+- S6 fixes L04's default persistence at `transient` (one retry recovers), so `loud-core` still leaves it out; S7.2 requires that ("L04 åªåœ¨ HTTP åœºæ™¯å¦è¡Œå¯ç”¨").
+- The status body is empty, per S6 ("ç©ºå“åº”ä½“"). The old code path that relayed an upstream 503 with its error body is unchanged for real upstream failures; `502` for an unreachable upstream remains a separate code path.
+- `--listen` rejects port 0 even though it is technically valid, because a proxy told to listen on a random port cannot be reached by the wrapped client.
+
+Tests: `test_loud.py` now asserts L04 is registered and that stdio forwards it unchanged; `test_http.py` covers the 503/empty-body path and the `proxy-*` stripping in both directions; `test_cli.py` covers the default listen, an override, the removed flags, and the bad-value exit code; `test_http_proxy.py` adds the end-to-end 503 acceptance test and an L04-with-status-418 case against the real echo fixture.
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+66 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 22 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+467 passed in 62.08s (0:01:02)
+Required test coverage of 85.0% reached. Total coverage: 96.17%
 EXIT=0
 ```

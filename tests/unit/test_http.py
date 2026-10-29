@@ -19,6 +19,8 @@ from skeptic_agent.proxy.http import (
     _is_json,
     _is_sse,
     _text,
+    forwarded_request_headers,
+    forwarded_response_headers,
     run_http_proxy,
 )
 from skeptic_agent.proxy.pipeline import (
@@ -30,6 +32,7 @@ from skeptic_agent.proxy.pipeline import (
     Pipeline,
     RecorderStage,
     ReplyToClient,
+    ReplyWithStatus,
     SendToServer,
 )
 
@@ -280,6 +283,46 @@ async def test_reply_to_client_skips_the_upstream() -> None:
     assert transport.requests == []
     assert b"answered" in await _body(reply)
     await proxy.client.aclose()  # type: ignore[union-attr]
+
+
+@pytest.mark.asyncio
+async def test_status_reply_skips_the_upstream() -> None:
+    """A ``ReplyWithStatus`` (L04) answers with the bare status (S6)."""
+    transport = _ScriptedTransport()
+    proxy = _proxy(_SendStage(ReplyWithStatus(503)), transport=transport)
+    reply = await proxy.handle(_request("POST", b'{"jsonrpc":"2.0","id":1,"method":"tools/list"}'))
+    assert reply.status_code == 503
+    assert await _body(reply) == b""
+    assert transport.requests == []
+    await proxy.client.aclose()  # type: ignore[union-attr]
+
+
+def test_hop_by_hop_and_proxy_headers_are_dropped() -> None:
+    """``proxy-*`` and hop-by-hop headers leave both directions (S4.1)."""
+    headers = {
+        "Authorization": "Bearer t",
+        "Mcp-Session-Id": "s",
+        "Proxy-Authorization": "x",
+        "PROXY-Connection": "close",
+        "Proxy-Skeptic-Trace": "1",
+        "Connection": "keep-alive",
+        "Transfer-Encoding": "chunked",
+        "Upgrade": "h2c",
+        "Content-Length": "0",
+        "Content-Type": "application/json",
+    }
+    request_headers = forwarded_request_headers(headers)
+    assert request_headers == {
+        "Authorization": "Bearer t",
+        "Mcp-Session-Id": "s",
+        "Content-Type": "application/json",
+    }
+    response_headers = forwarded_response_headers(headers)
+    assert response_headers == {
+        "Authorization": "Bearer t",
+        "Mcp-Session-Id": "s",
+        "Content-Type": "application/json",
+    }
 
 
 @pytest.mark.asyncio

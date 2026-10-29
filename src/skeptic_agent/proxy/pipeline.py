@@ -54,6 +54,20 @@ class ReplyToClient:
 
 
 @dataclass(frozen=True)
+class ReplyWithStatus:
+    """Answer the client with a bare HTTP status instead of a message.
+
+    Only the HTTP transport can send it (L04); the stdio proxy has no status
+    line to write, so it ignores the action (S6).
+
+    Attributes:
+        status: The HTTP status code.
+    """
+
+    status: int
+
+
+@dataclass(frozen=True)
 class SendToServer:
     """Send a message to the server.
 
@@ -82,11 +96,11 @@ class Hold:
     """
 
     ms: int
-    then: Forward | ReplyToClient | SendToServer | Drop
+    then: Forward | ReplyToClient | ReplyWithStatus | SendToServer | Drop
     unless_cancelled: int | str | None = None
 
 
-Action = Forward | ReplyToClient | SendToServer | Drop | Hold
+Action = Forward | ReplyToClient | ReplyWithStatus | SendToServer | Drop | Hold
 """One thing the pipeline can do with a message."""
 
 CANCELLED: str = "notifications/cancelled"

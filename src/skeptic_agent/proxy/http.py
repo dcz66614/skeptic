@@ -33,6 +33,7 @@ from skeptic_agent.proxy.pipeline import (
     Hold,
     Pipeline,
     ReplyToClient,
+    ReplyWithStatus,
     SendToServer,
     cancelled_id,
     new_pipeline,
@@ -64,6 +65,23 @@ HOP_BY_HOP_HEADERS: frozenset[str] = frozenset(
 )
 """The hop-by-hop headers that are never relayed in either direction (S4.1)."""
 
+PROXY_HEADER_PREFIX: str = "proxy-"
+"""Every header whose name starts with this is dropped too (S4.1)."""
+
+
+def _is_hop_by_hop(name: str) -> bool:
+    """Report whether a header is hop-by-hop or is a ``proxy-*`` header (S4.1).
+
+    Args:
+        name: A header name, in any case.
+
+    Returns:
+        ``True`` when the header is not relayed.
+    """
+    lowered = name.lower()
+    return lowered in HOP_BY_HOP_HEADERS or lowered.startswith(PROXY_HEADER_PREFIX)
+
+
 REQUEST_HEADERS_TO_DROP: frozenset[str] = HOP_BY_HOP_HEADERS | {"host", "content-length"}
 """Request headers rebuilt for the upstream: hop-by-hop ones and the framing ones."""
 
@@ -82,7 +100,7 @@ def forwarded_request_headers(headers: Mapping[str, str]) -> dict[str, str]:
 
     ``Authorization`` and the ``Mcp-*`` headers are kept (S4.1). ``Host`` and
     ``Content-Length`` describe the upstream connection and body, so httpx sets
-    them itself.
+    them itself; ``proxy-*`` headers are dropped with the hop-by-hop ones.
 
     Args:
         headers: The client request headers.
@@ -93,14 +111,15 @@ def forwarded_request_headers(headers: Mapping[str, str]) -> dict[str, str]:
     return {
         name: value
         for name, value in headers.items()
-        if name.lower() not in REQUEST_HEADERS_TO_DROP
+        if name.lower() not in REQUEST_HEADERS_TO_DROP and not _is_hop_by_hop(name)
     }
 
 
 def forwarded_response_headers(headers: Mapping[str, str]) -> dict[str, str]:
     """Drop the hop-by-hop and framing headers from an upstream response.
 
-    The body is re-framed for the client, so ``Content-Length`` is dropped too.
+    The body is re-framed for the client, so ``Content-Length`` is dropped too,
+    as is every ``proxy-*`` header.
 
     Args:
         headers: The upstream response headers.
@@ -111,7 +130,7 @@ def forwarded_response_headers(headers: Mapping[str, str]) -> dict[str, str]:
     return {
         name: value
         for name, value in headers.items()
-        if name.lower() not in HOP_BY_HOP_HEADERS and name.lower() != "content-length"
+        if not _is_hop_by_hop(name) and name.lower() != "content-length"
     }
 
 
@@ -180,10 +199,12 @@ class _Reply:
     Attributes:
         message: The message to send the client itself, or ``None``.
         upstream: The upstream response to relay, or ``None``.
+        status: The bare HTTP status to answer with (L04), or ``None``.
     """
 
     message: Message | None = None
     upstream: httpx.Response | None = None
+    status: int | None = None
 
 
 class HttpProxy:
@@ -202,6 +223,7 @@ class HttpProxy:
         *,
         episode_id: str = "http",
         seed: int = 0,
+        scenario: Any = None,
     ) -> None:
         """Prepare a proxy for one episode.
 
@@ -210,10 +232,13 @@ class HttpProxy:
             pipeline: The pipeline to use, or ``None`` for one with no-op stages.
             episode_id: The episode identifier.
             seed: The episode seed.
+            scenario: The scenario the episode runs against. Its ``transport``
+                is always ``http`` here, which is what makes L04 applicable
+                (S7.4).
         """
         self.upstream = upstream
         self.pipeline = pipeline if pipeline is not None else new_pipeline()
-        self.ctx = EpisodeContext(episode_id=episode_id, seed=seed, era=UNKNOWN)
+        self.ctx = EpisodeContext(episode_id=episode_id, seed=seed, era=UNKNOWN, scenario=scenario)
         self.client: httpx.AsyncClient | None = None
         self._cancelled: dict[int | str, asyncio.Event] = {}
         """Requests the client cancelled while their reply was held (L01)."""
@@ -494,6 +519,8 @@ class HttpProxy:
             The client response.
         """
         result = await self._collect(exchange, actions)
+        if result.status is not None:
+            return HttpResponse(status_code=result.status)
         if result.message is not None:
             return HttpResponse(
                 content=_text(result.message), status_code=200, media_type=JSON_CONTENT_TYPE
@@ -506,33 +533,44 @@ class HttpProxy:
         """Run the actions until the exchange's reply is known.
 
         The upstream sends at most one message per exchange, so a second one is
-        an internal exchange and is sent upstream in the background.
+        an internal exchange and is sent upstream in the background. A
+        ``ReplyWithStatus`` (L04) answers the request without it ever reaching
+        the upstream.
 
         Args:
             exchange: The client request the actions answer.
             actions: The pipeline actions.
 
         Returns:
-            The message to send or the upstream response to relay.
+            The message to send, the upstream response to relay, or the bare
+            status.
         """
         message: Message | None = None
         upstream: httpx.Response | None = None
+        status: int | None = None
         for action in actions:
             if isinstance(action, Hold):
                 action = await self._wait(action)
-            if isinstance(action, Forward):
-                if message is None and upstream is None:
+            if isinstance(action, ReplyWithStatus) and status is None:
+                status = action.status
+            elif isinstance(action, Forward):
+                if message is None and upstream is None and status is None:
                     upstream = await self._send(exchange)
             elif isinstance(action, SendToServer):
-                if message is None and upstream is None:
+                if message is None and upstream is None and status is None:
                     upstream = await self._send(exchange, action.msg)
                 else:
                     self._spawn(exchange, action.msg)
-            elif isinstance(action, ReplyToClient) and message is None and upstream is None:
+            elif (
+                isinstance(action, ReplyToClient)
+                and message is None
+                and upstream is None
+                and status is None
+            ):
                 message = action.msg
             elif isinstance(action, Drop):
                 continue
-        return _Reply(message=message, upstream=upstream)
+        return _Reply(message=message, upstream=upstream, status=status)
 
     async def _wait(self, action: Hold) -> Action:
         """Sleep out a held action, or stop early when its request is cancelled.
@@ -654,6 +692,7 @@ def run_http_proxy(
     pipeline: Pipeline | None = None,
     episode_id: str = "http",
     seed: int = 0,
+    scenario: Any = None,
 ) -> None:
     """Serve the HTTP proxy until the process is stopped (S2).
 
@@ -664,5 +703,8 @@ def run_http_proxy(
         pipeline: The pipeline to use, or ``None`` for one with no-op stages.
         episode_id: The episode identifier.
         seed: The episode seed.
+        scenario: The scenario the episode runs against.
     """
-    HttpProxy(upstream, pipeline, episode_id=episode_id, seed=seed).run(host=host, port=port)
+    HttpProxy(upstream, pipeline, episode_id=episode_id, seed=seed, scenario=scenario).run(
+        host=host, port=port
+    )
