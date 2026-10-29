@@ -1252,3 +1252,7 @@ concurrency http={'sessions': 50, 'calls': 5000, 'errors': 0, 'mismatches': 0}
 acceptance p50<5.0ms p99<30.0ms: PASS
 EXIT=0
 ```
+
+## P17 merge (2026-10-29)
+
+- codex a433d51 ff-merged to main. P17 eadf482 + P17fix a433d51 (5,000 calls per transport on persistent proxies). Measured on this Windows PC: stdio p50 0.185 ms / p99 0.563 ms; HTTP p50 2.042 ms / p99 4.111 ms (PASS). Self-review PASS (536 passed); agy detailed review PASS.
