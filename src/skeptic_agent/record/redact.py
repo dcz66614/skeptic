@@ -1,8 +1,10 @@
 """Redaction of secrets before a message is written to a cassette (1.7, S5).
 
-Recording is redacted by default: the ``Authorization`` and ``Cookie`` request
-headers, and the value of every key whose name matches a secret-looking pattern,
-are replaced by ``"***"``. The same rule applies to ``raw`` and ``final``.
+Recording is redacted by default: the ``Authorization``, ``Cookie`` and
+``Set-Cookie`` headers, and the value under every key whose name matches a
+secret-looking pattern, are replaced by ``"***"``. One name test decides both,
+names are matched case-insensitively at every depth, and the rule applies to
+``raw`` and ``final`` alike.
 """
 
 import re
@@ -11,51 +13,39 @@ from typing import Any
 REDACTED: str = "***"
 """What every secret value is replaced with (1.7)."""
 
-SECRET_HEADERS: frozenset[str] = frozenset({"authorization", "cookie"})
-"""The request headers that are always redacted, compared lower-cased (1.7)."""
+SECRET_HEADERS: frozenset[str] = frozenset({"authorization", "cookie", "set-cookie"})
+"""The headers that are always redacted, compared lower-cased (1.7)."""
 
 SECRET_KEY_PATTERN: re.Pattern[str] = re.compile(r"(?i)(api[_-]?key|token|secret|password)")
 """A key name that holds a secret; 1.7 matches this anywhere in the name."""
 
-HEADERS_KEY: str = "headers"
-"""The key whose object value is a whole header table, not a payload (1.7)."""
-
 
 def _secret_key(name: str) -> bool:
-    """Report whether a key name marks the value under it as a secret.
+    """Report whether a key or header name marks the value under it as a secret.
+
+    This is the one test 1.7 uses everywhere: a header table and an ordinary
+    object are treated the same, so an ``Authorization`` header, an
+    ``X-Api-Key`` header, an ``arguments.Authorization`` member and a nested
+    ``auth.password`` all redact. Names are compared lower-cased.
 
     Args:
-        name: The JSON object key.
+        name: The JSON object key or the header name.
 
     Returns:
-        ``True`` when 1.7's pattern matches anywhere in the name.
+        ``True`` when the name is a secret header or 1.7's pattern matches
+        anywhere in it.
     """
-    return SECRET_KEY_PATTERN.search(name) is not None
-
-
-def _redact_headers(headers: dict[Any, Any]) -> dict[Any, Any]:
-    """Replace the secret header values of one header table.
-
-    Args:
-        headers: A header table, name to value.
-
-    Returns:
-        A copy whose ``Authorization`` and ``Cookie`` values are ``"***"``.
-    """
-    return {
-        name: REDACTED
-        if isinstance(name, str) and name.lower() in SECRET_HEADERS
-        else _redact(value)
-        for name, value in headers.items()
-    }
+    lowered = name.lower()
+    return lowered in SECRET_HEADERS or SECRET_KEY_PATTERN.search(lowered) is not None
 
 
 def _redact(value: Any) -> Any:
     """Redact one JSON value, recursing through objects and arrays.
 
-    A key that matches the secret pattern loses its whole value; the object
-    under ``headers`` is redacted as a header table. Keys are never renamed and
-    the walk never mutates its input.
+    A key that matches the secret test loses its whole value; every other key
+    is kept and its value walked. The object under a ``headers`` key is walked
+    the same way, so its header names hit the same test. Keys are never renamed
+    and the walk never mutates its input.
 
     Args:
         value: Any decoded JSON value.
@@ -68,8 +58,6 @@ def _redact(value: Any) -> Any:
         for key, item in value.items():
             if isinstance(key, str) and _secret_key(key):
                 redacted[key] = REDACTED
-            elif key == HEADERS_KEY and isinstance(item, dict):
-                redacted[key] = _redact_headers(item)
             else:
                 redacted[key] = _redact(item)
         return redacted

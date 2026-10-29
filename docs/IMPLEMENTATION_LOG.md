@@ -967,3 +967,41 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 96.43%
 EXIT=0
 ```
+
+## P15fix Case-insensitive secret redaction at every depth (2026-10-29)
+
+Base `9c9ee7c`, branch `codex`. Fixes the redaction gaps found in the P15 review. Files touched: `src/skeptic_agent/record/redact.py` and `tests/unit/test_cassette.py` (4 new tests, 37 in the file). `cassette.py` is unchanged; it already sends every `raw`/`final` value through `redact()`.
+
+What was built:
+
+- **One name test.** `_secret_key(name)` is now the only check 1.7 uses: the lower-cased name is a secret header (`authorization`, `cookie`, `set-cookie`) or matches `(?i)(api[_-]?key|token|secret|password)` anywhere. The old split between "header tables" (`_redact_headers`, which only knew `authorization`/`cookie`) and ordinary objects is gone, so a header table needs no special case.
+- **`Set-Cookie` added.** It joins `SECRET_HEADERS`, which also makes `set-cookie`-like names such as `Set-Cookie` and `SET-COOKIE` redact.
+- **Every dict key at every depth.** `_redact` applies `_secret_key` to any string key it meets, so `X-Api-Key`, `X-Auth-Token`, `arguments.Authorization`, a nested `auth.password`, `_meta` members and objects inside lists all redact. Values under a secret name become `"***"` whatever their type (string, object, list, number); everything else is walked.
+- **The `headers` container key is matched case-insensitively.** Because a header table is walked like any other object, `Headers`, `HEADERS` and `headers` all redact their `Authorization`/`Cookie`/`Set-Cookie`/`api_key` members. `HEADERS_KEY` was removed as it no longer decides anything.
+- Kept S5/1.7 behaviour otherwise: keys are never renamed, the walk copies and never mutates its input, scalars and plain list values pass through, `REDACTED` is still `"***"`.
+
+Spec ambiguities and how they were resolved:
+
+- 1.7 lists `Authorization` and `Cookie` as headers and gives a pattern for keys. P15fix reads the two as one rule ("one case-insensitive secret-name test"), so the pattern also applies to header names; that is what makes `X-Api-Key` and `X-Auth-Token` redact. `Set-Cookie` is added to the fixed header list because it carries the same session secret as `Cookie` and appears in s2c payloads.
+- 1.7 does not say whether the `headers` container key is case-sensitive. It is matched case-insensitively like every other name, so a server that writes `Headers` is redacted too.
+- A key that itself matches the pattern has its whole value replaced, even when the value is an object or a list. 1.7 says "the values under keys whose name matches", so the subtree is dropped as a unit instead of being partially walked.
+- The header list is still a fixed set, not "the pattern only", so `Authorization` (which contains no pattern word) is caught; matching runs on the lower-cased name, so `(?i)` in the compiled pattern stays redundant but harmless.
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+71 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 25 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+504 passed in 60.88s (0:01:00)
+Required test coverage of 85.0% reached. Total coverage: 96.42%
+EXIT=0
+```

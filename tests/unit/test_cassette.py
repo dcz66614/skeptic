@@ -444,6 +444,63 @@ def test_redact_headers_and_secret_keys() -> None:
     assert redacted["arguments"]["city"] == "Paris"
 
 
+def test_redact_secret_header_names_beyond_authorization() -> None:
+    """1.7's header rule is one case-insensitive name test: X-Api-Key and friends too."""
+    headers = {
+        "X-Api-Key": "sk-1",
+        "x-auth-token": "tok",
+        "Set-Cookie": "session=abc; HttpOnly",
+        "SET-COOKIE": "other=1",
+        "X-Request-Id": "r-1",
+    }
+    redacted = redact({"headers": headers})
+    assert redacted["headers"]["X-Api-Key"] == REDACTED
+    assert redacted["headers"]["x-auth-token"] == REDACTED
+    assert redacted["headers"]["Set-Cookie"] == REDACTED
+    assert redacted["headers"]["SET-COOKIE"] == REDACTED
+    assert redacted["headers"]["X-Request-Id"] == "r-1"
+
+
+def test_redact_secret_names_in_arguments_at_any_case() -> None:
+    """A secret name is redacted in ``arguments`` whatever its case or position."""
+    payload = {
+        "params": {
+            "name": "get_forecast",
+            "arguments": {"Authorization": "Bearer sk-1", "city": "Paris"},
+            "auth": {"PASSWORD": "hunter2", "user": "ada"},
+        }
+    }
+    redacted = redact(payload)
+    assert redacted["params"]["arguments"]["Authorization"] == REDACTED
+    assert redacted["params"]["arguments"]["city"] == "Paris"
+    assert redacted["params"]["auth"]["PASSWORD"] == REDACTED
+    assert redacted["params"]["auth"]["user"] == "ada"
+
+
+def test_redact_matches_the_headers_key_in_any_case() -> None:
+    """The ``headers`` container key is matched case-insensitively."""
+    payload = {"Headers": {"Cookie": "session=abc", "Accept": "text/plain"}}
+    redacted = redact(payload)
+    assert redacted["Headers"]["Cookie"] == REDACTED
+    assert redacted["Headers"]["Accept"] == "text/plain"
+
+
+def test_redact_walks_lists_of_objects() -> None:
+    """Every dict inside a list is walked, so a secret anywhere in it redacts."""
+    payload = {
+        "calls": [
+            {"arguments": {"X-Auth-Token": "t1"}},
+            {"arguments": {"query": "weather"}},
+            {"_meta": {"secret": "s", "trace": "ok"}},
+        ]
+    }
+    redacted = redact(payload)
+    assert redacted["calls"][0]["arguments"]["X-Auth-Token"] == REDACTED
+    assert redacted["calls"][1]["arguments"]["query"] == "weather"
+    assert redacted["calls"][2]["_meta"]["secret"] == REDACTED
+    assert redacted["calls"][2]["_meta"]["trace"] == "ok"
+
+
 def test_redact_recurses_and_keeps_the_input() -> None:
     """Nested arrays and objects are redacted; the original object is untouched."""
     payload = {
