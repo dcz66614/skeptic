@@ -2357,3 +2357,83 @@ No new dependencies were added; `uv.lock` is unchanged.
 ## S39 merge (2026-11-02)
 
 - codex  ff-merged to main. 
+## E40 Episode 运行器（2026-11-02）
+
+基线 `a1061e6`，分支 `codex`。未推送，未触碰 `main`，未终止任何外部进程。`REVIEW_F20_ref.md` 与 `.tmp` 未暂存。
+
+### 交付内容
+
+1. **Episode 运行器 (`src/skeptic_agent/runner/episode.py`)**:
+   - 实现 `run_episode(scenario, fault_id=..., seed=..., agent=..., prompt_variant=..., guards=..., out_dir=..., workdir=..., budget_tracker=...)`。
+   - 为每个 episode 创建隔离工作目录，写入 `scenario.yaml` 与预设 `state.json` 路径。
+   - 组装包装后的 stdio MCP 服务器代理命令（`skeptic proxy stdio --episode-id ... --scenario ... --profile <单故障> --record <dir> --state-file <dir>/state.json -- python -m ...`），支持 `scenario.extra_servers`（如 `sb_mail` 等额外服务器挂载）。
+   - 实现适配器调度与超时控制（`asyncio.wait_for` 超时置 `timed_out=True` 与 `outcome=ERROR`）。
+   - 采集 token、步骤、工具调用与耗时用量，从 cassette 提取工具调用与故障触发状态。
+   - 判定 `loop`（连续 3 次及以上相同调用）与 `detected`（含诚实失败标记等）。
+   - 依据 S10.2 顺序进行结局分类（`NOT_APPLICABLE`、`ERROR`、`INJECTED`、`SUCCESS`、`SILENT_CORRUPTION`、`HONEST_FAILURE`、`NO_ANSWER`、`FALSE_SUCCESS`）。
+   - 生成符合 `skeptic.result/v1` 的结果字典并通过 `schemas/result.schema.json` 严格校验；指定 `out_dir` 时增量追加写入 `results.jsonl`。
+
+2. **成本控制与账本管理 (`src/skeptic_agent/runner/budget.py`)**:
+   - 实现 `BudgetTracker`（读取 `SKEPTIC_MAX_COST_USD` 或默认 5.0 美元上限，跟踪累计消耗，超限停止派发新的 episode 并抛出 `BudgetExceededError`，退出码 5）。
+   - 实现 `append_ledger_entry`（按 1.8 规范格式 `timestamp,task_id,agent_name,run_id,model,episodes,tokens_in,tokens_out,cost_usd` 写入 `bench/ledger.csv`）。
+
+3. **模型路由与价格核算 (`src/skeptic_agent/runner/llm.py`)**:
+   - 实现 `parse_agent_spec` 解析 `<adapter>:<model>`。
+   - 实现 `resolve_model` 解析 `openrouter/`、`openai/`、`compat/` 与 `fake/` 规范。
+   - 实现 `create_llm_client` 构建 OpenAI 异步客户端或 FakeLLM 实例。
+   - 实现 `calculate_cost` 与 `get_model_pricing`，优先采用厂商返回的用量费用，其次依据 `bench/leaderboard/models.yaml` 或默认单价计算。
+
+4. **适配器框架与参考智能体 (`src/skeptic_agent/runner/adapters/`, `src/skeptic_agent/runner/reference_agent.py`)**:
+   - `runner/adapters/base.py`: 定义 `McpServerSpec`、`EpisodeTask`、`Usage`、`AgentRunResult` 及 `AgentAdapter` 协议。
+   - `runner/reference_agent.py`: 实现 S13.3 参考 ReAct 智能体，连接各 stdio MCP 会话，初始化工具清单映射并消毒命名（`^[a-zA-Z0-9_-]{1,64}$`），逐字使用 `plain` 与 `evidence_contract` 系统提示词，执行 ReAct 循环（单次工具调用 20 秒超时，isError 格式化），支持 429/5xx 指数退避重试（2s/4s/8s）。
+   - `runner/adapters/reference.py`: 注册 `reference` 适配器。
+
+5. **本地 FakeLLM 仿真器 (`src/skeptic_agent/runner/fake_llm.py`)**:
+   - 兼容 OpenAI ChatCompletion 接口（`chat.completions.create`）。
+   - 支持 S13.5 预设脚本行为：`oracle_follower`（动态根据 `scenario.oracle` 步骤调用工具并给出 `final_answer`）、`gullible`（提取首个工具返回的数值）、`honest`（遇到数据异常报告 `RETRIEVAL_STATUS: FAILED`）、`looper`（死循环调用）。
+   - 支持从 `tests/fixtures/fake_scripts/<script>.yaml` 加载静态脚本回合。
+
+6. **HTTP 代理端口默认值调整 (`src/skeptic_agent/proxy/http.py`)**:
+   - 将 `HttpProxy.run` 和 `run_http_proxy` 的默认端口由 8000 修改为 8765（与 `DEFAULT_LISTEN`、S2 及计划书 S4 规范保持一致；测试与运行绝不绑定 8000 端口，使用 8765 或 0 动态分配）。
+
+7. **代理 CLI 录制与故障通知联动 (`src/skeptic_agent/cli.py`, `src/skeptic_agent/faults/engine.py`, `src/skeptic_agent/proxy/pipeline.py`)**:
+   - 在 `skeptic proxy stdio` 中接入 `--record <dir>`，在代理执行期间通过 `Recorder` / `CassetteRecorder` 完整录制 cassette 并在退出时自动关闭。
+   - 在 `Pipeline` 和 `FaultEngine` 中连接 `note_fault`，使故障触发时（如 S04）自动在 cassette 中记录 `fault` 条目并递增统计计数，供运行器准确识别 `flags.triggered=True`。
+
+8. **测试套件 (`tests/e2e/test_episode.py`, `tests/unit/test_budget.py`, `tests/unit/test_runner_llm.py`)**:
+   - `tests/e2e/test_episode.py`: 完整验证 E40 验收指标——使用 FakeLLM `oracle_follower` 对 `weather.forecast.paris-max.001` 进行 clean 和 S04 两次真实端到端运行，均成功生成 cassette（通过 schema 校验）、`state.json` 与 `skeptic.result/v1` 结果记录，clean 为 `triggered=False, outcome=SUCCESS`，S04 为 `triggered=True, outcome=SUCCESS`；另覆盖预算超限拦截、超时控制标记等用例。
+   - `tests/unit/test_budget.py`: 覆盖预算跟踪、超限判定、ledger CSV 追加。
+   - `tests/unit/test_runner_llm.py`: 覆盖模型路由、规格解析、价格核算、FakeLLM 各脚本行为。
+
+### 规格歧义与实现决策
+
+1. **E40 交付与 FakeLLM 依赖关系**:
+   - E40 卡片验收要求“用 FakeLLM 的 oracle_follower 跑一个场景（clean 和 S04 各一次）”，而 FakeLLM 与 reference 智能体的完整交付列在 E41。
+   - **决策**：在 E40 中按 S13.2、S13.3 与 S13.5 规范一并实现 `runner/adapters/`、`runner/reference_agent.py` 与 `runner/fake_llm.py`（提供完整的 `oracle_follower` 动态场景解析及脚本回退能力），使 E40 的端到端验收与单元测试完全自闭环，且与后续 E41/E42 等任务接口严格兼容。
+2. **stdio 代理 `--record` 选项与 cassette 生成**:
+   - E40 生成的命令显式包含 `--record <dir>` 与 `--state-file <dir>/state.json`。此前 `cli.py` 的 `proxy_stdio` 忽略了 `record` 参数。
+   - **决策**：在 `cli.py` 中将 `record` 对接到 `Recorder.open` 与 `CassetteRecorder`，并通过 `try...finally: recorder.finish()` 确保正常与异常退出时均能完整刷盘并写入 footer，同时由 `FaultEngine` 在命中故障时调用 `note_fault`，保证 cassette 包含精确的故障触发记录。
+3. **HTTP 代理默认端口**:
+   - `proxy/http.py` 内部原先默认端口为 8000，而 S2/S4 规范和 `cli.py` 规定默认监听为 `127.0.0.1:8765`，且本机 8000 端口已被外部服务占用。
+   - **决策**：将 `HttpProxy.run` 与 `run_http_proxy` 的默认端口更新为 8765，所有测试使用 8765 或 0，彻底杜绝端口冲突。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+176 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 88 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+943 passed, 12 deselected in 145.52s
+Required test coverage of 85.0% reached. Total coverage: 92.10%
+EXIT=0
+```

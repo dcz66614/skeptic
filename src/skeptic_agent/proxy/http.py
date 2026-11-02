@@ -277,7 +277,7 @@ class HttpProxy:
             await self.client.aclose()
             self.client = None
 
-    def run(self, *, host: str = "127.0.0.1", port: int = 8000) -> None:
+    def run(self, *, host: str = "127.0.0.1", port: int = 8765) -> None:
         """Serve the app until the process is stopped (S2).
 
         Args:
@@ -688,7 +688,7 @@ def run_http_proxy(
     upstream: str,
     *,
     host: str = "127.0.0.1",
-    port: int = 8000,
+    port: int = 8765,
     pipeline: Pipeline | None = None,
     episode_id: str = "http",
     seed: int = 0,

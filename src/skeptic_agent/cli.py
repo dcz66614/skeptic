@@ -186,7 +186,7 @@ def proxy_stdio(
     Raises:
         typer.Exit: With the upstream's exit code.
     """
-    del config, guards, record
+    del config, guards
     command = list(ctx.args)
     if "--" in sys.argv:
         command = sys.argv[sys.argv.index("--") + 1 :]
@@ -208,7 +208,7 @@ def proxy_stdio(
             raise typer.Exit(code=3) from exc
 
     fault_stage: FaultStage
-    if profile and profile.lower() != "none":
+    if profile and profile.lower() not in ("none", "clean"):
         from skeptic_agent.faults.base import FaultSpec
         from skeptic_agent.faults.engine import FaultEngine, load_profile_source, spec_from_entry
 
@@ -246,9 +246,31 @@ def proxy_stdio(
     if state_file:
         os.environ["SKEPTIC_STATE_FILE"] = state_file
 
-    pipeline = new_pipeline(fault=fault_stage)
+    recorder_stage = None
+    recorder = None
+    if record:
+        from skeptic_agent.protocol import UNKNOWN
+        from skeptic_agent.record.cassette import CassetteRecorder, Recorder
+
+        recorder = Recorder.open(
+            Path(record),
+            episode_id=episode_id or "stdio",
+            transport="stdio",
+            upstream=command,
+            era=UNKNOWN,
+            seed=seed,
+            profile=profile or "none",
+            scenario_id=str(scenario_dict.get("id", "none")) if scenario_dict else "none",
+        )
+        recorder_stage = CassetteRecorder(recorder)
+
+    pipeline = new_pipeline(fault=fault_stage, recorder=recorder_stage)
     proxy = StdioProxy(command, pipeline=pipeline, episode_id=episode_id or "stdio", seed=seed)
-    raise typer.Exit(code=asyncio.run(proxy.run()))
+    try:
+        raise typer.Exit(code=asyncio.run(proxy.run()))
+    finally:
+        if recorder is not None:
+            recorder.finish()
 
 
 @proxy_app.command("http")

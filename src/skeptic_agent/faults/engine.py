@@ -8,6 +8,7 @@ pipeline behaves exactly as before F21-F24.
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from skeptic_agent.faults import adversarial, loud, silent  # noqa: F401  # importing registers the faults
 from skeptic_agent.faults.base import Fault, FaultHook, FaultSpec
@@ -87,7 +88,13 @@ class FaultEngine(FaultStage):
         planned: One entry per scheduled fault, with its trigger state.
     """
 
-    def __init__(self, specs: Iterable[FaultSpec] = (), *, scenario: object | None = None) -> None:
+    def __init__(
+        self,
+        specs: Iterable[FaultSpec] = (),
+        *,
+        scenario: object | None = None,
+        recorder: Any = None,
+    ) -> None:
         """Prepare one schedule per scheduled fault.
 
         Args:
@@ -95,6 +102,7 @@ class FaultEngine(FaultStage):
             scenario: The scenario used to resolve ``$primary`` and friends.
         """
         self.scenario = scenario
+        self.recorder = recorder
         self.specs = tuple(specs)
         self._bound = False
         self.planned: list[ScheduledFault] = [
@@ -134,6 +142,10 @@ class FaultEngine(FaultStage):
             )
             planned.schedule.rng = fault_rng(ctx.seed, ctx.episode_id, planned.spec.fault_id, tool)
         self._bound = True
+
+    def set_recorder(self, recorder: Any) -> None:
+        """Attach a recorder stage to receive fault notes."""
+        self.recorder = recorder
 
     def _ensure_bound(self, ctx: EpisodeContext) -> None:
         """Seed schedules on the first message when ``bind`` was not called.
@@ -201,6 +213,14 @@ class FaultEngine(FaultStage):
             if not fired:
                 continue
             rewritten = fault.apply(current, planned.spec, ctx)
+            if self.recorder is not None and hasattr(self.recorder, "note_fault"):
+                self.recorder.note_fault(
+                    {
+                        "id": planned.spec.fault_id,
+                        "params": dict(planned.spec.params) if planned.spec.params else {},
+                        "call_index": index or 1,
+                    }
+                )
             if isinstance(rewritten, (Hold, ReplyToClient, ReplyWithStatus)):
                 return current, rewritten
             if isinstance(rewritten, Message):
