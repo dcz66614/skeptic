@@ -2823,3 +2823,7 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 92.10%
 EXIT=0
 ```
+
+## E45 merge (2026-11-02)
+
+- codex  ff-merged to main. 
