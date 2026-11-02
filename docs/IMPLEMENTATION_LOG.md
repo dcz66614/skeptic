@@ -2206,3 +2206,7 @@ EXIT=0
 ```
 
 No new dependencies were added; `uv.lock` is unchanged.
+
+## S36 merge (2026-11-02)
+
+- codex 3524f63 ff-merged to main. S36 (agy gemini build, rebased from ca8c15a). Self-review PASS (919 passed, cov 94.12%); agy claude-sonnet-4-6 review PASS. Advisory: validate.py Rule 2 does not check entity_arg against the tool inputSchema - fixed in S37.
