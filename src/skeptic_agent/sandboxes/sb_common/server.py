@@ -175,7 +175,7 @@ def _ok(result: BaseModel) -> CallToolResult:
     Returns:
         ``structuredContent`` plus one text block holding the S9.1 JSON.
     """
-    structured = result.model_dump(mode="json")
+    structured = result.model_dump(mode="json", by_alias=True)
     return CallToolResult(
         content=_text_blocks(_json_text(structured)),
         structured_content=structured,

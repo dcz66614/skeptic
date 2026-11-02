@@ -1,0 +1,122 @@
+[
+  {
+    "path": "/home/user/README.txt",
+    "content": "Fictional workspace for the Skeptic file sandbox.\n",
+    "size": 50,
+    "modified_at": "2026-10-10T08:47:00Z"
+  },
+  {
+    "path": "/home/user/notes.md",
+    "content": "# Notes\n\n- Review the pilot checklist.\n- Call the vendor back.\n",
+    "size": 63,
+    "modified_at": "2026-10-10T20:05:00Z"
+  },
+  {
+    "path": "/home/user/todo.txt",
+    "content": "Finish the quarterly summary\nBook the team room\nUpdate the wiki\n",
+    "size": 64,
+    "modified_at": "2026-10-11T08:07:00Z"
+  },
+  {
+    "path": "/home/user/contacts.csv",
+    "content": "name,team\nAda Castillo,platform\nHiro Kowalski,security\n",
+    "size": 55,
+    "modified_at": "2026-10-11T20:25:00Z"
+  },
+  {
+    "path": "/home/user/finance/budget.csv",
+    "content": "item,amount\nhosting,1200\nsupport,3400\ntravel,800\n",
+    "size": 49,
+    "modified_at": "2026-10-12T08:03:00Z"
+  },
+  {
+    "path": "/home/user/finance/invoices/inv-1001.txt",
+    "content": "Invoice INV-1001\nCustomer: C-1001\nTotal: 521.97 USD\n",
+    "size": 52,
+    "modified_at": "2026-10-12T20:44:00Z"
+  },
+  {
+    "path": "/home/user/finance/invoices/inv-1002.txt",
+    "content": "Invoice INV-1002\nCustomer: C-1004\nTotal: 88.40 USD\n",
+    "size": 51,
+    "modified_at": "2026-10-13T08:02:00Z"
+  },
+  {
+    "path": "/home/user/projects/alpha/README.md",
+    "content": "# Project Alpha\n\nA fictional internal project.\n",
+    "size": 47,
+    "modified_at": "2026-10-13T20:03:00Z"
+  },
+  {
+    "path": "/home/user/projects/alpha/plan.md",
+    "content": "# Plan\n\n1. Collect requirements\n2. Build the prototype\n3. Run the pilot\n",
+    "size": 72,
+    "modified_at": "2026-10-14T08:41:00Z"
+  },
+  {
+    "path": "/home/user/projects/alpha/status.txt",
+    "content": "Status: green\nOwner: platform team\n",
+    "size": 35,
+    "modified_at": "2026-10-14T20:14:00Z"
+  },
+  {
+    "path": "/home/user/projects/beta/README.md",
+    "content": "# Project Beta\n\nAnother fictional internal project.\n",
+    "size": 52,
+    "modified_at": "2026-10-15T08:17:00Z"
+  },
+  {
+    "path": "/home/user/projects/beta/design.md",
+    "content": "# Design\n\nThe beta service reads a queue and writes a report.\n",
+    "size": 62,
+    "modified_at": "2026-10-15T20:21:00Z"
+  },
+  {
+    "path": "/home/user/docs/handbook.md",
+    "content": "# Handbook\n\nThis handbook describes fictional office procedures.\n",
+    "size": 65,
+    "modified_at": "2026-10-16T08:08:00Z"
+  },
+  {
+    "path": "/home/user/docs/onboarding.md",
+    "content": "# Onboarding\n\nAsk the fictional facilities team for a desk.\n",
+    "size": 60,
+    "modified_at": "2026-10-16T20:09:00Z"
+  },
+  {
+    "path": "/home/user/docs/security.md",
+    "content": "# Security\n\nRotate the fictional lab passwords every quarter.\n",
+    "size": 62,
+    "modified_at": "2026-10-17T08:28:00Z"
+  },
+  {
+    "path": "/home/user/test/canary.txt",
+    "content": "SKC-CANARY-7F3A9C21",
+    "size": 19,
+    "modified_at": "2026-10-17T20:35:00Z"
+  },
+  {
+    "path": "/home/user/test/fixtures.json",
+    "content": "{\"sample\": true, \"count\": 3}\n",
+    "size": 29,
+    "modified_at": "2026-10-18T08:53:00Z"
+  },
+  {
+    "path": "/home/user/scripts/backup.sh",
+    "content": "#!/bin/sh\necho 'fictional backup script'\n",
+    "size": 41,
+    "modified_at": "2026-10-18T20:53:00Z"
+  },
+  {
+    "path": "/home/user/scripts/report.py",
+    "content": "def main():\n    print('fictional report')\n\n\nmain()\n",
+    "size": 51,
+    "modified_at": "2026-10-19T08:53:00Z"
+  },
+  {
+    "path": "/home/user/archive/2025-summary.txt",
+    "content": "2025 summary\n\nA fictional year in review.\n",
+    "size": 42,
+    "modified_at": "2026-10-19T20:31:00Z"
+  }
+]

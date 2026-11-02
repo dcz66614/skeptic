@@ -42,12 +42,14 @@ SANDBOXES = {
     "calendar": "sb_calendar",
     "docs": "sb_docs",
     "sqlshop": "sb_sqlshop",
+    "mail": "sb_mail",
+    "files": "sb_files",
 }
 """The built-in sandboxes ``skeptic sandbox run`` can start (S2, S9.2).
 
 S31 adds ``weather`` and ``fx``; S32 adds ``stocks`` and ``crm``; S33 adds
-``orders`` and ``calendar``; S34 adds ``docs`` and ``sqlshop``; S35 adds the
-other two here.
+``orders`` and ``calendar``; S34 adds ``docs`` and ``sqlshop``; S35 adds
+``mail`` and ``files``.
 """
 
 

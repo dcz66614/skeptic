@@ -1,0 +1,202 @@
+[
+  {
+    "id": "M-1001",
+    "from": "ada.castillo.01@example.com",
+    "to": "support@example.com",
+    "subject": "Question about my latest invoice",
+    "body": "My order has not arrived yet. Could you check the delivery status? — Ada Castillo",
+    "received_at": "2026-10-19T08:47:00Z"
+  },
+  {
+    "id": "M-1002",
+    "from": "bruno.brandt.02@example.com",
+    "to": "support@example.com",
+    "subject": "Delivery status for my order",
+    "body": "Thanks for the meeting today. The notes are attached to our shared folder. — Bruno Brandt",
+    "received_at": "2026-10-19T17:07:00Z"
+  },
+  {
+    "id": "M-1003",
+    "from": "chloé.kowalski.03@example.com",
+    "to": "support@example.com",
+    "subject": "Updating the billing address",
+    "body": "Hello, could you confirm the amount on invoice INV-2041? Thank you. — Chloé Kowalski",
+    "received_at": "2026-10-20T02:03:00Z"
+  },
+  {
+    "id": "M-1004",
+    "from": "dmitri.rossi.04@example.com",
+    "to": "support@example.com",
+    "subject": "Request for a quarterly report",
+    "body": "Please send the usage report for the third quarter when convenient. — Dmitri Rossi",
+    "received_at": "2026-10-20T11:03:00Z"
+  },
+  {
+    "id": "M-1005",
+    "from": "elena.thorne.05@example.com",
+    "to": "support@example.com",
+    "subject": "Issue with the sandbox pilot",
+    "body": "We would like to review the renewal terms before the end of the month. — Elena Thorne",
+    "received_at": "2026-10-20T20:17:00Z"
+  },
+  {
+    "id": "M-1006",
+    "from": "farid.petrov.06@example.com",
+    "to": "support@example.com",
+    "subject": "Renewal terms for next year",
+    "body": "We moved offices last month. Please update the billing address on file. — Farid Petrov",
+    "received_at": "2026-10-21T05:08:00Z"
+  },
+  {
+    "id": "M-1007",
+    "from": "greta.almeida.07@example.com",
+    "to": "support@example.com",
+    "subject": "Meeting follow-up",
+    "body": "The new dashboard is much clearer. One chart still shows the wrong label. — Greta Almeida",
+    "received_at": "2026-10-21T14:28:00Z"
+  },
+  {
+    "id": "M-1008",
+    "from": "hiro.kowalski.08@example.com",
+    "to": "support@example.com",
+    "subject": "Password reset for the portal",
+    "body": "I cannot sign in to the customer portal after the recent maintenance. — Hiro Kowalski",
+    "received_at": "2026-10-21T23:53:00Z"
+  },
+  {
+    "id": "M-1009",
+    "from": "ines.kowalski.09@example.com",
+    "to": "support@example.com",
+    "subject": "Feedback on the new dashboard",
+    "body": "We moved offices last month. Please update the billing address on file. — Ines Kowalski",
+    "received_at": "2026-10-22T08:05:00Z"
+  },
+  {
+    "id": "M-1010",
+    "from": "jonas.hansen.10@example.com",
+    "to": "support@example.com",
+    "subject": "Question about my latest invoice",
+    "body": "Hello, could you confirm the amount on invoice INV-2041? Thank you. — Jonas Hansen",
+    "received_at": "2026-10-22T17:58:00Z"
+  },
+  {
+    "id": "M-1011",
+    "from": "keiko.hansen.11@example.com",
+    "to": "support@example.com",
+    "subject": "Delivery status for my order",
+    "body": "Hello, could you confirm the amount on invoice INV-2041? Thank you. — Keiko Hansen",
+    "received_at": "2026-10-23T02:22:00Z"
+  },
+  {
+    "id": "M-1012",
+    "from": "lars.brandt.12@example.com",
+    "to": "support@example.com",
+    "subject": "Updating the billing address",
+    "body": "Thanks for the meeting today. The notes are attached to our shared folder. — Lars Brandt",
+    "received_at": "2026-10-23T11:31:00Z"
+  },
+  {
+    "id": "M-1013",
+    "from": "mei.okafor.13@example.com",
+    "to": "support@example.com",
+    "subject": "Request for a quarterly report",
+    "body": "I cannot sign in to the customer portal after the recent maintenance. — Mei Okafor",
+    "received_at": "2026-10-23T20:06:00Z"
+  },
+  {
+    "id": "M-1014",
+    "from": "nadia.petrov.14@example.com",
+    "to": "support@example.com",
+    "subject": "Issue with the sandbox pilot",
+    "body": "We moved offices last month. Please update the billing address on file. — Nadia Petrov",
+    "received_at": "2026-10-24T05:00:00Z"
+  },
+  {
+    "id": "M-1015",
+    "from": "omar.okafor.15@example.com",
+    "to": "support@example.com",
+    "subject": "Renewal terms for next year",
+    "body": "My order has not arrived yet. Could you check the delivery status? — Omar Okafor",
+    "received_at": "2026-10-24T14:43:00Z"
+  },
+  {
+    "id": "M-1016",
+    "from": "pia.rossi.16@example.com",
+    "to": "support@example.com",
+    "subject": "Meeting follow-up",
+    "body": "We would like to review the renewal terms before the end of the month. — Pia Rossi",
+    "received_at": "2026-10-24T23:40:00Z"
+  },
+  {
+    "id": "M-1017",
+    "from": "quentin.sato.17@example.com",
+    "to": "support@example.com",
+    "subject": "Password reset for the portal",
+    "body": "Please send the usage report for the third quarter when convenient. — Quentin Sato",
+    "received_at": "2026-10-25T08:58:00Z"
+  },
+  {
+    "id": "M-1018",
+    "from": "rosa.dubois.18@example.com",
+    "to": "support@example.com",
+    "subject": "Feedback on the new dashboard",
+    "body": "The sandbox pilot stopped accepting calls this morning. Can you investigate? — Rosa Dubois",
+    "received_at": "2026-10-25T17:11:00Z"
+  },
+  {
+    "id": "M-1019",
+    "from": "sven.eriksen.19@example.com",
+    "to": "support@example.com",
+    "subject": "Question about my latest invoice",
+    "body": "Hello, could you confirm the amount on invoice INV-2041? Thank you. — Sven Eriksen",
+    "received_at": "2026-10-26T02:20:00Z"
+  },
+  {
+    "id": "M-1020",
+    "from": "tara.petrov.20@example.com",
+    "to": "support@example.com",
+    "subject": "Delivery status for my order",
+    "body": "Please send the usage report for the third quarter when convenient. — Tara Petrov",
+    "received_at": "2026-10-26T11:10:00Z"
+  },
+  {
+    "id": "M-1021",
+    "from": "ada.quintero.21@example.com",
+    "to": "support@example.com",
+    "subject": "Updating the billing address",
+    "body": "The sandbox pilot stopped accepting calls this morning. Can you investigate? — Ada Quintero",
+    "received_at": "2026-10-26T20:26:00Z"
+  },
+  {
+    "id": "M-1022",
+    "from": "bruno.jensen.22@example.com",
+    "to": "support@example.com",
+    "subject": "Request for a quarterly report",
+    "body": "Please send the usage report for the third quarter when convenient. — Bruno Jensen",
+    "received_at": "2026-10-27T05:21:00Z"
+  },
+  {
+    "id": "M-1023",
+    "from": "chloé.kowalski.23@example.com",
+    "to": "support@example.com",
+    "subject": "Issue with the sandbox pilot",
+    "body": "Thanks for the meeting today. The notes are attached to our shared folder. — Chloé Kowalski",
+    "received_at": "2026-10-27T14:29:00Z"
+  },
+  {
+    "id": "M-1024",
+    "from": "dmitri.ito.24@example.com",
+    "to": "support@example.com",
+    "subject": "Renewal terms for next year",
+    "body": "Hello, could you confirm the amount on invoice INV-2041? Thank you. — Dmitri Ito",
+    "received_at": "2026-10-27T23:33:00Z"
+  },
+  {
+    "id": "M-1025",
+    "from": "elena.sato.25@example.com",
+    "to": "support@example.com",
+    "subject": "Meeting follow-up",
+    "body": "Hello, could you confirm the amount on invoice INV-2041? Thank you. — Elena Sato",
+    "received_at": "2026-10-28T08:38:00Z"
+  }
+]
