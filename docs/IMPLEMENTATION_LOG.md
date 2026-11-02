@@ -1550,3 +1550,130 @@ No dependency was added; `uv.lock` is unchanged.
 ## S31 merge (2026-11-02)
 
 - codex 1ddbe38 ff-merged to main. S31 fd2af51 (sb_weather, sb_fx) + S31fix 1ddbe38 (fx rate direction, convert currency = quote, extra-argument rejection in sb_common, list misuse tests). Self-review PASS (622 passed, cov 95.63%); agy detailed re-review PASS.
+
+## S32 sb_stocks and sb_crm (2026-11-02)
+
+Base `56375bb`, branch `codex`. Nothing pushed, `main` untouched, no process
+killed, `REVIEW_F20_ref.md` and `.tmp` not staged.
+
+The third and fourth of the ten sandboxes of S9.2, built only on the S30
+`sb_common` factory (`ToolSpec`, `SandboxTool`, `ToolFailure`, `make_server`,
+`run_sandbox`, `SandboxState`, `clock`, `load_json`, `load_customers`).
+
+`src/skeptic_agent/sandboxes/sb_stocks/`:
+
+- `data/generate.py` and the committed `data/market.json`: 8 fictional
+  tickers (ACME, BOLT, CRUX, DYNA, ECHO, FLUX, GRIT, HELX) over 60 trading
+  days, 2026-08-10 to 2026-10-30, seed `20261101`. Bars are weekdays only;
+  the last close is the quote `price`, `change_pct` is against the previous
+  close, and `as_of` is `2026-10-30T20:00:00Z` (after the last close). Each
+  ticker also has a company name, a lowercase sector, a listing date, an
+  integer head count and a headquarters city.
+- `server.py`: `get_quote`, `get_quote_delayed` (alternate; same close,
+  `as_of` 15 minutes earlier), `get_history` (`ticker, bars[...]` for an
+  inclusive window), `get_company_profile` (`ticker, name, sector, currency,
+  listed_at, employees, headquarters`) and `screen` (`results[]` for a sector
+  and inclusive price range, empty list when nothing matches). Field names
+  and literals are the S9.2 ones verbatim.
+- `README.md`: the five tools, example calls with real committed values, the
+  fictional-data notice.
+
+`src/skeptic_agent/sandboxes/sb_crm/`:
+
+- `data/generate.py` and the committed `data/notes.json`: 80 notes, two per
+  customer, seed `20261101`, each linked to a shared customer id and written
+  in English or Chinese. The 40 customers are the S9.1 item 9 shared
+  `sb_common/data/customers.json` (C-1001 to C-1040), not regenerated here.
+- `server.py`: `search_customers` (query over id, name, email, city, tier and
+  note text; empty query lists all; no match is an empty list),
+  `get_customer`, `update_customer_email` (idempotent write),
+  `add_note` (non-idempotent write, `N-3081` upwards) and `list_notes`. The
+  state holds `customers` (keyed by id) and `notes` (S9.2); every successful
+  write calls `tool.finish()`, a failed write changes nothing.
+- `README.md`: the five tools, example calls, the fictional-data notice.
+
+Supporting changes:
+
+- `cli.py`: `SANDBOXES` gains `stocks` and `crm`, so `skeptic sandbox run
+  stocks` / `skeptic sandbox run crm` start the modules (S2, S9.1 item 2).
+  `tests/unit/test_sandbox_run.py` accepts the two new names.
+- `tests/integration/test_sb_stocks.py` (26) and
+  `tests/integration/test_sb_crm.py` (30): every tool has a success case and
+  at least one misuse case. Stocks covers the quote, the delayed timestamp,
+  history windows and bar invariants, the quote-vs-last-close agreement,
+  profiles, screen matches and the empty screen, plus unknown ticker /
+  invalid, future and reversed dates / empty window / unknown sector /
+  reversed range / non-numeric argument. CRM covers search by city, the
+  all-customers query and missing query; get and list with known and unknown
+  ids; idempotent email update and its misuse (unknown id, invalid email);
+  non-idempotent note addition and its misuse (unknown id, empty text,
+  oversized text), each write checked against the state file. Both files also
+  check schemas and the read/write annotations, both protocol generations,
+  the state file, `python -m`, `skeptic sandbox run <name>` and `--http` with
+  its state file.
+- `tests/unit/test_sb_stocks_crm_data.py` (16): determinism, the committed
+  files against their generators, the S9.2 shapes (8x60, fixed date window,
+  weekdays only, well-formed bars, 80 notes two per customer), the shared
+  customer ids, lowercase sectors, and the committed data files.
+
+Spec ambiguities and how they were resolved:
+
+- S9.2 fixes 60 bars but not their dates. They end on the last trading day
+  before the frozen instant (2026-11-01 is a Saturday, so 2026-10-30) and run
+  back 60 weekdays to 2026-08-10. The quote `as_of` is the same day at 20:00,
+  after the close, so S03 moving it `days` back makes the quote visibly stale.
+- `get_quote_delayed` is the alternate, and the committed snapshot has no
+  intraday series. It reports the same last close with `as_of` 15 minutes
+  earlier, so the two tools differ in exactly the timestamp a careful agent
+  should compare; the data stays a single source of truth.
+- S9.2 does not list `get_company_profile`'s fields. They are `ticker, name,
+  sector, currency, listed_at, employees, headquarters`; `sector` is a plain
+  lowercase word and heads no number. Under the S6 S04 rule the first numeric
+  leaf of a profile is `employees` (the `id`/`count`-style exclusion does not
+  match it and `sector` is not a number), so a `factor=10` profile shows an
+  absurd head count instead of corrupting text. A customer has no numeric
+  leaf at all (ids excluded, dates are strings), so S04 on a customer is not
+  applicable, which S6 allows. Verified with the S6 traversal on both.
+- For a history, the first numeric leaf is the first bar's `open` (the tool is
+  the primary target and `numeric_path` is optional), so S04 on a history
+  scales the first day's prices and the other days disagree; the bar key
+  order is `date, open, high, low, close, volume` so `volume` never shadows a
+  price.
+- S9.2 gives the write results as `status, customer_id, ...` only. Email
+  update returns `status, customer_id, email`; note addition returns
+  `status, customer_id, note_id`. `status` is a word, so S10's default
+  phantom response `{"status":"ok"}` is a subset of both real results and a
+  write-back check must read the state, as S8.3's read-back step does.
+- S9.2 writes `update_customer_email` as an "idempotent write" and gives
+  `add_note` no such hint; S9.1 item 5 requires all three hints. Email update
+  is `idempotent: true`, note addition `idempotent: false`; neither is
+  destructive.
+- `search_customers` has no specified matching rule or empty-query behaviour.
+  It matches case-insensitively over id, name, email, city, tier and the
+  customer's note text; an empty query lists all 40 and no match is an empty
+  `customers` list, so a "find everything" probe and a "nothing" probe are
+  both valid results rather than errors.
+- S9.2 lists `tier` among the customer fields without a vocabulary; the
+  shared table uses `basic`, `silver`, `gold`, `enterprise`, so the response
+  model types it as that literal set.
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+113 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 49 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+688 passed, 12 deselected in 115.30s (0:01:55)
+Required test coverage of 85.0% reached. Total coverage: 95.63%
+EXIT=0
+```
+
+No dependency was added; `uv.lock` is unchanged.

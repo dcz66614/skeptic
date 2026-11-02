@@ -36,10 +36,13 @@ DEFAULT_LISTEN: str = "127.0.0.1:8765"
 SANDBOXES = {
     "weather": "sb_weather",
     "fx": "sb_fx",
+    "stocks": "sb_stocks",
+    "crm": "sb_crm",
 }
 """The built-in sandboxes ``skeptic sandbox run`` can start (S2, S9.2).
 
-S31 adds ``weather`` and ``fx``; S32-S35 add the other eight here.
+S31 adds ``weather`` and ``fx``; S32 adds ``stocks`` and ``crm``; S33-S35 add
+the other six here.
 """
 
 
