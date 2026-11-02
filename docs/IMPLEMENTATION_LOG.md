@@ -1343,3 +1343,6 @@ EXIT=0
 
 No dependency was added; `mcp`, `pydantic` and `starlette`/`uvicorn` were
 already present and `uv.lock` is unchanged.
+## S30 merge (2026-11-02)
+
+- codex 6d04ac4 ff-merged to main. Self-review PASS (562 passed, cov 95.85%); agy gemini-3.8-flash-high detailed review PASS. Sandboxes live under src/skeptic_agent/sandboxes/; generator at sb_common/generate.py.
