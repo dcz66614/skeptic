@@ -1937,3 +1937,7 @@ EXIT=0
 
 No dependency was added; `uv.lock` is unchanged. SQLite comes from the
 standard library.
+
+## S34 merge (2026-11-02)
+
+- codex aa593ba ff-merged to main. S34 sb_docs + sb_sqlshop (opencode deepseek-v4.1-flash-free). Self-review PASS (811 passed, cov 95.60%); agy detailed review PASS.
