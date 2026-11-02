@@ -1809,3 +1809,7 @@ EXIT=0
 ```
 
 No dependency was added; `uv.lock` is unchanged.
+
+## S33 merge (2026-11-02)
+
+- codex eb64bf4 ff-merged to main. S33 sb_orders + sb_calendar (built on opencode deepseek-v4.1-flash-free). Self-review PASS (753 passed, cov 95.55%); agy detailed review PASS.
