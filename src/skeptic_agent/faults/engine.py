@@ -123,6 +123,8 @@ class FaultEngine(FaultStage):
         Args:
             ctx: The episode context.
         """
+        if ctx.scenario is None and self.scenario is not None:
+            ctx.scenario = self.scenario
         scenario = ctx.scenario if ctx.scenario is not None else self.scenario
         for planned in self.planned:
             patterns = resolve_targets(planned.spec.tool, scenario)
@@ -174,6 +176,8 @@ class FaultEngine(FaultStage):
             The message after every firing fault has rewritten it, and the hold
             a fault asked for, if any.
         """
+        if ctx.scenario is None and self.scenario is not None:
+            ctx.scenario = self.scenario
         scenario = ctx.scenario if ctx.scenario is not None else self.scenario
         current = payload
         for planned in self.planned:

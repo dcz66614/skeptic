@@ -2064,3 +2064,145 @@ No dependency was added; `uv.lock` is unchanged.
 ## Status 2026-11-02 06:10
 
 - main a58019c (S35). S36 ca8c15a on codex: self-review PASS, gemini fresh-session review PASS; no independent review available (Antigravity Claude/GPT pool exhausted). Not merged.
+
+## S36 Scenario validator and Oracle (2026-11-02)
+
+Base `a58019c`, branch `codex`. Nothing pushed, `main` untouched, no process
+killed, `REVIEW_F20_ref.md` and `.tmp` not staged.
+
+Implemented the scenario validator, scripted Oracle runner, recoverability evaluator,
+and scenario models specified in S8, S8.3, S8.4, and S36 for Milestone 4.
+
+`src/skeptic_agent/scenario/`:
+
+- `model.py`: Pydantic models for `skeptic.scenario/v1` scenarios conforming to
+  `schemas/scenario.schema.json`. Includes `FaultTargets`, `Decoys`, `Check`,
+  `Expected`, `Limits`, `OracleStep`, `RecoveryBranch`, `OracleSpec`, and
+  `Scenario`. `Scenario.to_dict()` serializes with `by_alias=True, exclude_none=True`
+  to match strict schema `oneOf` constraints. Helper functions `load_scenario`,
+  `load_scenarios_from_path`, and `dump_scenario`.
+- `validate.py`: Two-phase validator executing JSON schema validation against
+  `schemas/scenario.schema.json` via `jsonschema.Draft202012Validator`, followed by
+  the 7 semantic validation rules from S8.4:
+  1. Primary tools exist in sandbox tool declarations.
+  2. Entity args exist in primary tools' parameter schemas.
+  3. `kind=write` requires non-empty `write_tools` and at least 1 `state_checks`;
+     `kind=cross_source` requires a 2-tool `conflict_pair`.
+  4. `expected.checks` has at least 1 check; `kind=read` requires either `forbid`
+     or `numeric_path`.
+  5. Oracle `final_answer` satisfies all `expected.checks`.
+  6. Prompt does not leak answers (target numeric values from `number_close` do
+     not appear in the prompt).
+  7. Language conformance: `language=zh` prompt contains >= 30% Chinese characters
+     (Unicode CJK Unified Ideographs).
+  Note N1 rule numbers are extracted from schema validation error messages and
+  reported as `Rule N1` when matched.
+- `oracle.py`: Scripted Oracle client executing scenario steps against sandboxes
+  via `skeptic proxy stdio` and `stdio_client`. Evaluates recoverability according to
+  the S8.3 matrix (`unaffected`, `recoverable`, `unrecoverable`, `silent_corruption`).
+  Under fault injection, when the main path fails or times out, the Oracle attempts
+  scenario-declared `recovery` branches (or default retry-once if none specified) to
+  classify whether the injected fault is recoverable.
+- `recoverability.py`: Deterministic JSON cache reader and writer for
+  `scenario_id -> {fault_id -> recoverability}` matrices, formatted with sorted keys
+  and two-space indentation.
+
+CLI and Proxy Integrations:
+
+- `src/skeptic_agent/cli.py`: Added `skeptic scenario validate <path>` and
+  `skeptic scenario oracle [--faults <fault_id|none>] [--profile <profile_id>] <path>`.
+  Updated `proxy_stdio` to accept `--scenario <path>` and `--profile <id>` alongside
+  `--faults`, binding scenario context to `FaultEngine`.
+- `src/skeptic_agent/faults/engine.py`: Updated `FaultEngine.bind()` and `_apply()`
+  to propagate `self.scenario` to `ctx.scenario` if not already set, enabling
+  scenario-targeted faults (e.g. S04 `numeric_path`).
+
+Scenario Fixtures:
+
+- `tests/fixtures/scenarios/`: Created 10 valid scenario files conforming to
+  `skeptic.scenario/v1`, one per sandbox:
+  - `weather.forecast.max-temp.001.yaml` (`sb_weather`)
+  - `fx.rate.usd-eur.001.yaml` (`sb_fx`)
+  - `stocks.quote.acme.001.yaml` (`sb_stocks`)
+  - `crm.customer.get.001.yaml` (`sb_crm`)
+  - `orders.order.get.001.yaml` (`sb_orders`)
+  - `calendar.events.list.001.yaml` (`sb_calendar`)
+  - `docs.doc.read.001.yaml` (`sb_docs`)
+  - `sqlshop.query.count.001.yaml` (`sb_sqlshop`)
+  - `mail.email.read.001.yaml` (`sb_mail`)
+  - `files.file.read.001.yaml` (`sb_files`)
+
+Tests:
+
+- `tests/unit/test_scenario_model.py`: Model parsing, dictionary serialization,
+  path loading, extra field rejection.
+- `tests/unit/test_scenario_validate.py`: Validation of all 7 semantic rules, Note N1
+  schema rule extraction, prompt leakage detection, Chinese character ratio check,
+  and CLI validate command.
+- `tests/unit/test_recoverability.py`: Recoverability cache loading, saving, key ordering,
+  and getter/setter operations.
+- `tests/integration/test_scenario_oracle.py`: Clean mode Oracle execution, S04 fault
+  recoverability evaluation, unaffected fault evaluation, recoverability matrix
+  evaluation, and CLI oracle subcommands.
+
+Spec ambiguities and how they were resolved:
+
+- In Pydantic `BaseModel`, `schema` is a reserved method name. Resolved by defining
+  the field as `schema_: Literal["skeptic.scenario/v1"] = Field(default=SCENARIO_SCHEMA, alias="schema")`
+  with `populate_by_name=True` and `by_alias=True`.
+- In `schemas/scenario.schema.json`, `Check` uses `oneOf` with `additionalProperties: false`,
+  and `numeric_path` is typed `string` (does not accept `null`). When converting
+  Pydantic models to dicts for schema validation or YAML dump, `exclude_none=True` is used
+  so unset optional fields are omitted rather than serialized as `null`.
+- In S8.3, when no custom `recovery` branches are declared in a scenario's `oracle`
+  section, Oracle defaults to retry-once on the failing step (`recovery.default`).
+  If retry succeeds and satisfies expected checks, the fault is classified as `recoverable`.
+- In S8.4 Rule 6 (prompt leakage), number extraction handles floating point and integer
+  tokens, matching candidate numbers against `number_close` target values within tolerance.
+- For `sb_mail.server.read_email`, the argument name is `email_id` rather than `message_id`.
+  The scenario fixture for `sb_mail` specifies `entity_arg: email_id` to conform with
+  Rule 2.
+
+### Commands and Outputs
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+161 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 78 source files
+EXIT=0
+
+===== uv run skeptic scenario validate tests/fixtures/scenarios =====
+PASS: 10 scenario(s) passed validation.
+EXIT=0
+
+===== uv run skeptic scenario oracle --faults none tests/fixtures/scenarios =====
+calendar.events.list.001: PASS
+crm.customer.get.001: PASS
+docs.doc.read.001: PASS
+files.file.read.001: PASS
+fx.rate.usd-eur.001: PASS
+mail.email.read.001: PASS
+orders.order.get.001: PASS
+sqlshop.query.count.001: PASS
+stocks.quote.acme.001: PASS
+weather.forecast.max-temp.001: PASS
+EXIT=0
+
+===== uv run skeptic scenario oracle --faults S04 tests/fixtures/scenarios/weather.forecast.max-temp.001.yaml =====
+weather.forecast.max-temp.001 [S04]: recoverable
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+919 passed, 12 deselected in 287.63s (0:04:47)
+Required test coverage of 85.0% reached. Total coverage: 94.10%
+EXIT=0
+```
+
+No new dependencies were added; `uv.lock` is unchanged.
