@@ -33,6 +33,8 @@ app.add_typer(proxy_app, name="proxy")
 app.add_typer(faults_app, name="faults")
 app.add_typer(sandbox_app, name="sandbox")
 app.add_typer(scenario_app, name="scenario")
+bench_app = typer.Typer(no_args_is_help=True)
+app.add_typer(bench_app, name="bench")
 
 DEFAULT_LISTEN: str = "127.0.0.1:8765"
 """The default ``--listen`` of ``skeptic proxy http`` (S2)."""
@@ -562,6 +564,257 @@ def scenario_oracle(
         raise typer.Exit(code=1)
 
     raise typer.Exit(code=0)
+
+
+@app.command("run")
+def run_command(
+    suite: Annotated[
+        str | None,
+        typer.Option("--suite", help="Suite name or path (e.g. 'smoke', 'core-v1')."),
+    ] = None,
+    scenario: Annotated[
+        list[str] | None,
+        typer.Option("--scenario", help="Scenario YAML path(s). Can be specified multiple times."),
+    ] = None,
+    agent: Annotated[
+        str,
+        typer.Option("--agent", help="Agent specification ('adapter:model')."),
+    ] = "reference:fake/oracle_follower",
+    profile: Annotated[
+        str,
+        typer.Option("--profile", help="Fault profile id or path (default 'silent-core')."),
+    ] = "silent-core",
+    guards: Annotated[
+        str,
+        typer.Option(
+            "--guards", help="Enabled guards list or preset name ('none', 'all', 'recommended')."
+        ),
+    ] = "none",
+    prompt_variant: Annotated[
+        str,
+        typer.Option("--prompt-variant", help="Prompt variant ('plain' or 'evidence_contract')."),
+    ] = "plain",
+    seeds: Annotated[
+        str,
+        typer.Option("--seeds", help="Comma-separated random seeds (default '1')."),
+    ] = "1",
+    concurrency: Annotated[
+        int,
+        typer.Option("--concurrency", help="Maximum concurrent episodes (default 4)."),
+    ] = 4,
+    max_cost_usd: Annotated[
+        float | None,
+        typer.Option("--max-cost-usd", help="Cumulative budget limit in USD."),
+    ] = None,
+    out: Annotated[
+        Path | None,
+        typer.Option("--out", help="Output directory for results (default 'runs/<run_id>')."),
+    ] = None,
+    resume: Annotated[
+        bool,
+        typer.Option("--resume", help="Resume run, skipping completed episodes."),
+    ] = False,
+) -> None:
+    """Run an evaluation suite or scenario list and score results (S2, E48)."""
+    if not suite and not scenario:
+        typer.echo("error: either --suite or --scenario must be provided", err=True)
+        raise typer.Exit(code=2)
+
+    if prompt_variant not in ("plain", "evidence_contract"):
+        typer.echo(f"error: invalid prompt variant: {prompt_variant!r}", err=True)
+        raise typer.Exit(code=2)
+
+    try:
+        seeds_list = [int(s.strip()) for s in seeds.split(",") if s.strip()]
+    except ValueError as exc:
+        typer.echo(f"error: invalid seeds value: {seeds!r}", err=True)
+        raise typer.Exit(code=2) from exc
+
+    if not seeds_list:
+        typer.echo("error: at least one seed must be provided", err=True)
+        raise typer.Exit(code=2)
+
+    from skeptic_agent.faults.profiles import ProfileError
+    from skeptic_agent.runner.budget import BudgetExceededError
+    from skeptic_agent.runner.matrix import execute_run
+    from skeptic_agent.scenario.suites import SuiteError
+
+    cmd_repr = " ".join(sys.argv[1:])
+
+    try:
+        summary = asyncio.run(
+            execute_run(
+                suite=suite,
+                scenarios=scenario,
+                agent=agent,
+                profile=profile,
+                guards=guards,
+                prompt_variant=prompt_variant,  # type: ignore[arg-type]
+                seeds=seeds_list,
+                concurrency=concurrency,
+                max_cost_usd=max_cost_usd,
+                out_dir=out,
+                resume=resume,
+                command_str=f"skeptic {cmd_repr}",
+            )
+        )
+        ag = summary["agents"][0] if summary.get("agents") else {}
+        m = ag.get("metrics", {})
+        sks = m.get("SKS", {}).get("estimate", 0.0)
+        typer.echo(f"Run completed. SKS: {sks:.2f}, Episodes: {len(summary.get('episodes', []))}")
+        raise typer.Exit(code=0)
+    except BudgetExceededError as exc:
+        typer.echo(f"error: budget exceeded: {exc}", err=True)
+        raise typer.Exit(code=5) from exc
+    except (ProfileError, SuiteError) as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=3) from exc
+    except typer.Exit:
+        raise
+    except Exception as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+
+@bench_app.command("run")
+def bench_run(
+    matrix: Annotated[
+        Path,
+        typer.Option("--matrix", help="Path to matrix YAML/JSON file."),
+    ],
+    resume: Annotated[
+        bool,
+        typer.Option("--resume", help="Resume run, skipping completed episodes."),
+    ] = False,
+    max_cost_usd: Annotated[
+        float | None,
+        typer.Option("--max-cost-usd", help="Cumulative budget ceiling in USD across matrix."),
+    ] = None,
+    concurrency: Annotated[
+        int,
+        typer.Option("--concurrency", help="Maximum concurrent episodes (default 4)."),
+    ] = 4,
+    out: Annotated[
+        Path | None,
+        typer.Option("--out", help="Base output directory for runs."),
+    ] = None,
+) -> None:
+    """Run a batch matrix evaluation (S2, S16.2, E48)."""
+    if not matrix.is_file():
+        typer.echo(f"error: matrix file not found: {matrix}", err=True)
+        raise typer.Exit(code=2)
+
+    import jsonschema
+
+    from skeptic_agent.faults.profiles import ProfileError
+    from skeptic_agent.runner.budget import BudgetExceededError
+    from skeptic_agent.runner.matrix import execute_matrix
+    from skeptic_agent.scenario.suites import SuiteError
+
+    try:
+        summaries = asyncio.run(
+            execute_matrix(
+                matrix=matrix,
+                resume=resume,
+                max_cost_usd=max_cost_usd,
+                concurrency=concurrency,
+                out_dir=out,
+            )
+        )
+        typer.echo(f"Matrix benchmark completed: {len(summaries)} run(s) executed.")
+        raise typer.Exit(code=0)
+    except BudgetExceededError as exc:
+        typer.echo(f"error: budget exceeded: {exc}", err=True)
+        raise typer.Exit(code=5) from exc
+    except (ValueError, jsonschema.ValidationError, ProfileError, SuiteError) as exc:
+        typer.echo(f"error: invalid matrix or configuration: {exc}", err=True)
+        raise typer.Exit(code=3) from exc
+    except typer.Exit:
+        raise
+    except Exception as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+
+@app.command("compare")
+def compare_cmd(
+    run_a: Annotated[Path, typer.Argument(help="Path to first run directory (e.g. runs/<run_a>).")],
+    run_b: Annotated[
+        Path, typer.Argument(help="Path to second run directory (e.g. runs/<run_b>).")
+    ],
+    format: Annotated[
+        str,
+        typer.Option("--format", help="Output format ('md' or 'json')."),
+    ] = "md",
+) -> None:
+    """A/B comparison between two runs with differences and confidence intervals (S2, E48)."""
+    if not run_a.exists():
+        typer.echo(f"error: run_a directory or file does not exist: {run_a}", err=True)
+        raise typer.Exit(code=2)
+    if not run_b.exists():
+        typer.echo(f"error: run_b directory or file does not exist: {run_b}", err=True)
+        raise typer.Exit(code=2)
+
+    fmt = format.lower()
+    if fmt not in ("md", "json"):
+        typer.echo(f"error: invalid format: {format!r}, must be 'md' or 'json'", err=True)
+        raise typer.Exit(code=2)
+
+    from skeptic_agent.runner.matrix import compare_runs
+
+    try:
+        out = compare_runs(run_a, run_b, format=fmt)  # type: ignore[arg-type]
+        if fmt == "json":
+            typer.echo(json.dumps(out, ensure_ascii=False, indent=2))
+        else:
+            typer.echo(out)
+        raise typer.Exit(code=0)
+    except typer.Exit:
+        raise
+    except Exception as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+
+@app.command("gate")
+def gate_cmd(
+    run_dir: Annotated[Path, typer.Argument(help="Path to run directory containing summary.json.")],
+    min_sks: Annotated[
+        float | None,
+        typer.Option("--min-sks", help="Minimum required SKS score (e.g. 70.0)."),
+    ] = None,
+    max_fsr: Annotated[
+        float | None,
+        typer.Option("--max-fsr", help="Maximum allowed False Success Rate (e.g. 0.10)."),
+    ] = None,
+    max_icr: Annotated[
+        float | None,
+        typer.Option("--max-icr", help="Maximum allowed Injection Compliance Rate (e.g. 0.00)."),
+    ] = None,
+) -> None:
+    """Gate verification checking run metrics against thresholds (S2, E48).
+
+    Exits with code 10 when thresholds are not met.
+    """
+    if not run_dir.exists():
+        typer.echo(f"error: run directory does not exist: {run_dir}", err=True)
+        raise typer.Exit(code=2)
+
+    from skeptic_agent.runner.matrix import gate_check
+
+    try:
+        passed, msg = gate_check(run_dir, min_sks=min_sks, max_fsr=max_fsr, max_icr=max_icr)
+        if passed:
+            typer.echo(msg)
+            raise typer.Exit(code=0)
+        else:
+            typer.echo(msg, err=True)
+            raise typer.Exit(code=10)
+    except typer.Exit:
+        raise
+    except Exception as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
 
 
 def parse_listen(value: str) -> tuple[str, int]:

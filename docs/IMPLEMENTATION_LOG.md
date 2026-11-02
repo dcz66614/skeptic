@@ -3014,3 +3014,80 @@ EXIT=0
 ## E47 merge (2026-11-02)
 
 - codex  ff-merged to main. 
+
+
+## E48 批量运行 `skeptic run` / `bench run`（2026-11-02）
+
+基线 `4102c6d`，分支 `codex`。交付 `src/skeptic_agent/runner/matrix.py`，更新 `src/skeptic_agent/runner/__init__.py` 与 `src/skeptic_agent/cli.py`，交付单元测试套件 `tests/unit/test_matrix.py`（11 个用例）与集成测试套件 `tests/integration/test_matrix_runner.py`（6 个用例），全库测试 1139 passed，总体测试覆盖率 91.68%（严格达到 >= 85.0% 要求）。
+
+### 交付内容
+
+1. **矩阵加载、`${model}` 展开与运行编排 (`src/skeptic_agent/runner/matrix.py`)**:
+   - 完整实现 `MatrixConfig`、`Matrix`、`ExpandedConfig` 数据模型，`load_matrix` 严格通过 `schemas/matrix.schema.json`（Draft 2020-12）校验。
+   - 实现 `expand_matrix_configs`：依据 `bench/leaderboard/models.yaml`，展开 `${model}` 模板占位符（支持 `leaderboard`、`dev` 或自定义模型 ID 列表）。
+   - 实现核心调度器 `execute_run`：
+     - 支持 `--suite`（通过 `resolve_suite_scenarios`）或 `--scenario` 路径列表。
+     - 支持 profile 单个或多个批量展开（通过 `expand`）。
+     - 支持并发控制（`--concurrency`，`asyncio.Semaphore`）。
+     - 支持断点续跑（`--resume`）：自动读取已有 `results.jsonl`，提取已有 `run_id`，精确过滤跳过已完成 episode，并在全部完成后按原始确定性时序规范重写 `results.jsonl`。
+     - 实时捕获并累计 `BudgetTracker` 消费；超出上限时立即安全终止新调度并抛出 `BudgetExceededError`（退出码 5）。
+     - 自动构建符合 S10.5 规范并严格通过 `schemas/report.schema.json` 校验的 `summary.json`（含 agent 聚合指标与 CI、by_fault、by_sandbox、worst_scenarios 及 cassette 路径、guard_actions、total_cost_usd）。
+     - 自动向 `bench/ledger.csv` 记账（通过 `append_ledger_entry`）。
+   - 实现矩阵批量运行器 `execute_matrix`：按矩阵配置循环批量调度 runs，跨配置共享 `BudgetTracker` 统一控制整批预算上限。
+   - 实现 A/B 对比工具 `compare_runs`：支持两个 run 的差异对比；当两 run 均包含 `results.jsonl` 时，执行场景聚类配对 Bootstrap（B=1000, seed=0）计算点估计差值（B - A）及 95% 置信区间；支持 `md`（Markdown 表格）与 `json` 结构输出。
+   - 实现门禁核验函数 `gate_check`：校验 run 的 SKS、FSR、ICR 是否满足门禁阈值（支持命令行显式指定与 `summary.json` 声明回退）。
+
+2. **CLI 子命令接入 (`src/skeptic_agent/cli.py`)**:
+   - `skeptic run`：完整支持 `--suite`、`--scenario`、`--agent`、`--profile`、`--guards`、`--prompt-variant`、`--seeds`、`--concurrency`、`--max-cost-usd`、`--out`、`--resume`。
+   - `skeptic bench run`：完整支持 `--matrix`、`--resume`、`--max-cost-usd`、`--concurrency`、`--out`。
+   - `skeptic compare RUN_A RUN_B`：完整支持 `--format {md,json}`。
+   - `skeptic gate RUN_DIR`：完整支持 `--min-sks`、`--max-fsr`、`--max-icr`；门禁不通过时严格返回退出码 10。
+
+3. **测试套件与验收核验**:
+   - `tests/unit/test_matrix.py`（11 个用例全部通过）：覆盖 matrix loading、schema validation、model expansion、guards 规范化、worst scenarios 计算、summary.json 构建与校验、gate check 逻辑、compare runs 输出、CLI gate 与 compare 命令。
+   - `tests/integration/test_matrix_runner.py`（6 个用例全部通过）：
+     - `test_execute_run_basic`：基础运行与文件产出。
+     - `test_execute_run_budget_limit`：超预算熔断。
+     - `test_resume_preserves_results_and_skips_completed`：断点续跑一致性。
+     - `test_execute_matrix_runs`：多配置矩阵批量执行。
+     - `test_cli_bench_run_and_gate_fail`：CLI bench run 与 gate 命令联动及退出码 10。
+     - `test_acceptance_smoke_silent_core_kill_and_resume`（**E48 核心验收测试**）：在 FakeLLM 下运行 smoke 套件 20 场景 × silent-core 8 故障 = 158 episodes，先一次跑完获得黄金基准；随后在全新目录模拟中途 50 条处 kill，使用 `--resume` 续跑补齐；验证最终 158 条记录、结局、SKS 及置信区间与一次跑完的完全一致；验证 `gate` 在阈值不满足时返回退出码 10。
+
+### 规格歧义与实现决策
+
+1. **断点续跑（`--resume`）时的 `run_id` 与 `episode_id` 继承机制**:
+   - **歧义**：每次运行默认调用 `generate_run_id()` 产生全新时间戳与随机后缀，若 resume 重新生成 run_id，则会导致后续 episode 的 `episode_id` 前缀变化，破坏结果集合的一致性。
+   - **决策**：当开启 `--resume` 且输出目录已存在 `results.jsonl`（或 `summary.json`）时，自动提取既有记录中的 `run_id` 沿用，确保整批 run 内所有 episode 的 run_id 前缀完全统一；同时通过 `(scenario_id, fault_tag, seed)` 建立联合索引排除已完成项，实现幂等断点续跑。
+
+2. **并发执行下 `results.jsonl` 的实时落盘与规范排序**:
+   - **歧义**：并发多 worker 执行下，若仅在内存中缓存并在结束时写盘，中途 kill 将丢失进度；若并发直接写盘，各 episode 完成时钟可能存在微秒级偏差，导致中断续跑与一次跑完的行序存在微小差异。
+   - **决策**：双层保障机制。在 `run_episode` 执行期间，每完成一个 episode 立即以追加模式写出，保证即便被强制 SIGKILL，已执行的成果也不丢失；在全量批次（或 resume 补齐批次）执行完成后，按原始场景展开清单的固定序位（seed -> scenario -> fault）进行确定性重新整理落盘。由此彻底保障无论是一次跑完还是中途 kill 后 resume，最终生成的 `results.jsonl` 逐行内容完全一致。
+
+3. **`summary.json` 在空结果或极低预算中断下的 Schema 合规**:
+   - **歧义**：若在首个 episode 执行前即因 `--max-cost-usd 0` 触发熔断，此时无完成 episode；而 `schemas/report.schema.json` 规定 `agents` 数组必须满足 `minItems: 1`。
+   - **决策**：在 `build_summary_doc` 中针对空 episode 列表提供退化保护：使用传入的目标 agent 配置构造默认 `agent_result` 记录（各指标与 CI 均为 0.0），确保生成的 `summary.json` 始终严格满足 Schema 校验，再由运行器安全抛出 `BudgetExceededError`（退出码 5）。
+
+4. **`gate` 门禁检查的阈值来源与退出码**:
+   - **歧义**：S2 表格中 `skeptic gate RUN_DIR` 带有可选的 `--min-sks`、`--max-fsr`、`--max-icr`，而 S3 的 `skeptic.yaml` 和 `summary.json` 中也带有 `gate` 配置块。
+   - **决策**：采用分层继承逻辑：若命令行显式指定参数，以命令行参数为最高优先级；未指定时自动读取 `summary.json` 内 `config.gate` 声明的阈值；若依然未配置，则回退到 S3 的缺省基准（min_sks: 70.0, max_fsr: 0.10, max_icr: 0.00）。当且仅当任一指标不达标时，在 stderr 输出详细失败原因并调用 `typer.Exit(code=10)`。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+210 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 100 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+1139 passed, 6 skipped, 12 deselected, 41 warnings in 880.25s (0:14:40)
+Required test coverage of 85.0% reached. Total coverage: 91.68%
+EXIT=0
+```
