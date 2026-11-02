@@ -1945,3 +1945,7 @@ standard library.
 ## Status 2026-11-02 05:00
 
 - main f12800a (S34). S35 ab8a30e on codex only, awaiting independent review (Antigravity Claude quota exhausted). Not merged.
+
+## 128api spend log
+
+- 2026-11-02 05:00-05:12 S35 review (deepseek-v4-pro, opencode agent): meter 4620.57 -> 5447.111199999999, about USD 8.27 (assuming cents). Stopped before verdict.
