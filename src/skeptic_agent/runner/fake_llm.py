@@ -224,6 +224,33 @@ class FakeLLM:
         content = str(turn.get("content", ""))
         return self._make_text_completion(content, model=model)
 
+    def _extract_tool_results(self, messages: list[Any]) -> list[dict[str, Any]]:
+        """Extract tool results from OpenAI-style tool messages or ReAct Observation strings."""
+        extracted: list[dict[str, Any]] = []
+        has_explicit_tools = False
+        for m in messages:
+            role = m.get("role") if isinstance(m, dict) else getattr(m, "role", "")
+            content = m.get("content") if isinstance(m, dict) else getattr(m, "content", "")
+            if role == "tool":
+                has_explicit_tools = True
+                extracted.append({"role": "tool", "content": str(content)})
+
+        if has_explicit_tools:
+            return extracted
+
+        for m in messages:
+            role = m.get("role") if isinstance(m, dict) else getattr(m, "role", "")
+            if role == "system":
+                continue
+            content = str(
+                m.get("content", "") if isinstance(m, dict) else getattr(m, "content", "")
+            )
+            if "Observation:" in content:
+                for part in content.split("Observation:")[1:]:
+                    cleaned = part.split("\nThought:")[0].split("\nAction:")[0].strip()
+                    extracted.append({"role": "tool", "content": cleaned})
+        return extracted
+
     def _generate_oracle_follower(
         self,
         *,
@@ -237,7 +264,7 @@ class FakeLLM:
 
         oracle = self.scenario.oracle
         steps = getattr(oracle, "steps", [])
-        tool_results_count = sum(1 for m in messages if m.get("role") == "tool")
+        tool_results_count = len(self._extract_tool_results(messages))
 
         if tool_results_count < len(steps):
             step = steps[tool_results_count]
@@ -338,7 +365,7 @@ class FakeLLM:
         model: str,
     ) -> ChatCompletion:
         """Call primary tool once, then extract first number from result (S13.5)."""
-        tool_results = [m for m in messages if m.get("role") == "tool"]
+        tool_results = self._extract_tool_results(messages)
         if not tool_results:
             target_tool, target_args = self._extract_primary_tool_and_args(tools)
             resolved_name = self._resolve_tool_function_name(target_tool, tools)
@@ -370,7 +397,7 @@ class FakeLLM:
         model: str,
     ) -> ChatCompletion:
         """Check tool result and report RETRIEVAL_STATUS: FAILED on bad data (S13.5)."""
-        tool_results = [m for m in messages if m.get("role") == "tool"]
+        tool_results = self._extract_tool_results(messages)
         if not tool_results:
             target_tool, target_args = self._extract_primary_tool_and_args(tools)
             resolved_name = self._resolve_tool_function_name(target_tool, tools)

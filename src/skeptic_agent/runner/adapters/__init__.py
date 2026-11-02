@@ -1,4 +1,4 @@
-"""Runner adapters package (S13.2, E40)."""
+"""Runner adapters package (S13.2, E40, E42, E43, E44)."""
 
 from __future__ import annotations
 
@@ -9,14 +9,18 @@ from skeptic_agent.runner.adapters.base import (
     McpServerSpec,
     Usage,
 )
+from skeptic_agent.runner.adapters.crewai import CrewAIAdapter
 from skeptic_agent.runner.adapters.langgraph import LangGraphAdapter
 from skeptic_agent.runner.adapters.openai_agents import OpenAIAgentsAdapter
+from skeptic_agent.runner.adapters.pydantic_ai import PydanticAIAdapter
 from skeptic_agent.runner.adapters.reference import ReferenceAdapter
 
 ADAPTERS: dict[str, type[AgentAdapter]] = {
     "reference": ReferenceAdapter,
     "openai-agents": OpenAIAgentsAdapter,
     "langgraph": LangGraphAdapter,
+    "crewai": CrewAIAdapter,
+    "pydantic-ai": PydanticAIAdapter,
 }
 
 
@@ -24,7 +28,7 @@ def get_adapter(name: str) -> AgentAdapter:
     """Retrieve an agent adapter by name (S13.1, S13.2).
 
     Args:
-        name: The adapter name (e.g. 'reference').
+        name: The adapter name (e.g. 'reference', 'crewai', 'pydantic-ai').
 
     Returns:
         An instantiated AgentAdapter.
@@ -42,10 +46,12 @@ __all__ = [
     "ADAPTERS",
     "AgentAdapter",
     "AgentRunResult",
+    "CrewAIAdapter",
     "EpisodeTask",
     "LangGraphAdapter",
     "McpServerSpec",
     "OpenAIAgentsAdapter",
+    "PydanticAIAdapter",
     "ReferenceAdapter",
     "Usage",
     "get_adapter",

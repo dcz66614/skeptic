@@ -2652,3 +2652,92 @@ EXIT=0
 ## E43 merge (2026-11-02)
 
 - codex  ff-merged to main. 
+
+
+## E44 CrewAI 与 PydanticAI 框架适配器（2026-11-02）
+
+基线 `291804b`，分支 `codex`。未推送，未触碰 `main`，未终止任何外部进程。`REVIEW_F20_ref.md` 与 `.tmp` 未暂存。
+
+### 交付内容
+
+1. **CrewAI 适配器 (`src/skeptic_agent/runner/adapters/crewai.py`, `src/skeptic_agent/runner/adapters/__init__.py`)**:
+   - 实现 `CrewAIAdapter` 满足 S13.2 的 `AgentAdapter` 协议，并在 `ADAPTERS["crewai"]` 注册。
+   - 严格遵循 ADR-0006：使用 `crewai` + `mcpadapt`，完全杜绝 `crewai-tools` 与 `pymupdf`（AGPL 依赖）。通过 `mcpadapt.MCPAdapt` 接入 stdio MCP 工具服务器。
+   - 实现零侵入兼容垫片 `_ensure_mcpadapt_compat()`，解决 `mcp 2.3+` SDK 与 `mcpadapt 0.1.20` 之间的 API 变更与破坏：
+     - 将 `streamable_http_client` 映射至已废弃名称 `streamablehttp_client`。
+     - 注入已在 `mcp 2.3+` 移除的 `mcp.client.websocket` 模块存根（MCPAdapt 内部条件导入）。
+     - 修复 `ClientSession.__init__` 中 `read_timeout_seconds` 参数在 mcp 2.3+ 下必须为 `float` 而 `mcpadapt` 传入 `timedelta` 导致的加法类型错误。
+     - 为 `mcp.types.Tool` 动态补充 `inputSchema` 属性 getter/setter，平滑映射至 `input_schema`。
+   - 遵循 S13.4 规范，严格采用框架默认 ReAct 循环与智能体构建（`Agent(role=..., goal=..., backstory=..., verbose=False)`，`prompt=None`），不注入任何提分提示词。
+   - 在 `asyncio.to_thread` 中调度同步执行的 `crew.kickoff()`，并在 `finally` 块中严格退出 `MCPAdapt` 会话（清理 stdio 子进程）。
+   - 实现模型路由：支持 `openrouter/` 前缀、OpenAI 标准模型以及本地 `fake/` 模型。为 `fake/` 模型实现 `SkepticCrewAILLM(OpenAICompletion)` 桥接，支持 ReAct 文本格式输出与 tools_spec 传递。
+   - 禁用 CrewAI 遥测与交互式交互追踪提示（设置 `CREWAI_TESTING="true"`, `OTEL_SDK_DISABLED="true"`, `CREWAI_DISABLE_TELEMETRY="true"`, `CREWAI_DISABLE_TRACKING="true"`）。
+   - 将 CrewAI 结果与 `agent.tools_results` 映射为标准 OpenAI 风格 `transcript`，并依据 S13.3 规则在达到 `max_steps` 时截断回答。
+
+2. **PydanticAI 适配器 (`src/skeptic_agent/runner/adapters/pydantic_ai.py`, `src/skeptic_agent/runner/adapters/__init__.py`)**:
+   - 实现 `PydanticAIAdapter` 满足 S13.2 的 `AgentAdapter` 协议，并在 `ADAPTERS["pydantic-ai"]` 注册。
+   - 使用官方原生 `pydantic_ai.Agent` 配合 `pydantic_ai.mcp.MCPToolset` 与 `fastmcp.client.transports.stdio.StdioTransport` 接入 stdio MCP 工具。
+   - 严格使用 `contextlib.AsyncExitStack` 管理 MCP 工具集生命周期，确保在 `finally` 块中优雅关闭所有客户端会话与进程。
+   - 实现模型路由：基于 `pydantic_ai.models.openai.OpenAIChatModel` 与 `OpenAIProvider`，无缝路由 OpenRouter、OpenAI 及本地 `FakeLLM` 实例。
+   - 遵循 S13.4 规范，严格保持默认系统提示词（空），不注入任何额外提分提示词。
+   - 对齐 S13.3 规范：设置模型单次调用超时 20 秒，配置 `UsageLimits(request_limit=task.max_steps)`；捕获 `UsageLimitExceeded` 异常并优雅提取截断前的消息历史，将 `final_answer` 置为空字符串 `""`、`steps=task.max_steps`，由评测引擎判定为 `NO_ANSWER`。
+   - 完整将 `agent_run_result.all_messages()`（`ModelRequest`, `ModelResponse`, `ToolCallPart`, `ToolReturnPart` 等）转换为 OpenAI 格式标准 `transcript`，并聚合统计 token 与工具调用次数。
+
+3. **FakeLLM 支持 ReAct 交互解析 (`src/skeptic_agent/runner/fake_llm.py`)**:
+   - 扩充 `_extract_tool_results`：不仅解析 OpenAI 标准的 `role: "tool"` 消息，还支持从 Assistant/User 消息中的 `Observation:` 标记中抽取工具返回值。
+   - 显式过滤 `role == "system"` 消息中的文本，避免 CrewAI 等 ReAct 框架在系统提示词模板中包含格式说明文字时被误识别为工具调用返回值。
+
+4. **框架适配器文档 (`docs/en/adapters/crewai.md`, `docs/en/adapters/pydantic-ai.md`)**:
+   - `docs/en/adapters/crewai.md`: 记录框架包与版本（`crewai==1.6.1`, `mcpadapt==0.1.20`）、ADR-0006 合规性、默认提示词说明、超时设置与 MCPAdapt 进程生命周期管理。
+   - `docs/en/adapters/pydantic-ai.md`: 记录框架包与版本（`pydantic-ai==2.38.0`）、MCPToolset 与 StdioTransport 生命周期、默认提示词说明、UsageLimits 与单次工具调用超时设置。
+
+5. **单元与端到端测试套件 (`tests/unit/test_crewai_adapter.py`, `tests/unit/test_pydantic_ai_adapter.py`, `tests/e2e/test_crewai_e2e.py`, `tests/e2e/test_pydantic_ai_e2e.py`)**:
+   - `tests/unit/test_crewai_adapter.py`: 覆盖 CrewAI 适配器协议注册、transcript 构造、MCPAdapt 启动故障基础设施异常捕获、达到 max_steps 截断空回答、模型客户端路由与参数传递、无工具场景以及使用 echo/weather fixture 的 stdio 工具调用端到端执行。
+   - `tests/unit/test_pydantic_ai_adapter.py`: 覆盖 PydanticAI 适配器协议注册、消息序列到 OpenAI transcript 格式化、MCP 启动故障捕获、`UsageLimitExceeded` 优雅回退、模型路由与 OpenRouter extra_body 参数、无工具场景以及使用 echo fixture 的 stdio MCP 工具调用。
+   - `tests/e2e/test_crewai_e2e.py`:
+     - 验证 `weather.forecast.paris-max.001` 在 clean baseline 与 S04 故障注入下的全流程端到端执行，生成的 cassette 通过 schema 校验，结果记录通过 `skeptic.result/v1` 校验。
+     - 离线验证 smoke 套件 2 个场景调度流水线。
+     - 包含加 `@pytest.mark.live` 标记的 dev 模型真实网络测试 `test_acceptance_live_dev_model_smoke_scenarios_crewai`（总开销 < $0.50，在日常无 key 环境通过 skipif 安全跳过）。
+   - `tests/e2e/test_pydantic_ai_e2e.py`:
+     - 验证 `weather.forecast.paris-max.001` 在 clean baseline 与 S04 故障注入下的全流程端到端执行，生成的 cassette 通过 schema 校验，结果记录通过 `skeptic.result/v1` 校验。
+     - 离线验证 smoke 套件 2 个场景调度流水线。
+     - 包含加 `@pytest.mark.live` 标记的 dev 模型真实网络测试 `test_acceptance_live_dev_model_smoke_scenarios_pydantic_ai`（总开销 < $0.50，在日常无 key 环境通过 skipif 安全跳过）。
+
+### 规格歧义与实现决策
+
+1. **ADR-0006 与 `crewai` / `mcpadapt` 依赖选择**:
+   - 原计划 1.2 中 crewai extra 引入 `crewai-tools[mcp]`，后者强依赖 AGPL-3.0 许可的 `pymupdf`，违反项目许可规范与 ADR-0006。
+   - **决策**：严格遵守 ADR-0006，仅使用 `crewai` 与 `mcpadapt`。通过 `mcpadapt.MCPAdapt` 接入 stdio MCP 协议，不引入任何 AGPL 依赖。
+2. **`mcpadapt 0.1.20` 与 `mcp 2.3+` SDK 接口断层**:
+   - `mcpadapt 0.1.20` 内部依赖已被 `mcp 2.3+` 废弃或重命名的模块与类型（如 `streamablehttp_client`、`websocket_client`、`ClientSession` 构造超时类型为 `float` 而不是 `timedelta`、`Tool.inputSchema` 变更为 `input_schema`）。若降级 `mcp` 则会破坏已有适配器与沙箱服务。
+   - **决策**：在 `CrewAIAdapter` 模块初始化时执行动态兼容垫片 `_ensure_mcpadapt_compat()`，在当前进程内存中平滑适配别名与类型转换，既维持项目根环境 `mcp 2.3.0` 不降级，又保证 `mcpadapt` 零报错驱动 MCP 客户端。
+3. **CrewAI 交互式追踪提示抑制**:
+   - CrewAI 在无配置执行时会打印终端交互提示 `Would you like to view your execution traces? [y/N]` 并等待 20 秒超时，阻塞非交互式批处理评测。
+   - **决策**：设置环境变量 `CREWAI_TESTING="true"`, `OTEL_SDK_DISABLED="true"`, `CREWAI_DISABLE_TELEMETRY="true"`, `CREWAI_DISABLE_TRACKING="true"`，彻底禁用遥测与外部追踪。
+4. **PydanticAI `UsageLimits` 与 S13.3 契约**:
+   - PydanticAI 通过 `UsageLimits(request_limit=task.max_steps)` 约束模型请求次数。超限时框架抛出 `UsageLimitExceeded` 异常。
+   - **决策**：严格按照 S13.3“达到 max_steps 时，最终回答为空字符串”，捕获 `UsageLimitExceeded` 异常，从异常上下文中获取当前消息并将其转换为 transcript，返回 `final_answer=""`, `steps=task.max_steps`, `error=None`，由评测引擎判定结局为 `NO_ANSWER`。
+5. **CrewAI ReAct 提示词中 Observation 格式与 FakeLLM 工具响应计数**:
+   - CrewAI 的 ReAct 提示词模版会将包含 `Observation:` 示例的格式说明注入到系统提示词中，若简单的全文搜索 `Observation:` 会导致未发生工具调用前就误判工具返回次数。
+   - **决策**：在 `FakeLLM._extract_tool_results` 中跳过 `role == "system"` 的消息，只从 assistant/user 消息中提取真正的工具执行 `Observation:` 输出，确保离线与在线 ReAct 模拟流程中步数与工具调用判定完全准确。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+192 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 92 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+992 passed, 5 skipped, 12 deselected, 41 warnings in 298.79s (0:04:58)
+Required test coverage of 85.0% reached. Total coverage: 92.85%
+EXIT=0
+```
