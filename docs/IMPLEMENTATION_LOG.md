@@ -2251,3 +2251,7 @@ No new dependencies were added; `uv.lock` is unchanged.
 - `uv run ruff format --check .`：PASS。
 - `uv run mypy src`：PASS。
 - `uv run pytest -q --cov=skeptic_agent`：覆盖率达标（$\ge 85\%$）。
+
+## S37 merge (2026-11-02)
+
+- codex b14dd5f ff-merged to main. S37 100 scenarios (weather/fx/stocks/crm/orders) + validate.py entity_arg check. Self-review PASS (920 passed); WorkBuddy glm-5.3-flash review PASS with spot-checked answers (agy claude quota ran out mid-review).
