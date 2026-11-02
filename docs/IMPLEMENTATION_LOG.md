@@ -2583,3 +2583,68 @@ EXIT=0
 ## E42 merge (2026-11-02)
 
 - codex  ff-merged to main. 
+
+
+## E43 LangGraph 框架适配器（2026-11-02）
+
+基线 `86e6efb`，分支 `codex`。未推送，未触碰 `main`，未终止任何外部进程。`REVIEW_F20_ref.md` 与 `.tmp` 未暂存。
+
+### 交付内容
+
+1. **LangGraph 适配器 (`src/skeptic_agent/runner/adapters/langgraph.py`, `src/skeptic_agent/runner/adapters/__init__.py`)**:
+   - 实现 `LangGraphAdapter` 满足 S13.2 的 `AgentAdapter` 协议，并在 `ADAPTERS["langgraph"]` 注册。
+   - 依据 S13.4 规范，严格使用框架默认智能体构造方式（`create_react_agent(model=llm, tools=tools)`，`prompt=None`，默认 ReAct 循环及错误处理），绝不为提分注入额外系统提示词或干预框架行为。
+   - 整合 `langchain-mcp-adapters` 的 `MultiServerMCPClient`，对接 `task.servers` 中的 stdio MCP 服务器，设置 `session_kwargs={"read_timeout_seconds": 20.0}`（与 S13.3 单次工具调用 20 秒超时严格对齐）。
+   - 实现模型路由：对接 `resolve_model` 与 `create_llm_client`；当厂商为 `openrouter` 时自动在 `ChatOpenAI` 中带上 `extra_body={"usage": {"include": True}}` 与自定义 `base_url`；对本地 `fake/` 模型使用 `FakeLLM` 的 `chat.completions` 作为 `async_client`。
+   - 默认禁用 LangSmith / LangChain 遥测与追踪（`LANGSMITH_TRACING="false"`, `LANGCHAIN_TRACING_V2="false"`），防止无 key 时的无效外部网络调用。
+   - 依据 S13.3 规范，为 ReAct 图执行设定 `recursion_limit = 2 * task.max_steps + 1`；捕获 `GraphRecursionError` 并优雅返回空回答 `final_answer=""` 与 `steps=task.max_steps`，由评测引擎判定为 `NO_ANSWER`。
+   - 将 LangChain 状态消息（`HumanMessage`, `AIMessage`, `ToolMessage`）完整映射为 OpenAI 风格的标准消息序列（`transcript`），并统计 token 与工具调用次数。
+
+2. **本地 FakeLLM 客户端适配 (`src/skeptic_agent/runner/fake_llm.py`)**:
+   - 在 `FakeChatCompletions` 中增加 `with_raw_response` 命名空间及 `FakeRawResponse` / `FakeRawChatCompletions`，满足 `langchain-openai` 的 `ChatOpenAI` 在异步调用底层客户端时对 `with_raw_response.create` 的直接调用要求。
+
+3. **MCP 2.3+ SDK 与 langchain-mcp-adapters 兼容垫片 (`src/skeptic_agent/runner/adapters/langgraph.py`)**:
+   - 针对 `mcp 2.3+` 中重命名的内部模块与字段（`RequestContext` -> `BaseContext`, `ProgressFnT` 路径, FastMCP 路径, 以及 Pydantic 属性由 camelCase 改为 snake_case 如 `inputSchema`/`nextCursor`/`isError`/`structuredContent`/`mimeType`），在适配器加载时提供零外部侵入的内存属性别名与参数适配（`list_tools(cursor=...)` 映射至 `params=PaginatedRequestParams(cursor=...)`），确保无需降级 `mcp` 即可无缝运行。
+
+4. **框架适配器文档 (`docs/en/adapters/langgraph.md`)**:
+   - 依据 S13.4 规范完整记录：框架包与版本（`langgraph==1.2.18`, `langchain-mcp-adapters==0.3.1`, `langchain-openai==1.7.3`）、默认提示词摘录（`prompt=None`）、超时设置（工具调用 20 秒、最大步数映射 `recursion_limit=2*max_steps+1`、墙钟超时控制）。
+
+5. **单元与端到端测试套件 (`tests/unit/test_langgraph_adapter.py`, `tests/e2e/test_langgraph_e2e.py`)**:
+   - `tests/unit/test_langgraph_adapter.py`: 覆盖适配器协议契约、消息到 OpenAI transcript 的转换、MCP 服务器启动失败基础设施错误捕获、`GraphRecursionError` 递归超限优雅回退、未知异常错误上报、模型路由与 OpenRouter extra_body 设置、无工具纯文本补全与 stdio MCP 工具调用端到端执行。
+   - `tests/e2e/test_langgraph_e2e.py`:
+     - 验证 `weather.forecast.paris-max.001` 在 clean baseline 与 S04 故障注入下的全流程端到端执行，生成的 cassette 通过 schema 校验，结果记录通过 `skeptic.result/v1` 校验。
+     - 离线验证 smoke 套件 2 个场景调度流水线。
+     - 包含加 `@pytest.mark.live` 标记的 dev 模型真实网络测试 `test_acceptance_live_dev_model_smoke_scenarios_langgraph`（总开销 < $0.50，在日常无 key 环境通过 skipif 安全跳过）。
+
+### 规格歧义与实现决策
+
+1. **`GraphRecursionError` 异常处理与 S13.3 / S10.2 契约**:
+   - 在 LangGraph 中，智能体循环的步数由 `recursion_limit` 限制。ReAct 图中每个交互轮次包含 agent 节点与 tools 节点两次图转移，因此将 `recursion_limit` 设为 `2 * task.max_steps + 1`。当超出步数时框架抛出 `GraphRecursionError`。
+   - **决策**：严格依据 S13.3“达到 max_steps 时，最终回答为空字符串”，在适配器中捕获 `GraphRecursionError`，将 `final_answer` 置为空字符串 `""`、`steps=task.max_steps` 且 `error=None`，使评测引擎正确判定结局为 `NO_ANSWER`。
+2. **`langchain-mcp-adapters` 与 `mcp 2.3+` 的兼容性垫片**:
+   - 锁定的 `langchain-mcp-adapters 0.3.1` 基于 `mcp 1.x` 编写，直接导入时因 `mcp 2.3.0` 的重构而抛出 `ModuleNotFoundError`（如 `mcp.shared.session`）及 `AttributeError`（如 `Tool.inputSchema`、`ListToolsResult.nextCursor` 等 camelCase 字段变为 snake_case，以及 `list_tools(cursor=...)` 接口变动）。若升级包会导致降级 `mcp` 到 1.30（违反 ADR-0004 与 D4）。
+   - **决策**：在 `LangGraphAdapter` 内部实现 `_ensure_mcp_compat()` 兼容垫片，以非侵入方式在内存中补充模块别名与动态属性映射，既完全遵守 ADR-0004“保持 mcp 2.3.0 不降级”的约束，又成功跑通 `MultiServerMCPClient` 与预置 ReAct 图。
+3. **`FakeLLM` 与 `ChatOpenAI` 的底层调用契约**:
+   - `ChatOpenAI` 内部在异步调用时直接调用 `self.async_client.with_raw_response.create(...)` 并解析响应。
+   - **决策**：在 `FakeLLM` 的 `FakeChatCompletions` 中添加 `with_raw_response` 命名空间，返回具备 `.parse()` 方法的 `FakeRawResponse`，在零外部依赖前提下无缝兼容 LangChain 异步模型客户端。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+184 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 90 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+971 passed, 3 skipped, 12 deselected in 192.00s (0:03:11)
+Required test coverage of 85.0% reached. Total coverage: 92.64%
+EXIT=0
+```

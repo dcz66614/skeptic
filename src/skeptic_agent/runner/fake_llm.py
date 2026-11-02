@@ -25,11 +25,47 @@ from skeptic_agent.jsonsel import get_first
 FIXTURES_DIR = Path(__file__).resolve().parents[3] / "tests" / "fixtures" / "fake_scripts"
 
 
+class FakeRawResponse:
+    """Mock raw response object returned by `with_raw_response.create` (S13.5, E43)."""
+
+    def __init__(self, completion: ChatCompletion) -> None:
+        self._completion = completion
+        self.headers: dict[str, str] = {}
+        self.http_response: Any = None
+
+    def parse(self) -> ChatCompletion:
+        return self._completion
+
+
+class FakeRawChatCompletions:
+    """Mock `chat.completions.with_raw_response` API on FakeLLM (S13.5, E43)."""
+
+    def __init__(self, completions: FakeChatCompletions) -> None:
+        self._completions = completions
+
+    async def create(
+        self,
+        *,
+        model: str,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None = None,
+        **kwargs: Any,
+    ) -> FakeRawResponse:
+        completion = await self._completions.create(
+            model=model,
+            messages=messages,
+            tools=tools,
+            **kwargs,
+        )
+        return FakeRawResponse(completion)
+
+
 class FakeChatCompletions:
     """Mock `chat.completions` API on FakeLLM."""
 
     def __init__(self, fake_llm: FakeLLM) -> None:
         self._fake_llm = fake_llm
+        self.with_raw_response = FakeRawChatCompletions(self)
 
     async def create(
         self,
