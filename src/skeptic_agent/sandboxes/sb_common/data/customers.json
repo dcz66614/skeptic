@@ -1,0 +1,322 @@
+[
+  {
+    "id": "C-1001",
+    "name": "Ada Castillo",
+    "email": "ada.castillo.01@example.com",
+    "tier": "enterprise",
+    "city": "Paris",
+    "created_at": "2025-03-31T22:15:32Z"
+  },
+  {
+    "id": "C-1002",
+    "name": "Bruno Brandt",
+    "email": "bruno.brandt.02@example.com",
+    "tier": "silver",
+    "city": "Tokyo",
+    "created_at": "2025-02-09T04:00:16Z"
+  },
+  {
+    "id": "C-1003",
+    "name": "Chloé Kowalski",
+    "email": "chloé.kowalski.03@example.com",
+    "tier": "silver",
+    "city": "Shanghai",
+    "created_at": "2025-04-08T07:19:39Z"
+  },
+  {
+    "id": "C-1004",
+    "name": "Dmitri Rossi",
+    "email": "dmitri.rossi.04@example.com",
+    "tier": "basic",
+    "city": "Berlin",
+    "created_at": "2026-01-15T11:09:24Z"
+  },
+  {
+    "id": "C-1005",
+    "name": "Elena Thorne",
+    "email": "elena.thorne.05@example.com",
+    "tier": "gold",
+    "city": "Paris",
+    "created_at": "2025-01-02T01:08:17Z"
+  },
+  {
+    "id": "C-1006",
+    "name": "Farid Petrov",
+    "email": "farid.petrov.06@example.com",
+    "tier": "basic",
+    "city": "Shanghai",
+    "created_at": "2025-10-29T08:34:03Z"
+  },
+  {
+    "id": "C-1007",
+    "name": "Greta Almeida",
+    "email": "greta.almeida.07@example.com",
+    "tier": "basic",
+    "city": "Boston",
+    "created_at": "2025-05-25T19:39:39Z"
+  },
+  {
+    "id": "C-1008",
+    "name": "Hiro Kowalski",
+    "email": "hiro.kowalski.08@example.com",
+    "tier": "silver",
+    "city": "Tokyo",
+    "created_at": "2025-07-11T22:29:03Z"
+  },
+  {
+    "id": "C-1009",
+    "name": "Ines Kowalski",
+    "email": "ines.kowalski.09@example.com",
+    "tier": "basic",
+    "city": "Berlin",
+    "created_at": "2026-08-19T12:12:13Z"
+  },
+  {
+    "id": "C-1010",
+    "name": "Jonas Hansen",
+    "email": "jonas.hansen.10@example.com",
+    "tier": "gold",
+    "city": "Osaka",
+    "created_at": "2025-11-17T15:09:27Z"
+  },
+  {
+    "id": "C-1011",
+    "name": "Keiko Hansen",
+    "email": "keiko.hansen.11@example.com",
+    "tier": "enterprise",
+    "city": "Hangzhou",
+    "created_at": "2025-12-23T18:05:47Z"
+  },
+  {
+    "id": "C-1012",
+    "name": "Lars Brandt",
+    "email": "lars.brandt.12@example.com",
+    "tier": "basic",
+    "city": "Shanghai",
+    "created_at": "2026-04-12T20:07:58Z"
+  },
+  {
+    "id": "C-1013",
+    "name": "Mei Okafor",
+    "email": "mei.okafor.13@example.com",
+    "tier": "gold",
+    "city": "Boston",
+    "created_at": "2025-05-05T02:29:12Z"
+  },
+  {
+    "id": "C-1014",
+    "name": "Nadia Petrov",
+    "email": "nadia.petrov.14@example.com",
+    "tier": "silver",
+    "city": "Shanghai",
+    "created_at": "2026-09-13T17:34:55Z"
+  },
+  {
+    "id": "C-1015",
+    "name": "Omar Okafor",
+    "email": "omar.okafor.15@example.com",
+    "tier": "enterprise",
+    "city": "Berlin",
+    "created_at": "2025-03-25T19:11:31Z"
+  },
+  {
+    "id": "C-1016",
+    "name": "Pia Rossi",
+    "email": "pia.rossi.16@example.com",
+    "tier": "enterprise",
+    "city": "Shanghai",
+    "created_at": "2026-10-01T23:01:09Z"
+  },
+  {
+    "id": "C-1017",
+    "name": "Quentin Sato",
+    "email": "quentin.sato.17@example.com",
+    "tier": "basic",
+    "city": "Sydney",
+    "created_at": "2026-05-10T11:01:21Z"
+  },
+  {
+    "id": "C-1018",
+    "name": "Rosa Dubois",
+    "email": "rosa.dubois.18@example.com",
+    "tier": "silver",
+    "city": "Hangzhou",
+    "created_at": "2026-06-18T04:17:40Z"
+  },
+  {
+    "id": "C-1019",
+    "name": "Sven Eriksen",
+    "email": "sven.eriksen.19@example.com",
+    "tier": "enterprise",
+    "city": "Munich",
+    "created_at": "2026-04-05T02:06:01Z"
+  },
+  {
+    "id": "C-1020",
+    "name": "Tara Petrov",
+    "email": "tara.petrov.20@example.com",
+    "tier": "silver",
+    "city": "Munich",
+    "created_at": "2025-12-27T23:01:37Z"
+  },
+  {
+    "id": "C-1021",
+    "name": "Ada Quintero",
+    "email": "ada.quintero.21@example.com",
+    "tier": "silver",
+    "city": "Boston",
+    "created_at": "2025-01-29T12:20:54Z"
+  },
+  {
+    "id": "C-1022",
+    "name": "Bruno Jensen",
+    "email": "bruno.jensen.22@example.com",
+    "tier": "enterprise",
+    "city": "Sydney",
+    "created_at": "2025-11-02T18:47:53Z"
+  },
+  {
+    "id": "C-1023",
+    "name": "Chloé Kowalski",
+    "email": "chloé.kowalski.23@example.com",
+    "tier": "basic",
+    "city": "Berlin",
+    "created_at": "2025-02-15T16:41:39Z"
+  },
+  {
+    "id": "C-1024",
+    "name": "Dmitri Ito",
+    "email": "dmitri.ito.24@example.com",
+    "tier": "gold",
+    "city": "Paris",
+    "created_at": "2025-08-24T15:17:23Z"
+  },
+  {
+    "id": "C-1025",
+    "name": "Elena Sato",
+    "email": "elena.sato.25@example.com",
+    "tier": "gold",
+    "city": "Osaka",
+    "created_at": "2025-08-21T18:23:40Z"
+  },
+  {
+    "id": "C-1026",
+    "name": "Farid Petrov",
+    "email": "farid.petrov.26@example.com",
+    "tier": "silver",
+    "city": "Paris",
+    "created_at": "2025-12-03T19:29:13Z"
+  },
+  {
+    "id": "C-1027",
+    "name": "Greta Mori",
+    "email": "greta.mori.27@example.com",
+    "tier": "gold",
+    "city": "Munich",
+    "created_at": "2026-06-14T08:22:00Z"
+  },
+  {
+    "id": "C-1028",
+    "name": "Hiro Rossi",
+    "email": "hiro.rossi.28@example.com",
+    "tier": "enterprise",
+    "city": "Berlin",
+    "created_at": "2026-02-27T15:57:07Z"
+  },
+  {
+    "id": "C-1029",
+    "name": "Ines Okafor",
+    "email": "ines.okafor.29@example.com",
+    "tier": "basic",
+    "city": "Hangzhou",
+    "created_at": "2026-05-20T21:54:36Z"
+  },
+  {
+    "id": "C-1030",
+    "name": "Jonas Quintero",
+    "email": "jonas.quintero.30@example.com",
+    "tier": "basic",
+    "city": "Berlin",
+    "created_at": "2026-01-31T22:15:27Z"
+  },
+  {
+    "id": "C-1031",
+    "name": "Keiko Quintero",
+    "email": "keiko.quintero.31@example.com",
+    "tier": "basic",
+    "city": "Boston",
+    "created_at": "2026-09-25T16:25:12Z"
+  },
+  {
+    "id": "C-1032",
+    "name": "Lars Petrov",
+    "email": "lars.petrov.32@example.com",
+    "tier": "silver",
+    "city": "Boston",
+    "created_at": "2026-06-27T18:24:05Z"
+  },
+  {
+    "id": "C-1033",
+    "name": "Mei Castillo",
+    "email": "mei.castillo.33@example.com",
+    "tier": "gold",
+    "city": "Tokyo",
+    "created_at": "2026-04-20T04:09:24Z"
+  },
+  {
+    "id": "C-1034",
+    "name": "Nadia Kowalski",
+    "email": "nadia.kowalski.34@example.com",
+    "tier": "enterprise",
+    "city": "New York",
+    "created_at": "2025-04-05T22:52:39Z"
+  },
+  {
+    "id": "C-1035",
+    "name": "Omar Fischer",
+    "email": "omar.fischer.35@example.com",
+    "tier": "silver",
+    "city": "New York",
+    "created_at": "2026-04-04T02:48:09Z"
+  },
+  {
+    "id": "C-1036",
+    "name": "Pia Almeida",
+    "email": "pia.almeida.36@example.com",
+    "tier": "enterprise",
+    "city": "Osaka",
+    "created_at": "2026-08-24T11:24:47Z"
+  },
+  {
+    "id": "C-1037",
+    "name": "Quentin Fischer",
+    "email": "quentin.fischer.37@example.com",
+    "tier": "enterprise",
+    "city": "New York",
+    "created_at": "2025-02-06T06:55:23Z"
+  },
+  {
+    "id": "C-1038",
+    "name": "Rosa Petrov",
+    "email": "rosa.petrov.38@example.com",
+    "tier": "gold",
+    "city": "Beijing",
+    "created_at": "2026-06-27T09:17:52Z"
+  },
+  {
+    "id": "C-1039",
+    "name": "Sven Okafor",
+    "email": "sven.okafor.39@example.com",
+    "tier": "enterprise",
+    "city": "Hangzhou",
+    "created_at": "2025-12-24T07:28:22Z"
+  },
+  {
+    "id": "C-1040",
+    "name": "Tara Eriksen",
+    "email": "tara.eriksen.40@example.com",
+    "tier": "basic",
+    "city": "Boston",
+    "created_at": "2025-04-21T13:39:18Z"
+  }
+]

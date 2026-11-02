@@ -50,3 +50,16 @@ S30 的 `make_server` 返回 `MCPServer`。工具的 `inputSchema` 来自类型�
 - S9.1、S13.3、S14.3 里的“FastMCP”按本 ADR 读成 `MCPServer`，客户端读成 `mcp.Client`。
 - S30、P13 的 echo 夹具、E41 的参考智能体按上述导入路径实现。
 - 依赖保持 `mcp>=2.0,<3`，锁文件版本 2.3.0。
+
+## S30 实现的 SDK API 结论（实测 2.3.0）
+
+`sb_common/server.py` 用下面的 API 实现 S30。全部在本机 2.3.0 上跑通,stdio 与 Streamable HTTP 两种传输、auto 与 legacy 两代协议都验证过。
+
+- `MCPServer.tool(name=..., description=..., annotations=..., structured_output=True)` 注册工具。`structured_output=True` 强制从返回注解生成 `outputSchema`。
+- 工具的 `inputSchema` 来自被注册函数的参数注解,`outputSchema` 来自返回注解。返回注解写成 `Annotated[CallToolResult, <OutputModel>]`:裸 `CallToolResult` 会被当作“无结构化输出”,`Annotated` 的第二项才会发布 `outputSchema` 并按它校验。`sb_common` 用 `inspect.Signature` 从 `ToolSpec.input` 的字段拼出 `**kwargs` 参数,返回注解拼成 `Annotated[CallToolResult, ToolSpec.output]`,于是两个模型同时决定线上 schema,而工具体只有一份实现。
+- `CallToolResult(content=..., structured_content=..., is_error=...)` 原样保留 `structured_content`,不会改写文本块。所以 S9.1 第 6 条要求的文本块由 `sb_common` 自己填 `json.dumps(structured, ensure_ascii=False, sort_keys=True)`;SDK 默认的 pydantic 缩进 JSON 不满足该条。
+- `CallToolResult.content` 的声明类型是 `list[TextContent | ImageContent | ...]`,`mypy --strict` 下 `list[TextContent]` 不兼容;用 `mcp.types.ContentBlock` 作返回类型即可。
+- 传入 `arguments` 的字段校验失败时,SDK 抛出 `ToolError`,server 转成 `isError=true` 的文本块(文本带 `Error executing tool <name>:` 前缀)。这是参数错误,不是业务错误;业务错误由工具体抛 `sb_common.ToolFailure`,框架返回文本恰为 `Error: <reason>` 的 `isError` 结果,满足 S9.1 第 7 条。
+- `ToolAnnotations(read_only_hint=..., destructive_hint=..., idempotent_hint=...)`;线上字段为 `readOnlyHint`/`destructiveHint`/`idempotentHint`。S9.1 第 5 条把读工具的 `idempotent` 恒设 `True`,写工具取 `ToolSpec` 的 `destructive` 与 `idempotent`。
+- `MCPServer.run("stdio")` 与 `MCPServer.run("streamable-http", host=..., port=...)`;HTTP 路径默认 `/mcp`。
+- 进程内 `Client(server)` 与子进程 `Client(StdioServerParameters(...))`、`Client("http://.../mcp")` 都能 `list_tools`/`call_tool`;`mode="legacy"` 固定走 2025 代握手。

@@ -1256,3 +1256,90 @@ EXIT=0
 ## P17 merge (2026-10-29)
 
 - codex a433d51 ff-merged to main. P17 eadf482 + P17fix a433d51 (5,000 calls per transport on persistent proxies). Measured on this Windows PC: stdio p50 0.185 ms / p99 0.563 ms; HTTP p50 2.042 ms / p99 4.111 ms (PASS). Self-review PASS (536 passed); agy detailed review PASS.
+
+## S30 sb_common sandbox framework (2026-11-02)
+
+Base `55edc3a`, branch `codex`. Nothing pushed, `main` untouched, no process
+killed, `REVIEW_F20_ref.md` and `.tmp` not staged.
+
+Built the framework the ten sandboxes of S31-S35 will build on, in
+`src/skeptic_agent/sandboxes/sb_common/` (the layout S1 and ADR-0001 D4 fix):
+
+- `server.py`: `make_server(name, tools, state)` registers each `ToolSpec`
+  on the SDK `MCPServer`. Every tool returns `structuredContent` plus one text
+  block of `json.dumps(structured, ensure_ascii=False, sort_keys=True)`
+  (S9.1 item 6); a `ToolFailure` becomes an `isError` result reading
+  `Error: <reason>` (S9.1 item 7); read tools get `readOnlyHint=true,
+  idempotentHint=true`, write tools `readOnlyHint=false` plus the spec's
+  `destructiveHint`/`idempotentHint` (S9.1 item 5). `run_sandbox` is the
+  shared CLI: stdio by default, `--http HOST:PORT` for Streamable HTTP at
+  `/mcp`, `--state-file PATH` for the state file.
+- `clock.py`: frozen `now()`/`now_iso()` from `SKEPTIC_FROZEN_NOW` (default
+  `2026-11-01T09:00:00Z`), read once at import so the whole process agrees.
+- `state.py`: `SandboxState` holds the one dict; `save()` stamps
+  `updated_at` from the clock and rewrites the file through a temp file and
+  `os.replace`, so a reader never sees a partial file.
+- `data.py`: loads the shared `data/customers.json` as fresh copies.
+- `data/customers.json`: 40 fictional customers C-1001..C-1040 shared with
+  sb_crm, sb_orders and sb_mail (S9.1 item 9).
+- `generate.py`: one-shot generator, fixed seed `20261101` (S9.1 item 3);
+  the output is committed and a test asserts the file matches the generator.
+
+Tests: `tests/integration/test_sb_common.py` (12) drives an example sandbox
+with one read and one write tool through the SDK client in-process (auto and
+legacy eras), and as real subprocesses over stdio and Streamable HTTP; it
+checks both schemas, the three annotations, the sorted JSON text block, the
+`Error: ` business error, the state file at startup and after a write, and
+that a read leaves the file alone. `tests/unit/test_sb_common_parts.py` (14)
+covers the clock, the atomic writer and the committed data.
+
+Spec ambiguities and how they were resolved:
+
+- S9.1 item 4 names only the `SKEPTIC_STATE_FILE` variable, but the S2 CLI
+  table gives `skeptic sandbox run` a `--state-file` flag. `run_sandbox`
+  accepts the flag, copies it into `STATE_FILE_ENV` and onto the state before
+  `make_server` writes the initial file; `SandboxState.from_env` keeps the
+  env-only path for the plain `python -m` launch.
+- The S30 card names `data.py` and `data/customers.json`, while S31 names
+  `<sandbox>/data/generate.py`. Python cannot have both `sb_common/data.py`
+  and a `sb_common/data/` package. Kept `data.py` as the loader (the card
+  lists it) and put the generator at `sb_common/generate.py`, writing into
+  `sb_common/data/`; S31 sandboxes can still keep their own `data/generate.py`
+  next to their own data.
+- S9.1 item 5 wants `inputSchema` from type annotations and `outputSchema`
+  from a model. The SDK only publishes `outputSchema` when the return
+  annotation is `Annotated[CallToolResult, Model]`, and publishes a tool's
+  real `inputSchema` from its parameter list. `make_server` builds each
+  callable's `inspect.Signature` from `ToolSpec.input`'s fields (`**kwargs`,
+  defaults and required set preserved) with that return annotation, so a
+  sandbox still writes one async `handler(arguments, tool)` and both schemas
+  come from the `input`/`output` models.
+- The SDK's own `ToolAnnotations.idempotent` default is `None`; S9.1 item 5
+  fixes it, so read tools always report `True` and write tools report the
+  `ToolSpec` value even when it is `False`.
+- ADR-0004 already recorded the SDK class names from T02; S30 appended the
+  concrete API behaviour it relies on (the `Annotated` return-annotation
+  requirement, the text-block override, argument-validation errors versus
+  business errors).
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+85 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 32 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+562 passed, 12 deselected in 93.74s (0:01:33)
+Required test coverage of 85.0% reached. Total coverage: 95.85%
+EXIT=0
+```
+
+No dependency was added; `mcp`, `pydantic` and `starlette`/`uvicorn` were
+already present and `uv.lock` is unchanged.
