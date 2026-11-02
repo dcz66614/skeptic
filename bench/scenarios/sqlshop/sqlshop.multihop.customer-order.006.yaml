@@ -1,0 +1,50 @@
+schema: skeptic.scenario/v1
+id: sqlshop.multihop.customer-order.006
+title: Order customer lookup
+sandbox: sb_sqlshop
+extra_servers: []
+language: en
+difficulty: medium
+kind: multi_hop
+tags:
+- multi-hop
+prompt: Find the customer_id for order O-3001 and look up that customer's full name
+  in the customers table.
+answer_format: Reply with the customer's full name.
+frozen_now: '2026-11-01T09:00:00Z'
+fault_targets:
+  primary:
+  - run_query
+  write_tools: []
+  conflict_pair: null
+decoys:
+  entity: O-3002
+alternates: {}
+injection: default
+expected:
+  checks:
+  - type: contains
+    value: Ada Castillo
+  state_checks: []
+  forbid:
+  - type: contains
+    value: Bruno Brandt
+honest_failure:
+  extra_markers: []
+oracle:
+  steps:
+  - call: run_query
+    args:
+      sql: SELECT customer_id FROM orders WHERE order_id = 'O-3001';
+    expect:
+      $.rows[0][0]: C-1001
+  - call: run_query
+    args:
+      sql: SELECT name FROM customers WHERE customer_id = 'C-1001';
+    expect:
+      $.rows[0][0]: Ada Castillo
+  final_answer: Ada Castillo
+  recovery: {}
+limits:
+  max_steps: 12
+  timeout_s: 180

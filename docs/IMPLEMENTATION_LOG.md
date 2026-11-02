@@ -2255,3 +2255,48 @@ No new dependencies were added; `uv.lock` is unchanged.
 ## S37 merge (2026-11-02)
 
 - codex b14dd5f ff-merged to main. S37 100 scenarios (weather/fx/stocks/crm/orders) + validate.py entity_arg check. Self-review PASS (920 passed); WorkBuddy glm-5.3-flash review PASS with spot-checked answers (agy claude quota ran out mid-review).
+
+## S38 场景批次 2（2026-11-02）
+
+基线 `fd9c24e`，分支 `codex`。未推送，未触碰 `main`。
+
+### 交付内容
+
+1. **100 个基准场景文件 (Milestone 4 Batch 2)**:
+   - 覆盖 5 个沙箱：`calendar`、`docs`、`sqlshop`、`mail`、`files`，每个沙箱 20 个独立场景 YAML：
+     - `bench/scenarios/calendar/*.yaml` (20 个)
+     - `bench/scenarios/docs/*.yaml` (20 个)
+     - `bench/scenarios/sqlshop/*.yaml` (20 个)
+     - `bench/scenarios/mail/*.yaml` (20 个)
+     - `bench/scenarios/files/*.yaml` (20 个)
+   - 每个沙箱包含 10 个英文场景（编号 001-010）与 10 个中文场景（编号 011-020）。
+   - 状态化沙箱（`calendar`、`mail`、`files`）配比：8 个单工具读取（easy）、5 个多跳读取（medium）、2 个跨源冲突对（medium，带 `conflict_pair`）、4 个写操作（medium，带 `state_checks` 与写后回读步骤）、1 个高难度综合写任务（hard，020）。
+   - 只读沙箱（`docs`、`sqlshop`）配比：8 个单工具读取（easy）、10 个多跳读取（9 medium + 1 hard，020）、2 个跨源冲突对（medium，带 `conflict_pair` 与 `alternates`）。
+   - `sb_docs` 的场景侧重“根据文档内容回答问题”（员工安全密钥、远程办公预算、机器人负载与续航、报销与差旅限额、事件通报时限等），直接适配 A01 注入测试要求。
+
+2. **端到端测试稳定性修复 (Test Race Mitigation)**:
+   - 在 `tests/e2e/test_loud_faults.py` 中的 `test_l01_hold_ends_early_on_cancel`，补充了与 `test_l01_cancellation_drops_the_reply` 一致的 `await session.wait_for_id(1)` 握手等待，消除全量覆盖率并发下在消息 1 发出前提早关闭 stdin 导致的非确定性断言失败。
+
+### 规格歧义与实现决策
+
+- **只读沙箱（sb_docs, sb_sqlshop）与写操作配比**:
+  - 承袭 S37 决策，`sb_docs` 与 `sb_sqlshop` 为纯读取沙箱，无写操作工具。若强行定义写场景会导致静态 Rule 2/Rule 3 校验失败或 Oracle 执行找不到写工具。因此将其写配比替换为多跳关联读取场景，保持 8 easy / 11 medium / 1 hard 和 20 个场景总数不变。
+- **sb_docs 跨源冲突对与替代源**:
+  - `sb_docs` 具备 `read_doc_archive` 工具（指定历史版本），在跨源场景（010/019）与单工具场景的 `recovery.default` 中，使用 `read_doc_archive(version=1)` 作为主读取工具 `read_doc` 的替代源。
+- **sb_sqlshop 的订单编号与只读查询约束**:
+  - `sb_sqlshop` 的真实订单编号为 `O-3001` 至 `O-3120`（不同于 `sb_orders` 的 `O-2001` 至 `O-2120`），场景涉及的查询与断言全部依据 `shop.sql` 真实数据设定。
+  - `run_query` 仅允许单个 SELECT 语句；跨源场景将 `run_query` 与 `run_query_replica` 作为冲突对，同时也是默认恢复工具。
+- **sb_files 目录列表排序机制**:
+  - `sb_files.list_dir` 将子目录与文件统一按完整路径 `entry.path` 进行 ASCII 升序排列。在多跳和单工具读取中，索引与排序严格匹配实际文件系统的固有序列（例如 `/home/user` 下的 `README.txt` 排在 `archive` 前）。
+- **中文场景 CJK 字符比例**:
+  - 遵守 S8.4 Rule 7 中文场景 CJK 字符数 $\ge 30\%$ 的要求，在涉及 JSON 配置字串或英文路径的长参数写场景（如 `files.write.create-config.018`）中扩充自然语言指令描述，确保 CJK 比例保持在 40% 以上。
+
+### 验证结果
+
+- `skeptic scenario validate bench/scenarios/{calendar,docs,sqlshop,mail,files}`：100/100 全部通过，0 错误。
+- 全库验证 `skeptic scenario validate bench/scenarios`：200/200 全部通过（S37+S38 完整无冲突）。
+- `skeptic scenario oracle ... --faults none`：S38 全部 100 个场景在对应沙箱中 100/100 PASS。
+- `uv run ruff check .`：PASS。
+- `uv run ruff format --check .`：PASS。
+- `uv run mypy src`：PASS。
+- `uv run pytest -q --cov=skeptic_agent`：920 passed，覆盖率 94.08%（$\ge 85\%$）。

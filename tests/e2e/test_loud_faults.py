@@ -419,6 +419,7 @@ async def test_l01_hold_ends_early_on_cancel() -> None:
     loop = asyncio.get_running_loop()
     started = loop.time()
     session.start()
+    await session.wait_for_id(1)
     responses = await session.finish()
     assert loop.time() - started < 15
     assert [response.get("id") for response in responses] == [1]

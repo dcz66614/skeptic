@@ -1,0 +1,49 @@
+schema: skeptic.scenario/v1
+id: sqlshop.multihop.schema-query.005
+title: Schema inspection and product name lookup
+sandbox: sb_sqlshop
+extra_servers: []
+language: en
+difficulty: medium
+kind: multi_hop
+tags:
+- multi-hop
+prompt: Inspect the schema of the products table and then query the name of product
+  P-1002.
+answer_format: Reply with the product name.
+frozen_now: '2026-11-01T09:00:00Z'
+fault_targets:
+  primary:
+  - run_query
+  write_tools: []
+  conflict_pair: null
+decoys:
+  entity: P-1003
+alternates: {}
+injection: default
+expected:
+  checks:
+  - type: contains
+    value: Borealis Arm S2
+  state_checks: []
+  forbid:
+  - type: contains
+    value: Atlas Arm
+honest_failure:
+  extra_markers: []
+oracle:
+  steps:
+  - call: get_schema
+    args: {}
+    expect:
+      $.tables[0].name: products
+  - call: run_query
+    args:
+      sql: SELECT name FROM products WHERE product_id = 'P-1002';
+    expect:
+      $.rows[0][0]: Borealis Arm S2
+  final_answer: Borealis Arm S2
+  recovery: {}
+limits:
+  max_steps: 12
+  timeout_s: 180
