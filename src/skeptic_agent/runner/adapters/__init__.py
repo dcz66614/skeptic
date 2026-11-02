@@ -9,10 +9,12 @@ from skeptic_agent.runner.adapters.base import (
     McpServerSpec,
     Usage,
 )
+from skeptic_agent.runner.adapters.openai_agents import OpenAIAgentsAdapter
 from skeptic_agent.runner.adapters.reference import ReferenceAdapter
 
 ADAPTERS: dict[str, type[AgentAdapter]] = {
     "reference": ReferenceAdapter,
+    "openai-agents": OpenAIAgentsAdapter,
 }
 
 
@@ -40,6 +42,7 @@ __all__ = [
     "AgentRunResult",
     "EpisodeTask",
     "McpServerSpec",
+    "OpenAIAgentsAdapter",
     "ReferenceAdapter",
     "Usage",
     "get_adapter",

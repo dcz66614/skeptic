@@ -2517,3 +2517,65 @@ EXIT=0
 ## E41 merge (2026-11-02)
 
 - codex  ff-merged to main. 
+
+
+## E42 OpenAI Agents SDK 框架适配器（2026-11-02）
+
+基线 `5d813c3`，分支 `codex`。未推送，未触碰 `main`，未终止任何外部进程。`REVIEW_F20_ref.md` 与 `.tmp` 未暂存。
+
+### 交付内容
+
+1. **OpenAI Agents SDK 适配器 (`src/skeptic_agent/runner/adapters/openai_agents.py`, `src/skeptic_agent/runner/adapters/__init__.py`)**:
+   - 实现 `OpenAIAgentsAdapter` 满足 S13.2 的 `AgentAdapter` 协议，并在 `ADAPTERS["openai-agents"]` 注册。
+   - 依据 S13.4 规范，严格使用框架默认智能体构造方式（`instructions=None`, `prompt=None`, 默认 ReAct 循环及错误处理），绝不为提分注入额外系统提示词或干预框架行为。
+   - 实现 MCP stdio 服务器桥接：将 `task.servers` 的每个 `McpServerSpec` 转换为 `MCPServerStdio`，通过 `contextlib.AsyncExitStack` 管理生命周期（`connect()` / `cleanup()`），单次工具调用超时设为 20.0 秒（`client_session_timeout_seconds=20.0`，与 S13.3 保持一致）。
+   - 实现模型客户端与价格路由：封装 `OpenAIChatCompletionsModel`，对接 `resolve_model` 与 `create_llm_client`（支持 `openrouter/`、`openai/`、`compat/` 与 `fake/`）；当厂商为 `openrouter` 时自动在 `ModelSettings` 中带上 `extra_body={"usage": {"include": True}}` 优先读取上报费用。
+   - 禁用 SDK 内部遥测与 trace export（`agents.set_tracing_disabled(True)`），避免无 API key 时的无效外部网络上报与告警。
+   - 捕获 `MaxTurnsExceeded` 异常并依据 S13.3 规定优雅返回空回答 `final_answer=""` 与 `steps=task.max_steps`，由结局判定器正确归类为 `NO_ANSWER`（而非基础设施崩溃）。
+   - 将 SDK 执行过程中的 `new_items`（`ToolCallItem`, `ToolCallOutputItem`, `MessageOutputItem`）完整映射为 OpenAI 风格的标准消息序列（`transcript`），并统计 token 与工具调用次数。
+
+2. **本地 FakeLLM 客户端适配 (`src/skeptic_agent/runner/fake_llm.py`)**:
+   - 在 `FakeLLM` 中补齐 `base_url = None` 与 `api_key = None` 属性，满足 `OpenAIChatCompletionsModel` 在初始化追踪与元数据提取时对底层 OpenAI 客户端属性的直接读取要求。
+
+3. **框架适配器文档 (`docs/en/adapters/openai-agents.md`)**:
+   - 依据 S13.4 规范完整记录：框架包与版本（`openai-agents==0.24.0`）、默认提示词摘录（`instructions=None`, `prompt=None`）、超时设置（工具调用 20 秒、最大步数映射 `max_turns=task.max_steps`、墙钟超时控制）。
+
+4. **单元与端到端测试套件 (`tests/unit/test_openai_agents_adapter.py`, `tests/e2e/test_openai_agents_e2e.py`)**:
+   - `tests/unit/test_openai_agents_adapter.py`: 覆盖适配器协议契约、SDK 运行条目到 OpenAI transcript 的转换、MCP 服务器启动失败基础设施错误捕获、`MaxTurnsExceeded` 步数超限优雅回退、未知异常错误上报、模型路由与 OpenRouter extra_body 设置、无工具纯文本补全与 stdio MCP 工具调用端到端执行。
+   - `tests/e2e/test_openai_agents_e2e.py`:
+     - 验证 `weather.forecast.paris-max.001` 在 clean baseline 与 S04 故障注入下的全流程端到端执行，生成的 cassette 通过 schema 校验，结果记录通过 `skeptic.result/v1` 校验。
+     - 离线验证 smoke 套件 2 个场景调度流水线。
+     - 包含加 `@pytest.mark.live` 标记的 dev 模型真实网络测试 `test_acceptance_live_dev_model_smoke_scenarios_openai_agents`（总开销 < $0.50，在日常无 key 环境通过 skipif 安全跳过）。
+
+### 规格歧义与实现决策
+
+1. **`MaxTurnsExceeded` 异常处理与 S13.3 / S10.2 契约**:
+   - 当任务达到步数上限 `max_turns` 时，`openai-agents` 默认抛出 `agents.exceptions.MaxTurnsExceeded`。若适配器不予捕获，外层 `run_episode` 会将其视作 `infra_error`，导致结局被误分类为 `ERROR`。
+   - **决策**：严格依据 S13.3“达到 max_steps 时，最终回答为空字符串”，在适配器中捕获 `MaxTurnsExceeded`，将 `final_answer` 置为空字符串 `""`、`steps=task.max_steps` 且 `error=None`，使评测引擎正确判定结局为 `NO_ANSWER`。
+2. **FakeLLM 与 `OpenAIChatCompletionsModel` 的属性兼容**:
+   - `OpenAIChatCompletionsModel` 在构造追踪上下文时直接访问 `self._client.base_url`。FakeLLM 作为轻量 mock 原先未定义该属性。
+   - **决策**：在 `FakeLLM.__init__` 中增加 `self.base_url = None` 与 `self.api_key = None`，在零外部依赖与零侵入前提下无缝兼容 SDK 模型包装器。
+3. **测试模块命名与 pytest 文件收集冲突**:
+   - 若在 `tests/unit/` 和 `tests/e2e/` 下使用相同的 `test_openai_agents_adapter.py` 文件名，pytest 会因模块重名抛出 `import file mismatch` 错误。
+   - **决策**：将 e2e 测试命名为 `tests/e2e/test_openai_agents_e2e.py`，单元测试保持 `tests/unit/test_openai_agents_adapter.py`，保持全套测试在各种运行参数下平滑收集。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+180 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 89 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+960 passed, 2 skipped, 12 deselected in 173.47s
+Required test coverage of 85.0% reached. Total coverage: 92.59%
+EXIT=0
+```

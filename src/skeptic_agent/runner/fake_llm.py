@@ -78,6 +78,8 @@ class FakeLLM:
         self.script_name = script_name
         self.scenario = scenario
         self.fixtures_dir = fixtures_dir or FIXTURES_DIR
+        self.base_url: str | None = None
+        self.api_key: str | None = None
         self.chat = FakeChat(self)
         self.call_count = 0
         self.script_data = self._load_script()
