@@ -82,6 +82,18 @@ def test_rule_2_unknown_sandbox(base_scenario_dict: dict[str, Any]) -> None:
     assert "unknown" in rule_2_errors[0].message.lower()
 
 
+def test_rule_2_entity_arg_not_in_tool_schema(base_scenario_dict: dict[str, Any]) -> None:
+    """Rule 2: entity_arg must exist in primary tool's inputSchema."""
+    base_scenario_dict["fault_targets"]["entity_arg"] = "nonexistent_parameter"
+    errors = validate_scenario_data(base_scenario_dict)
+    rule_2_errors = [e for e in errors if e.rule == 2]
+    assert len(rule_2_errors) == 1
+    assert "Rule 2" in rule_2_errors[0].message
+    assert "entity_arg" in rule_2_errors[0].message
+    assert "nonexistent_parameter" in rule_2_errors[0].message
+    assert "inputSchema" in rule_2_errors[0].message
+
+
 def test_rule_3_write_missing_write_tools(base_scenario_dict: dict[str, Any]) -> None:
     """Rule 3: kind=write requires write_tools and state_checks."""
     base_scenario_dict["kind"] = "write"

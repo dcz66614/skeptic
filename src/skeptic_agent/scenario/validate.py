@@ -109,6 +109,25 @@ def extract_numbers(text: str) -> list[float]:
     return deduped
 
 
+def get_sandbox_tool_specs(sandbox_name: str) -> dict[str, Any]:
+    """Inspect and return the registered tools map of a sandbox (S9.2).
+
+    Args:
+        sandbox_name: Sandbox module or server name, e.g. 'sb_weather'.
+
+    Returns:
+        Mapping of tool name to ToolSpec declared by the sandbox.
+
+    Raises:
+        ImportError: When sandbox server cannot be imported.
+    """
+    mod = importlib.import_module(f"skeptic_agent.sandboxes.{sandbox_name}.server")
+    tools = getattr(mod, "TOOLS", None)
+    if tools is not None:
+        return {tool.name: tool for tool in tools}
+    return {}
+
+
 def get_sandbox_tools(sandbox_name: str) -> set[str]:
     """Inspect and return the registered tool names of a sandbox (S9.2).
 
@@ -121,11 +140,33 @@ def get_sandbox_tools(sandbox_name: str) -> set[str]:
     Raises:
         ImportError: When sandbox server cannot be imported.
     """
-    mod = importlib.import_module(f"skeptic_agent.sandboxes.{sandbox_name}.server")
-    tools = getattr(mod, "TOOLS", None)
-    if tools is not None:
-        return {tool.name for tool in tools}
-    return set()
+    return set(get_sandbox_tool_specs(sandbox_name).keys())
+
+
+def get_tool_input_parameters(tool_spec: Any) -> set[str]:
+    """Extract parameter names declared in a ToolSpec input model.
+
+    Args:
+        tool_spec: ToolSpec instance.
+
+    Returns:
+        Set of valid argument names.
+    """
+    input_cls = getattr(tool_spec, "input", None)
+    if input_cls is None:
+        return set()
+    params: set[str] = set()
+    if hasattr(input_cls, "model_fields"):
+        for name, field_info in input_cls.model_fields.items():
+            params.add(name)
+            if getattr(field_info, "alias", None):
+                params.add(field_info.alias)
+    if hasattr(input_cls, "model_json_schema"):
+        with contextlib.suppress(Exception):
+            schema = input_cls.model_json_schema()
+            props = schema.get("properties", {})
+            params.update(props.keys())
+    return params
 
 
 def evaluate_final_answer_check(check: Check, answer: str) -> tuple[bool, str | None]:
@@ -268,11 +309,12 @@ def validate_scenario(
         else:
             known_ids.add(scen_id)
 
-    # Rule 2: fault_targets.primary tools must actually exist in the sandbox
+    # Rule 2: fault_targets.primary tools must actually exist in the sandbox,
+    # and entity_arg (if specified) must be a parameter in the primary tool's inputSchema.
     try:
-        sandbox_tools = get_sandbox_tools(scenario.sandbox)
+        tool_specs = get_sandbox_tool_specs(scenario.sandbox)
         for tool in scenario.fault_targets.primary:
-            if tool not in sandbox_tools:
+            if tool not in tool_specs:
                 errors.append(
                     ValidationError(
                         rule=2,
@@ -284,6 +326,20 @@ def validate_scenario(
                         path=file_path,
                     )
                 )
+            elif scenario.fault_targets.entity_arg:
+                param_names = get_tool_input_parameters(tool_specs[tool])
+                if scenario.fault_targets.entity_arg not in param_names:
+                    errors.append(
+                        ValidationError(
+                            rule=2,
+                            message=(
+                                f"Rule 2: entity_arg '{scenario.fault_targets.entity_arg}' "
+                                f"is not a parameter in primary tool '{tool}' inputSchema."
+                            ),
+                            scenario_id=scen_id,
+                            path=file_path,
+                        )
+                    )
     except Exception as exc:
         errors.append(
             ValidationError(

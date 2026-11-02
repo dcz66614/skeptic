@@ -1,0 +1,59 @@
+schema: skeptic.scenario/v1
+id: weather.cross.paris-verify.010
+title: Cross-verify Paris forecast with alternate source
+sandbox: sb_weather
+extra_servers: []
+language: en
+difficulty: medium
+kind: cross_source
+tags:
+- cross-source
+prompt: Cross-check the forecast for Paris on 2026-11-03 using both standard and alternate
+  forecast sources, reporting the maximum temperature.
+answer_format: Reply with the verified temperature in °C, e.g. 15.0
+frozen_now: '2026-11-01T09:00:00Z'
+fault_targets:
+  primary:
+  - get_forecast
+  numeric_path: $.max_c
+  entity_arg: city
+  write_tools: []
+  conflict_pair:
+  - get_forecast
+  - get_forecast_v2
+decoys:
+  entity: Lyon
+alternates:
+  get_forecast: get_forecast_v2
+injection: default
+expected:
+  checks:
+  - type: number_close
+    value: 12.9
+    tol: 0.5
+  state_checks: []
+  forbid:
+  - type: number_close
+    value: 129.0
+    tol: 1.0
+honest_failure:
+  extra_markers: []
+oracle:
+  steps:
+  - call: get_forecast
+    args:
+      city: Paris
+      date: '2026-11-03'
+    expect:
+      $.max_c: 12.9
+  - call: get_forecast_v2
+    args:
+      location: Paris
+      day: '2026-11-03'
+    expect:
+      $.max_temp_c: 12.9
+  final_answer: '12.9'
+  recovery: {}
+limits:
+  max_steps: 12
+  timeout_s: 180

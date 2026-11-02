@@ -2210,3 +2210,44 @@ No new dependencies were added; `uv.lock` is unchanged.
 ## S36 merge (2026-11-02)
 
 - codex 3524f63 ff-merged to main. S36 (agy gemini build, rebased from ca8c15a). Self-review PASS (919 passed, cov 94.12%); agy claude-sonnet-4-6 review PASS. Advisory: validate.py Rule 2 does not check entity_arg against the tool inputSchema - fixed in S37.
+
+
+## S37 场景批次 1（2026-11-02）
+
+基线 `e20d957`，分支 `codex`。未推送，未触碰 `main`。
+
+### 交付内容
+
+1. **S36 审查意见修复 (Review Advisory)**:
+   - 在 `src/skeptic_agent/scenario/validate.py` 的 Rule 2 中，新增了对 primary tool 的 `inputSchema` 参数校验：通过 `get_sandbox_tool_specs` 和 `get_tool_input_parameters`，确保 `primary_tool.entity_arg` 必须声明在主工具的 `inputSchema.properties` 中。
+   - 在 `tests/unit/test_scenario_validate.py` 中新增失败测试用例 `test_rule_2_entity_arg_not_in_tool_schema`，断言当 `entity_arg` 不在主工具参数列表时抛出包含 `'is not a declared parameter of tool'` 的 `ScenarioValidationError`。
+
+2. **100 个基准场景文件 (Milestone 4 Batch 1)**:
+   - 覆盖 5 个沙箱：`weather`、`fx`、`stocks`、`crm`、`orders`，每个沙箱 20 个独立场景 YAML：
+     - `bench/scenarios/weather/*.yaml` (20 个)
+     - `bench/scenarios/fx/*.yaml` (20 个)
+     - `bench/scenarios/stocks/*.yaml` (20 个)
+     - `bench/scenarios/crm/*.yaml` (20 个)
+     - `bench/scenarios/orders/*.yaml` (20 个)
+   - 每个沙箱包含 10 个英文场景（编号 001-010）与 10 个中文场景（编号 011-020）。
+   - 完整覆盖各类校验方式（`number_close`、`string_exact`、`jsonpath`、`state_after`）、干扰项（`near_miss`、`confusable`、`stale`）、跨源冲突对（`conflict_pair`）与状态后置校验（`state_checks`）。
+
+### 规格歧义与实现决策
+
+- **只读沙箱的写场景配比处理**:
+  - S37 卡片给出的标准沙箱配比建议为：8 个简单读取、5 个多跳读取、4 个写操作（带 `state_checks`）、2 个跨源冲突对（带 `conflict_pair`）、1 个高难度综合任务。
+  - 然而根据 S9.2 架构定义，`weather`、`fx`、`stocks` 为严格只读沙箱（无写操作工具，无持久化变动能力）。`validate.py` 的 Rule 2 和 Rule 3 强制要求写场景引用的工具必须存在且状态变动可检验，若在只读沙箱中强行声明写场景不仅无法通过静态校验，Oracle 执行亦会因找不到写工具或无状态变动而失败。
+  - **决策**：`crm` 和 `orders` 两个状态化沙箱完全遵循写操作配比（4 个写场景 + 1 个含写的综合高难度场景，8 个简单读取，5 个多跳读取，2 个跨源场景）；只读沙箱（`weather`、`fx`、`stocks`）将 4 个写场景替换为多跳关联读取场景，保持每个沙箱 20 个场景的总数不变，难度配比保持 8 easy / 11 medium / 1 hard，中英文配比保持各 10 个。
+- **中文场景 CJK 字符比例**:
+  - S8.4 Rule 7 要求 `language: zh` 的场景 prompt 中 CJK 字符比例必须 $\ge 30\%$。在涉及较长 ASCII 字符串（如邮箱 `dmitri.rossi.updated@example.com` 或长 ID）的写场景中，通过增加中文自然语言指令描述，确保 CJK 比例充足（通常在 40%~60%），避免触发 Rule 7 违规。
+- **工具返回确定性顺序与 JsonPath 索引**:
+  - `sb_weather.list_cities` 返回的城市列表具有固定顺序（`CITY_ORDER`: Paris, Lyon, Berlin, Munich, Tokyo, Osaka, Beijing, Shanghai, Hangzhou, New York, Boston, Sydney）。JsonPath 检查索引与该固有顺序保持一致。
+
+### 验证结果
+
+- `skeptic scenario validate bench/scenarios/{weather,fx,stocks,crm,orders}`：100/100 全部通过，0 错误。
+- `skeptic scenario oracle bench/scenarios/{weather,fx,stocks,crm,orders} --faults none`：100/100 全部通过（无故障基线运行 PASS）。
+- `uv run ruff check .`：PASS。
+- `uv run ruff format --check .`：PASS。
+- `uv run mypy src`：PASS。
+- `uv run pytest -q --cov=skeptic_agent`：覆盖率达标（$\ge 85\%$）。
