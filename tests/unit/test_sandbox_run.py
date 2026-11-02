@@ -39,7 +39,7 @@ def _stub(seen: list[str], code: int | None = None) -> types.ModuleType:
 
 @pytest.mark.parametrize("name", sorted(SANDBOXES))
 def test_sandbox_names_map_to_sandbox_modules(name: str) -> None:
-    """S31 registers weather/fx, S32 stocks/crm, S33 orders/calendar."""
+    """S31 registers weather/fx, S32 stocks/crm, S33 orders/calendar, S34 docs/sqlshop."""
     assert SANDBOXES[name] in {
         "sb_weather",
         "sb_fx",
@@ -47,6 +47,8 @@ def test_sandbox_names_map_to_sandbox_modules(name: str) -> None:
         "sb_crm",
         "sb_orders",
         "sb_calendar",
+        "sb_docs",
+        "sb_sqlshop",
     }
 
 

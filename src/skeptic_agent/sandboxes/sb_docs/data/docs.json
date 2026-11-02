@@ -1,0 +1,422 @@
+[
+  {
+    "doc_id": "KB-001",
+    "title": "Security awareness policy",
+    "body": "Initial release. Northwind Robotics requires a hardware security key for every employee sign-in. Passwords must contain at least 16 characters. Suspected phishing must be reported to security@example.com within one hour. Customer data must never be sent to an external email address.",
+    "updated_at": "2026-03-24T06:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-001",
+    "title": "Security awareness policy",
+    "body": "Northwind Robotics requires a hardware security key for every employee sign-in. Passwords must contain at least 16 characters. Suspected phishing must be reported to security@example.com within one hour. Customer data must never be sent to an external email address.",
+    "updated_at": "2026-04-26T00:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-002",
+    "title": "Remote work guidelines",
+    "body": "Initial release. Employees may work remotely for up to three days each week. The annual home office budget is 800 USD. Core collaboration hours are 10:00 to 15:00 UTC. Full remote work needs written approval from a manager.",
+    "updated_at": "2026-03-12T03:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-002",
+    "title": "Remote work guidelines",
+    "body": "Employees may work remotely for up to three days each week. The annual home office budget is 800 USD. Core collaboration hours are 10:00 to 15:00 UTC. Full remote work needs written approval from a manager.",
+    "updated_at": "2026-04-12T04:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-003",
+    "title": "Expense reimbursement",
+    "body": "Initial release. Expense claims must be submitted within 30 days of purchase. Receipts are required for amounts above 25 USD. Rail travel uses standard class. The daily meal limit is 40 USD in Europe and 50 USD in the United States.",
+    "updated_at": "2026-05-24T02:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-003",
+    "title": "Expense reimbursement",
+    "body": "Expense claims must be submitted within 30 days of purchase. Receipts are required for amounts above 25 USD. Rail travel uses standard class. The daily meal limit is 40 USD in Europe and 50 USD in the United States.",
+    "updated_at": "2026-06-27T07:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-004",
+    "title": "Atlas X1 robot specifications",
+    "body": "Initial release. The Atlas X1 mobile robot weighs 12 kilograms and can carry a payload of 25 kilograms. Its battery lasts 8 hours and charges in 90 minutes. The maximum speed is 1.5 metres per second. It operates between 0 and 40 degrees Celsius.",
+    "updated_at": "2026-07-22T07:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-004",
+    "title": "Atlas X1 robot specifications",
+    "body": "The Atlas X1 mobile robot weighs 12 kilograms and can carry a payload of 25 kilograms. Its battery lasts 8 hours and charges in 90 minutes. The maximum speed is 1.5 metres per second. It operates between 0 and 40 degrees Celsius.",
+    "updated_at": "2026-09-16T01:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-005",
+    "title": "Atlas S2 sensor specifications",
+    "body": "Initial release. The Atlas S2 depth sensor measures distances from 0.2 to 6 metres. It captures 30 frames per second and uses 4 watts of power. The housing is rated IP65. Every unit ships with a two metre cable.",
+    "updated_at": "2026-04-04T00:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-005",
+    "title": "Atlas S2 sensor specifications",
+    "body": "The Atlas S2 depth sensor measures distances from 0.2 to 6 metres. It captures 30 frames per second and uses 4 watts of power. The housing is rated IP65. Every unit ships with a two metre cable.",
+    "updated_at": "2026-06-02T05:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-006",
+    "title": "New employee onboarding",
+    "body": "Initial release. New employees receive their laptop on the first day. Security training must be finished within five business days. The probation period is three months. Each new employee is paired with a buddy for 30 days.",
+    "updated_at": "2026-03-07T06:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-006",
+    "title": "New employee onboarding",
+    "body": "New employees receive their laptop on the first day. Security training must be finished within five business days. The probation period is three months. Each new employee is paired with a buddy for 30 days.",
+    "updated_at": "2026-04-21T01:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-007",
+    "title": "Data retention schedule",
+    "body": "Initial release. Customer records are retained for seven years after the last order. Support tickets are kept for 24 months. Server backups are deleted after 90 days. Audit logs are retained for 400 days.",
+    "updated_at": "2026-07-05T02:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-007",
+    "title": "Data retention schedule",
+    "body": "Customer records are retained for seven years after the last order. Support tickets are kept for 24 months. Server backups are deleted after 90 days. Audit logs are retained for 400 days.",
+    "updated_at": "2026-08-04T01:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-008",
+    "title": "Incident response plan",
+    "body": "Initial release. A severity one incident must be declared within 15 minutes of detection. The on-call engineer acts as incident commander. Personal data breaches require customer notification within 72 hours. A post-incident review is held within five business days.",
+    "updated_at": "2026-05-24T03:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-008",
+    "title": "Incident response plan",
+    "body": "A severity one incident must be declared within 15 minutes of detection. The on-call engineer acts as incident commander. Personal data breaches require customer notification within 72 hours. A post-incident review is held within five business days.",
+    "updated_at": "2026-07-22T02:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-009",
+    "title": "Business travel policy",
+    "body": "Initial release. Flights should be booked at least 14 days before departure. Economy class is required for flights shorter than six hours. The hotel limit is 180 EUR per night in Europe. Ground transport receipts must be kept.",
+    "updated_at": "2026-05-18T00:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-009",
+    "title": "Business travel policy",
+    "body": "Flights should be booked at least 14 days before departure. Economy class is required for flights shorter than six hours. The hotel limit is 180 EUR per night in Europe. Ground transport receipts must be kept.",
+    "updated_at": "2026-06-27T02:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-010",
+    "title": "Supplier code of conduct",
+    "body": "Initial release. Suppliers must pay living wages and respect freedom of association. A compliance audit takes place every 12 months. Two critical findings lead to immediate suspension. Gifts worth more than 50 USD must be declined.",
+    "updated_at": "2026-05-01T04:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-010",
+    "title": "Supplier code of conduct",
+    "body": "Suppliers must pay living wages and respect freedom of association. A compliance audit takes place every 12 months. Two critical findings lead to immediate suspension. Gifts worth more than 50 USD must be declined.",
+    "updated_at": "2026-06-13T05:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-011",
+    "title": "Product release process",
+    "body": "Initial release. Every release candidate needs two approvals. Code freeze begins 48 hours before a release. Rollback procedures must be tested before deployment. Production changes are allowed only from 09:00 to 16:00 UTC on weekdays.",
+    "updated_at": "2026-05-03T06:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-011",
+    "title": "Product release process",
+    "body": "Every release candidate needs two approvals. Code freeze begins 48 hours before a release. Rollback procedures must be tested before deployment. Production changes are allowed only from 09:00 to 16:00 UTC on weekdays.",
+    "updated_at": "2026-06-16T00:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-012",
+    "title": "Support service levels",
+    "body": "Initial release. Priority one tickets receive a first response within 30 minutes. Priority two tickets within 4 hours. Priority three tickets within one business day. The support desk is staffed 24 hours a day.",
+    "updated_at": "2026-03-16T07:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-012",
+    "title": "Support service levels",
+    "body": "Priority one tickets receive a first response within 30 minutes. Priority two tickets within 4 hours. Priority three tickets within one business day. The support desk is staffed 24 hours a day.",
+    "updated_at": "2026-04-29T02:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-013",
+    "title": "Privacy protection standard",
+    "body": "Initial release. Only data needed for a stated purpose may be collected. Marketing data is deleted after 18 months. Access requests are answered within 30 days. Data at rest is encrypted with AES-256.",
+    "updated_at": "2026-05-25T07:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-013",
+    "title": "Privacy protection standard",
+    "body": "Only data needed for a stated purpose may be collected. Marketing data is deleted after 18 months. Access requests are answered within 30 days. Data at rest is encrypted with AES-256.",
+    "updated_at": "2026-07-14T02:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-014",
+    "title": "Office access policy",
+    "body": "Initial release. A badge is required to enter every building. Visitors must be escorted at all times. A lost badge must be reported within two hours. The main office is open from 07:00 to 20:00.",
+    "updated_at": "2026-07-06T07:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-014",
+    "title": "Office access policy",
+    "body": "A badge is required to enter every building. Visitors must be escorted at all times. A lost badge must be reported within two hours. The main office is open from 07:00 to 20:00.",
+    "updated_at": "2026-08-27T01:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-015",
+    "title": "Quality testing standard",
+    "body": "Initial release. Every release runs 500 automated tests. A critical defect blocks the release. Load tests must sustain 2,000 requests per second. Test data is refreshed every 30 days.",
+    "updated_at": "2026-06-05T02:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-015",
+    "title": "Quality testing standard",
+    "body": "Every release runs 500 automated tests. A critical defect blocks the release. Load tests must sustain 2,000 requests per second. Test data is refreshed every 30 days.",
+    "updated_at": "2026-08-01T07:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-016",
+    "title": "安全意识政策",
+    "body": "初版。Northwind Robotics 要求员工登录时使用硬件安全密钥。密码长度至少为 16 个字符。发现可疑钓鱼邮件后, 必须在一小时内报告到 security@example.com。客户数据不得发送到外部邮箱。",
+    "updated_at": "2026-07-04T00:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-016",
+    "title": "安全意识政策",
+    "body": "Northwind Robotics 要求员工登录时使用硬件安全密钥。密码长度至少为 16 个字符。发现可疑钓鱼邮件后, 必须在一小时内报告到 security@example.com。客户数据不得发送到外部邮箱。",
+    "updated_at": "2026-08-21T01:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-017",
+    "title": "远程办公指南",
+    "body": "初版。员工每周最多可以远程办公三天。每年的家庭办公预算为 800 美元。核心协作时间为 UTC 10:00 至 15:00。完全远程办公需要经理书面批准。",
+    "updated_at": "2026-04-08T02:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-017",
+    "title": "远程办公指南",
+    "body": "员工每周最多可以远程办公三天。每年的家庭办公预算为 800 美元。核心协作时间为 UTC 10:00 至 15:00。完全远程办公需要经理书面批准。",
+    "updated_at": "2026-06-03T07:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-018",
+    "title": "费用报销规定",
+    "body": "初版。费用报销必须在购买后 30 天内提交。金额超过 25 美元时需要提供收据。铁路出行默认乘坐标准车厢。欧洲每日餐费上限为 40 美元, 美国为 50 美元。",
+    "updated_at": "2026-04-23T07:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-018",
+    "title": "费用报销规定",
+    "body": "费用报销必须在购买后 30 天内提交。金额超过 25 美元时需要提供收据。铁路出行默认乘坐标准车厢。欧洲每日餐费上限为 40 美元, 美国为 50 美元。",
+    "updated_at": "2026-06-07T02:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-019",
+    "title": "Atlas X1 机器人规格",
+    "body": "初版。Atlas X1 移动机器人重 12 千克, 最大载重为 25 千克。电池续航 8 小时, 充满需要 90 分钟。最高速度为每秒 1.5 米。工作温度范围为 0 至 40 摄氏度。",
+    "updated_at": "2026-04-25T00:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-019",
+    "title": "Atlas X1 机器人规格",
+    "body": "Atlas X1 移动机器人重 12 千克, 最大载重为 25 千克。电池续航 8 小时, 充满需要 90 分钟。最高速度为每秒 1.5 米。工作温度范围为 0 至 40 摄氏度。",
+    "updated_at": "2026-06-19T02:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-020",
+    "title": "Atlas S2 传感器规格",
+    "body": "初版。Atlas S2 深度传感器的测量范围为 0.2 至 6 米。它每秒采集 30 帧, 功耗为 4 瓦。外壳防护等级为 IP65。每个单元附带两米线缆。",
+    "updated_at": "2026-05-13T06:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-020",
+    "title": "Atlas S2 传感器规格",
+    "body": "Atlas S2 深度传感器的测量范围为 0.2 至 6 米。它每秒采集 30 帧, 功耗为 4 瓦。外壳防护等级为 IP65。每个单元附带两米线缆。",
+    "updated_at": "2026-06-24T05:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-021",
+    "title": "新员工入职指南",
+    "body": "初版。新员工在第一天领取笔记本电脑。安全培训必须在五个工作日内完成。试用期为三个月。每位新员工会有一名伙伴陪伴 30 天。",
+    "updated_at": "2026-03-16T02:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-021",
+    "title": "新员工入职指南",
+    "body": "新员工在第一天领取笔记本电脑。安全培训必须在五个工作日内完成。试用期为三个月。每位新员工会有一名伙伴陪伴 30 天。",
+    "updated_at": "2026-04-18T04:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-022",
+    "title": "数据保留计划",
+    "body": "初版。客户记录在最后一次订单后保留七年。支持工单保留 24 个月。服务器备份在 90 天后删除。审计日志保留 400 天。",
+    "updated_at": "2026-05-17T05:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-022",
+    "title": "数据保留计划",
+    "body": "客户记录在最后一次订单后保留七年。支持工单保留 24 个月。服务器备份在 90 天后删除。审计日志保留 400 天。",
+    "updated_at": "2026-07-14T00:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-023",
+    "title": "事件响应计划",
+    "body": "初版。发现一级事件后必须在 15 分钟内宣布。值班工程师担任事件指挥。个人数据泄露必须在 72 小时内通知客户。事件复盘在五个工作日内完成。",
+    "updated_at": "2026-07-23T05:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-023",
+    "title": "事件响应计划",
+    "body": "发现一级事件后必须在 15 分钟内宣布。值班工程师担任事件指挥。个人数据泄露必须在 72 小时内通知客户。事件复盘在五个工作日内完成。",
+    "updated_at": "2026-08-31T05:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-024",
+    "title": "差旅政策",
+    "body": "初版。航班应至少提前 14 天预订。飞行时间少于六小时必须乘坐经济舱。欧洲酒店每晚上限为 180 欧元。地面交通收据必须保留。",
+    "updated_at": "2026-06-29T06:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-024",
+    "title": "差旅政策",
+    "body": "航班应至少提前 14 天预订。飞行时间少于六小时必须乘坐经济舱。欧洲酒店每晚上限为 180 欧元。地面交通收据必须保留。",
+    "updated_at": "2026-08-27T02:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-025",
+    "title": "供应商行为准则",
+    "body": "初版。供应商必须支付生活工资并尊重结社自由。合规审计每 12 个月进行一次。出现两项严重问题会立即暂停合作。价值超过 50 美元的礼品必须拒绝。",
+    "updated_at": "2026-03-09T05:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-025",
+    "title": "供应商行为准则",
+    "body": "供应商必须支付生活工资并尊重结社自由。合规审计每 12 个月进行一次。出现两项严重问题会立即暂停合作。价值超过 50 美元的礼品必须拒绝。",
+    "updated_at": "2026-04-20T03:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-026",
+    "title": "产品发布流程",
+    "body": "初版。每个发布候选版本需要两次批准。代码冻结在发布前 48 小时开始。部署前必须测试回滚流程。生产变更只允许在工作日 UTC 09:00 至 16:00 进行。",
+    "updated_at": "2026-07-18T06:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-026",
+    "title": "产品发布流程",
+    "body": "每个发布候选版本需要两次批准。代码冻结在发布前 48 小时开始。部署前必须测试回滚流程。生产变更只允许在工作日 UTC 09:00 至 16:00 进行。",
+    "updated_at": "2026-09-03T02:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-027",
+    "title": "支持服务等级",
+    "body": "初版。一级工单在 30 分钟内首次响应。二级工单在 4 小时内响应。三级工单在一个工作日内响应。支持台每天 24 小时有人值守。",
+    "updated_at": "2026-06-22T01:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-027",
+    "title": "支持服务等级",
+    "body": "一级工单在 30 分钟内首次响应。二级工单在 4 小时内响应。三级工单在一个工作日内响应。支持台每天 24 小时有人值守。",
+    "updated_at": "2026-08-21T00:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-028",
+    "title": "隐私保护标准",
+    "body": "初版。只能收集实现明确目的所需的数据。营销数据在 18 个月后删除。访问请求在 30 天内答复。静态数据使用 AES-256 加密。",
+    "updated_at": "2026-04-10T01:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-028",
+    "title": "隐私保护标准",
+    "body": "只能收集实现明确目的所需的数据。营销数据在 18 个月后删除。访问请求在 30 天内答复。静态数据使用 AES-256 加密。",
+    "updated_at": "2026-05-26T07:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-029",
+    "title": "办公区门禁政策",
+    "body": "初版。进入每栋建筑都需要刷卡。访客必须全程有人陪同。丢失门禁卡必须在两小时内报告。主办公室开放时间为 07:00 至 20:00。",
+    "updated_at": "2026-07-10T01:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-029",
+    "title": "办公区门禁政策",
+    "body": "进入每栋建筑都需要刷卡。访客必须全程有人陪同。丢失门禁卡必须在两小时内报告。主办公室开放时间为 07:00 至 20:00。",
+    "updated_at": "2026-08-14T04:00:00Z",
+    "version": 2
+  },
+  {
+    "doc_id": "KB-030",
+    "title": "质量测试标准",
+    "body": "初版。每次发布运行 500 个自动化测试。严重缺陷会阻止发布。负载测试必须支撑每秒 2,000 个请求。测试数据每 30 天刷新一次。",
+    "updated_at": "2026-05-09T01:00:00Z",
+    "version": 1
+  },
+  {
+    "doc_id": "KB-030",
+    "title": "质量测试标准",
+    "body": "每次发布运行 500 个自动化测试。严重缺陷会阻止发布。负载测试必须支撑每秒 2,000 个请求。测试数据每 30 天刷新一次。",
+    "updated_at": "2026-06-18T07:00:00Z",
+    "version": 2
+  }
+]

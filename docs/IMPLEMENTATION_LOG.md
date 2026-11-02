@@ -1813,3 +1813,127 @@ No dependency was added; `uv.lock` is unchanged.
 ## S33 merge (2026-11-02)
 
 - codex eb64bf4 ff-merged to main. S33 sb_orders + sb_calendar (built on opencode deepseek-v4.1-flash-free). Self-review PASS (753 passed, cov 95.55%); agy detailed review PASS.
+
+## S34 sb_docs and sb_sqlshop (2026-11-02)
+
+Base `044a06c`, branch `codex`. Nothing pushed, `main` untouched, no process
+killed, `REVIEW_F20_ref.md` and `.tmp` not staged.
+
+The seventh and eighth of the ten sandboxes of S9.2, built only on the S30
+`sb_common` factory (`ToolSpec`, `SandboxTool`, `ToolFailure`, `make_server`,
+`run_sandbox`, `SandboxState`). Both are all-read, so their state file carries
+the table and is written once at startup (S9.1 item 4); no tool mutates it.
+
+`src/skeptic_agent/sandboxes/sb_docs/`:
+
+- `data/generate.py` and the committed `data/docs.json`: 30 fictional
+  Northwind Robotics documents KB-001 to KB-030, seed `20261101`. The first 15
+  are English and the last 15 Chinese, so the corpus is half and half. Each
+  document has an archived version 1 and a current version 2; the committed
+  table therefore has 60 records, two per document, each with `doc_id, title,
+  body, updated_at, version`.
+- `server.py`: `search_docs` (terms over the current title and body, `top_k`
+  default 5), `read_doc` (newest version) and `read_doc_archive` (an exact
+  older version, the alternate source). Search results are exactly `doc_id,
+  title, snippet, updated_at`; a document is exactly the five S9.2 fields in
+  S9.2 order.
+- `README.md`: the three tools, example calls with committed values, the
+  fictional-data notice.
+
+`src/skeptic_agent/sandboxes/sb_sqlshop/`:
+
+- `data/generate.py` and the committed `data/shop.sql`: an in-memory SQLite
+  script with the S9.2 counts, seed `20261101`: `products` 40 rows,
+  `customers` 40, `orders` 120 and `order_items` 300. Customers are the shared
+  C-1001 to C-1040 rows, so ids agree with sb_crm/sb_orders; products and
+  orders are fictional. Every order total is the sum of its line items.
+- `server.py`: `get_schema`, `run_query` and `run_query_replica` (the
+  alternate). Each call builds a fresh in-memory database from the committed
+  script; only one SELECT statement is accepted. A query returns exactly
+  `columns, rows, row_count`.
+- `README.md`: the three tools, example calls with committed values, the
+  fictional-data notice.
+
+Supporting changes:
+
+- `cli.py`: `SANDBOXES` gains `docs` and `sqlshop`, so `skeptic sandbox run
+  docs` / `skeptic sandbox run sqlshop` start the modules (S2, S9.1 item 2).
+  `tests/unit/test_sandbox_run.py` accepts the two new names.
+- `tests/integration/test_sb_docs.py` and `tests/integration/test_sb_sqlshop.py`:
+  every tool has a success case and at least one misuse case. Docs covers an
+  English and a Chinese search, the S9.2 field sets, an empty query, a bad
+  `top_k`, an unexpected argument, an unknown document, a known and a Chinese
+  archived version, a missing version, version zero, schemas and read-only
+  annotations, both protocol generations, the startup state file, `python -m`,
+  `skeptic sandbox run docs` and `--http` with its state file. SQLshop covers
+  the four-table schema, an unexpected `get_schema` argument, a real SELECT,
+  the replica agreeing with the primary, non-SELECT statements, two-statement
+  input, syntax and missing-table errors on both query tools, schemas and
+  annotations, both protocol generations, the startup state file, `python -m`,
+  `skeptic sandbox run sqlshop` and `--http` with its state file.
+- `tests/unit/test_sb_docs_sqlshop_data.py`: determinism, the committed files
+  against their generators, the S9.2 shapes (30 documents with versions 1 and
+  2, 15/15 languages, the five field names, archive differing from current;
+  40/40/120/300 rows, the shared customer ids, balanced statuses, totals equal
+  to item sums, valid order/product references) and the committed data files.
+
+Spec ambiguities and how they were resolved:
+
+- S9.2 gives `get_schema` no return fields. It returns `tables[{name,
+  columns[{name, type, not_null, primary_key}]}]`, read from `PRAGMA
+  table_info`, with the four tables in a fixed order. The other two SQL tools
+  use the S9.2 `columns, rows, row_count` shape verbatim.
+- S9.2 says only "SELECT" is allowed. Validation accepts one statement that
+  starts with the SELECT keyword and strips one trailing semicolon; a second
+  statement, a non-SELECT keyword (including WITH) and any SQLite error are
+  business errors. This is the literal reading, without adding a read-only
+  authorizer or a second mechanism.
+- S9.2 does not define the shop columns, only the four table names and row
+  counts. The columns are `products(product_id, name, category, price,
+  stock)`, `customers(customer_id, name, email, city, tier)`,
+  `orders(order_id, customer_id, status, total, created_at)` and
+  `order_items(order_item_id, order_id, product_id, quantity, unit_price)`.
+  Ids run P-1001, O-3001 and OI-5001 upwards.
+- `run_query_replica` has no separate data set in S9.2. It runs the same
+  statement on a fresh copy of the same committed database, so the alternate
+  agrees with the primary unless a fault changes one of the responses.
+- S9.2 fixes the document fields but not the archive semantics. Every document
+  has version 1 (archived, prefixed with `Initial release.` or `初版。`) and
+  version 2 (current); `read_doc` always returns the newest and
+  `read_doc_archive` returns the exact requested version. A non-positive or
+  missing version is a business error.
+- S9.2 does not define search matching. Every whitespace-separated term must
+  occur in the current title or body, case-insensitively; ranking is by term
+  frequency with a title hit counting twice, then by `doc_id`; `snippet` is up
+  to 160 characters around the first body match; no match is an empty
+  `results` list. An empty query and a `top_k` below one are business errors.
+- S9.1 item 9 names sb_crm, sb_orders and sb_mail as the shared-customer
+  users; sb_sqlshop is not listed. Its customer table still reuses the same
+  C-1001 to C-1040 rows so cross-source questions see one customer identity.
+- S9.2's document field order puts the numeric `version` last. That is kept
+  verbatim, so the S6 S04 first numeric leaf of a document is `version`.
+- S9.1 item 4's "state file updates after a write" has no write to observe in
+  either sandbox. The tests assert the stamped startup file instead and that
+  the tools leave it unchanged.
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+139 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 65 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+811 passed, 12 deselected in 160.13s (0:02:40)
+Required test coverage of 85.0% reached. Total coverage: 95.60%
+EXIT=0
+```
+
+No dependency was added; `uv.lock` is unchanged. SQLite comes from the
+standard library.
