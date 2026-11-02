@@ -1677,3 +1677,7 @@ EXIT=0
 ```
 
 No dependency was added; `uv.lock` is unchanged.
+
+## S32 merge (2026-11-02)
+
+- codex 01d28c4 ff-merged to main. S32 sb_stocks + sb_crm. Self-review PASS (688 passed, cov 95.63%); agy detailed review PASS.
