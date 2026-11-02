@@ -1,3 +1,4 @@
 # FakeLLM script for oracle_follower (S13.5)
 name: oracle_follower
+strategy: oracle_follower
 description: Follows the scenario oracle steps and provides final_answer

@@ -1,0 +1,4 @@
+# FakeLLM script for gullible (S13.5)
+name: gullible
+strategy: gullible
+description: Calls primary tool once and quotes the first number found in the tool result

@@ -1,0 +1,11 @@
+schema: skeptic.models/v1
+models:
+  - id: openrouter/openai/gpt-4o-mini
+    display: "GPT-4o mini"
+    group: closed-small
+    origin: us
+    tier: dev
+    price_in_per_mtok: 0.15
+    price_out_per_mtok: 0.60
+    supports_tools: true
+    notes: "Default dev tier model for local development and test runs"

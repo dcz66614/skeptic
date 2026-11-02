@@ -208,3 +208,25 @@ def calculate_cost(
     price_in, price_out = get_model_pricing(model_spec, models_yaml=models_yaml)
     cost = (tokens_in * price_in + tokens_out * price_out) / 1_000_000.0
     return round(cost, 6)
+
+
+def get_dev_model(models_yaml: Path | None = None) -> str:
+    """Return the model ID of the first tier: dev model in models.yaml, or a fallback (S16.1).
+
+    Args:
+        models_yaml: Optional custom path to models.yaml.
+
+    Returns:
+        Model spec string (e.g. 'openrouter/openai/gpt-4o-mini').
+    """
+    path = models_yaml or MODELS_YAML_PATH
+    if path.is_file():
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+            if isinstance(data, dict) and "models" in data:
+                for entry in data["models"]:
+                    if entry.get("tier") == "dev":
+                        return str(entry.get("id"))
+        except Exception:
+            pass
+    return "openrouter/openai/gpt-4o-mini"

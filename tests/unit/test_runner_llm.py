@@ -2,18 +2,25 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock
 
+import jsonschema
 import pytest
 import yaml
 
+from skeptic_agent.runner.adapters.base import EpisodeTask
 from skeptic_agent.runner.fake_llm import FakeLLM
 from skeptic_agent.runner.llm import (
     calculate_cost,
+    get_dev_model,
     get_model_pricing,
     parse_agent_spec,
     resolve_model,
 )
+from skeptic_agent.runner.reference_agent import ReferenceAgent
 
 pytestmark = pytest.mark.unit
 
@@ -114,3 +121,143 @@ async def test_fake_llm_scripts() -> None:
     looper = FakeLLM("looper")
     res_loop = await looper.generate(model="fake/looper", messages=[])
     assert res_loop.choices[0].message.tool_calls is not None
+
+
+def test_models_yaml_schema_and_dev_tier() -> None:
+    """models.yaml adheres to schema and defines a dev-tier model under $1/Mtok (S16.1, E41)."""
+    repo_root = Path(__file__).resolve().parents[2]
+    models_file = repo_root / "bench" / "leaderboard" / "models.yaml"
+    assert models_file.is_file(), f"models.yaml missing at {models_file}"
+
+    schema_file = repo_root / "schemas" / "models.schema.json"
+    schema = json.loads(schema_file.read_text(encoding="utf-8"))
+    data = yaml.safe_load(models_file.read_text(encoding="utf-8"))
+
+    jsonschema.validate(instance=data, schema=schema)
+    assert data["schema"] == "skeptic.models/v1"
+    models = data["models"]
+    assert len(models) >= 1
+
+    # Check dev tier model
+    dev_models = [m for m in models if m.get("tier") == "dev"]
+    assert len(dev_models) >= 1, "Must contain at least 1 tier: dev model"
+
+    dev = dev_models[0]
+    total_cost_per_mtok = float(dev["price_in_per_mtok"]) + float(dev["price_out_per_mtok"])
+    assert total_cost_per_mtok <= 1.0, f"Dev model cost {total_cost_per_mtok} exceeds $1/Mtok limit"
+    assert dev["supports_tools"] is True
+    assert dev["id"].startswith("openrouter/")
+
+
+def test_get_dev_model_helper() -> None:
+    """get_dev_model helper returns expected dev tier model ID (S16.1)."""
+    model_id = get_dev_model()
+    assert model_id == "openrouter/openai/gpt-4o-mini"
+
+
+@pytest.mark.asyncio
+async def test_reference_agent_temperature_retry(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """ReferenceAgent removes temperature and retries once when model rejects it (S13.3)."""
+    from openai import BadRequestError
+    from openai.types import CompletionUsage
+    from openai.types.chat import ChatCompletion, ChatCompletionMessage
+    from openai.types.chat.chat_completion import Choice
+
+    first_call = True
+
+    async def mock_create(**kwargs: Any) -> ChatCompletion:
+        nonlocal first_call
+        if first_call:
+            first_call = False
+            # Simulate remote API rejecting temperature parameter
+            resp_mock = MagicMock()
+            resp_mock.status_code = 400
+            resp_mock.headers = {}
+            raise BadRequestError(
+                message="temperature parameter is not supported by this model",
+                response=resp_mock,
+                body=None,
+            )
+        assert "temperature" not in kwargs
+        msg = ChatCompletionMessage(role="assistant", content="Answer without temp")
+        return ChatCompletion(
+            id="chat-1",
+            choices=[Choice(finish_reason="stop", index=0, message=msg)],
+            created=1234567890,
+            model="mock-model",
+            object="chat.completion",
+            usage=CompletionUsage(completion_tokens=10, prompt_tokens=20, total_tokens=30),
+        )
+
+    mock_client = MagicMock()
+    mock_client.chat.completions.create = AsyncMock(side_effect=mock_create)
+    monkeypatch.setattr(
+        "skeptic_agent.runner.reference_agent.create_llm_client",
+        lambda *args, **kwargs: mock_client,
+    )
+
+    agent = ReferenceAgent()
+    task = EpisodeTask(
+        episode_id="test-temp",
+        prompt="hello",
+        servers=[],
+        model="openrouter/mock/model",
+        max_steps=5,
+        timeout_s=30,
+        prompt_variant="plain",
+        workdir=tmp_path,
+        env={},
+    )
+    res = await agent.run(task)
+    assert res.final_answer == "Answer without temp"
+    assert any("retried without temperature" in str(m.get("content", "")) for m in res.transcript)
+
+
+@pytest.mark.asyncio
+async def test_reference_agent_openrouter_cost_reporting(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """ReferenceAgent prioritizes usage.cost from OpenRouter response (S13.3)."""
+    from openai.types import CompletionUsage
+    from openai.types.chat import ChatCompletion, ChatCompletionMessage
+    from openai.types.chat.chat_completion import Choice
+
+    async def mock_create(**kwargs: Any) -> ChatCompletion:
+        assert kwargs.get("extra_body") == {"usage": {"include": True}}
+        msg = ChatCompletionMessage(role="assistant", content="42")
+        usage_obj = CompletionUsage(completion_tokens=10, prompt_tokens=20, total_tokens=30)
+        # Attach reported cost as OpenRouter does
+        object.__setattr__(usage_obj, "cost", 0.000456)
+        return ChatCompletion(
+            id="chat-2",
+            choices=[Choice(finish_reason="stop", index=0, message=msg)],
+            created=1234567890,
+            model="openrouter/openai/gpt-4o-mini",
+            object="chat.completion",
+            usage=usage_obj,
+        )
+
+    mock_client = MagicMock()
+    mock_client.chat.completions.create = AsyncMock(side_effect=mock_create)
+    monkeypatch.setattr(
+        "skeptic_agent.runner.reference_agent.create_llm_client",
+        lambda *args, **kwargs: mock_client,
+    )
+
+    agent = ReferenceAgent()
+    task = EpisodeTask(
+        episode_id="test-cost",
+        prompt="hello",
+        servers=[],
+        model="openrouter/openai/gpt-4o-mini",
+        max_steps=5,
+        timeout_s=30,
+        prompt_variant="plain",
+        workdir=tmp_path,
+        env={},
+    )
+    res = await agent.run(task)
+    assert res.final_answer == "42"
+    assert res.usage.cost_usd == 0.000456

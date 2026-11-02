@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from pathlib import Path
 
 import jsonschema
 import pytest
+import yaml
 
 from skeptic_agent.runner.adapters.base import AgentAdapter, AgentRunResult, EpisodeTask, Usage
 from skeptic_agent.runner.budget import (
@@ -20,6 +22,7 @@ from skeptic_agent.runner.episode import run_episode
 from skeptic_agent.runner.llm import (
     calculate_cost,
     create_llm_client,
+    get_dev_model,
     parse_agent_spec,
     resolve_model,
 )
@@ -116,6 +119,138 @@ async def test_acceptance_oracle_follower_clean_and_s04(tmp_path: Path) -> None:
     # Both runs wrote results.jsonl
     assert (clean_out / "results.jsonl").is_file()
     assert (s04_out / "results.jsonl").is_file()
+
+
+@pytest.mark.asyncio
+async def test_acceptance_fake_llm_scripts_behavior(tmp_path: Path) -> None:
+    """Acceptance criterion for E41: e2e verification of 4 FakeLLM scripts (S13.5).
+
+    1. oracle_follower: clean & S04 (covered in test_acceptance_oracle_follower_clean_and_s04).
+    2. gullible: quotes first number; SUCCESS under clean, SILENT_CORRUPTION under S04.
+    3. honest: outputs RETRIEVAL_STATUS: FAILED on bad tool data; SUCCESS under clean,
+       HONEST_FAILURE under S01.
+    4. looper: repeats same tool call until max_steps; flags.loop is True, NO_ANSWER.
+    """
+    # --- 1. gullible ---
+    clean_gullible_out = tmp_path / "gullible_clean"
+    res_gc = await run_episode(
+        SCENARIO_PATH,
+        fault_id=None,
+        agent="reference:fake/gullible",
+        out_dir=clean_gullible_out,
+    )
+    jsonschema.validate(instance=res_gc, schema=RESULT_SCHEMA)
+    assert res_gc["outcome"] == "SUCCESS"
+    assert res_gc["final_answer"] == "14.5"
+
+    s04_gullible_out = tmp_path / "gullible_s04"
+    res_gs = await run_episode(
+        SCENARIO_PATH,
+        fault_id="S04",
+        agent="reference:fake/gullible",
+        out_dir=s04_gullible_out,
+    )
+    jsonschema.validate(instance=res_gs, schema=RESULT_SCHEMA)
+    assert res_gs["outcome"] == "SILENT_CORRUPTION"
+    assert res_gs["flags"]["triggered"] is True
+    assert res_gs["final_answer"] == "145.0"
+
+    # --- 2. honest ---
+    clean_honest_out = tmp_path / "honest_clean"
+    res_hc = await run_episode(
+        SCENARIO_PATH,
+        fault_id=None,
+        agent="reference:fake/honest",
+        prompt_variant="evidence_contract",
+        out_dir=clean_honest_out,
+    )
+    jsonschema.validate(instance=res_hc, schema=RESULT_SCHEMA)
+    assert res_hc["outcome"] == "SUCCESS"
+    assert "RETRIEVAL_STATUS: OK" in res_hc["final_answer"]
+
+    s01_honest_out = tmp_path / "honest_s01"
+    res_hs = await run_episode(
+        SCENARIO_PATH,
+        fault_id="S01",
+        agent="reference:fake/honest",
+        prompt_variant="evidence_contract",
+        out_dir=s01_honest_out,
+    )
+    jsonschema.validate(instance=res_hs, schema=RESULT_SCHEMA)
+    assert res_hs["outcome"] == "HONEST_FAILURE"
+    assert res_hs["flags"]["detected"] is True
+    assert "RETRIEVAL_STATUS: FAILED" in res_hs["final_answer"]
+
+    # --- 3. looper ---
+    looper_out = tmp_path / "looper_run"
+    res_loop = await run_episode(
+        SCENARIO_PATH,
+        fault_id=None,
+        agent="reference:fake/looper",
+        out_dir=looper_out,
+    )
+    jsonschema.validate(instance=res_loop, schema=RESULT_SCHEMA)
+    assert res_loop["flags"]["loop"] is True
+    assert res_loop["usage"]["steps"] >= 3
+    assert res_loop["outcome"] == "NO_ANSWER"
+
+
+@pytest.mark.live
+@pytest.mark.asyncio
+@pytest.mark.skipif(
+    not os.getenv("OPENROUTER_API_KEY") or str(os.getenv("OPENROUTER_API_KEY")).startswith("test"),
+    reason="Live model test requires valid OPENROUTER_API_KEY",
+)
+async def test_acceptance_live_dev_model_smoke_scenarios(tmp_path: Path) -> None:
+    """Acceptance criterion for E41: live test dev model on 2 smoke scenarios (< $0.5)."""
+    smoke_suite_file = ROOT_DIR / "bench" / "suites" / "smoke.yaml"
+    assert smoke_suite_file.is_file(), f"Smoke suite missing at {smoke_suite_file}"
+    suite_data = yaml.safe_load(smoke_suite_file.read_text(encoding="utf-8"))
+    scenario_paths = [ROOT_DIR / rel for rel in suite_data.get("scenarios", [])[:2]]
+
+    dev_model = get_dev_model()
+    agent_spec = f"reference:{dev_model}"
+    total_cost: float = 0.0
+
+    for idx, sc_path in enumerate(scenario_paths):
+        out_dir = tmp_path / f"live_smoke_{idx}"
+        result = await run_episode(
+            sc_path,
+            fault_id=None,
+            seed=1,
+            agent=agent_spec,
+            out_dir=out_dir,
+        )
+        jsonschema.validate(instance=result, schema=RESULT_SCHEMA)
+        assert result["outcome"] == "SUCCESS"
+        cost = float(result.get("usage", {}).get("cost_usd", 0.0))
+        total_cost += cost
+
+    assert total_cost < 0.5, f"Total live smoke cost ${total_cost:.4f} exceeded $0.5 budget limit"
+
+
+@pytest.mark.asyncio
+async def test_smoke_scenarios_dispatch_offline(tmp_path: Path) -> None:
+    """Offline validation of the 2 smoke scenarios execution pipeline under FakeLLM."""
+    smoke_suite_file = ROOT_DIR / "bench" / "suites" / "smoke.yaml"
+    suite_data = yaml.safe_load(smoke_suite_file.read_text(encoding="utf-8"))
+    scenario_paths = [ROOT_DIR / rel for rel in suite_data.get("scenarios", [])[:2]]
+
+    total_cost: float = 0.0
+    for idx, sc_path in enumerate(scenario_paths):
+        out_dir = tmp_path / f"offline_smoke_{idx}"
+        result = await run_episode(
+            sc_path,
+            fault_id=None,
+            seed=1,
+            agent="reference:fake/oracle_follower",
+            out_dir=out_dir,
+        )
+        jsonschema.validate(instance=result, schema=RESULT_SCHEMA)
+        assert result["outcome"] == "SUCCESS"
+        total_cost += float(result.get("usage", {}).get("cost_usd", 0.0))
+
+    assert total_cost < 0.5
 
 
 @pytest.mark.asyncio

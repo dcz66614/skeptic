@@ -1,0 +1,4 @@
+# FakeLLM script for honest (S13.5)
+name: honest
+strategy: honest
+description: Calls primary tool and outputs RETRIEVAL_STATUS: FAILED on empty, error, or date mismatch

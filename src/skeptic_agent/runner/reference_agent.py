@@ -13,8 +13,7 @@ import os
 import re
 from typing import Any
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from mcp import Client, StdioServerParameters
 from openai import APIStatusError
 
 from skeptic_agent.runner.adapters.base import AgentRunResult, EpisodeTask, Usage
@@ -86,9 +85,10 @@ class ReferenceAgent:
         final_answer = ""
         infra_error: str | None = None
 
-        # Connect to each MCP server via stdio
+        # Connect to each MCP server via stdio using high-level SDK v2 Client (ADR-0004, S13.3)
+        connect_mode = task.env.get("SKEPTIC_MCP_MODE", "auto")
         async with contextlib.AsyncExitStack() as stack:
-            sessions: dict[str, ClientSession] = {}
+            clients: dict[str, Client] = {}
             tools_map: dict[str, tuple[str, str]] = {}  # func_name -> (server_name, tool_name)
             tools_by_toolname: dict[
                 str, tuple[str, str]
@@ -107,16 +107,10 @@ class ReferenceAgent:
                     cwd=str(task.workdir),
                 )
                 try:
-                    read_stream, write_stream = await stack.enter_async_context(
-                        stdio_client(params)
-                    )
-                    session = await stack.enter_async_context(
-                        ClientSession(read_stream, write_stream)
-                    )
-                    await session.initialize()
-                    sessions[server_spec.name] = session
+                    client = await stack.enter_async_context(Client(params, mode=connect_mode))
+                    clients[server_spec.name] = client
 
-                    tool_list = await session.list_tools()
+                    tool_list = await client.list_tools()
                     for t in tool_list.tools:
                         s_name = sanitize_func_name(server_spec.name)
                         t_name = sanitize_func_name(t.name)
@@ -169,13 +163,34 @@ class ReferenceAgent:
                 }
                 if openai_tools:
                     call_kwargs["tools"] = openai_tools
+                if task.model.startswith("openrouter/"):
+                    call_kwargs["extra_body"] = {"usage": {"include": True}}
 
                 response: Any = None
+                temperature_retry_occurred = False
+
                 for attempt_idx in range(MAX_API_RETRIES + 1):
                     try:
                         response = await llm.chat.completions.create(**call_kwargs)
                         break
                     except APIStatusError as err:
+                        # If model rejects temperature (S13.3)
+                        if "temperature" in str(err).lower() and "temperature" in call_kwargs:
+                            call_kwargs.pop("temperature", None)
+                            temperature_retry_occurred = True
+                            try:
+                                response = await llm.chat.completions.create(**call_kwargs)
+                                break
+                            except Exception as inner_err:
+                                infra_error = f"LLM API error after temperature retry: {inner_err}"
+                                return AgentRunResult(
+                                    final_answer="",
+                                    usage=usage,
+                                    transcript=messages,
+                                    steps=step_count,
+                                    error=infra_error,
+                                )
+
                         if (
                             err.status_code == 429 or err.status_code >= 500
                         ) and attempt_idx < MAX_API_RETRIES:
@@ -190,13 +205,24 @@ class ReferenceAgent:
                             error=infra_error,
                         )
                     except TypeError:
-                        # Model may reject temperature parameter (S13.3)
-                        call_kwargs.pop("temperature", None)
-                        try:
-                            response = await llm.chat.completions.create(**call_kwargs)
-                            break
-                        except Exception as inner_err:
-                            infra_error = f"LLM API error: {inner_err}"
+                        # Model may reject temperature parameter locally (S13.3)
+                        if "temperature" in call_kwargs:
+                            call_kwargs.pop("temperature", None)
+                            temperature_retry_occurred = True
+                            try:
+                                response = await llm.chat.completions.create(**call_kwargs)
+                                break
+                            except Exception as inner_err:
+                                infra_error = f"LLM API error: {inner_err}"
+                                return AgentRunResult(
+                                    final_answer="",
+                                    usage=usage,
+                                    transcript=messages,
+                                    steps=step_count,
+                                    error=infra_error,
+                                )
+                        else:
+                            infra_error = "LLM API type error"
                             return AgentRunResult(
                                 final_answer="",
                                 usage=usage,
@@ -224,14 +250,42 @@ class ReferenceAgent:
                         error=infra_error,
                     )
 
-                # Track usage
+                if temperature_retry_occurred:
+                    messages.append(
+                        {
+                            "role": "system",
+                            "content": (
+                                "Note: Model does not support temperature parameter; "
+                                "retried without temperature."
+                            ),
+                        }
+                    )
+
+                # Track usage (S13.3)
                 resp_usage = getattr(response, "usage", None)
                 if resp_usage:
                     tin = getattr(resp_usage, "prompt_tokens", 0) or 0
                     tout = getattr(resp_usage, "completion_tokens", 0) or 0
                     usage.tokens_in += tin
                     usage.tokens_out += tout
-                    cost = calculate_cost(task.model, tin, tout)
+
+                    # Check for reported cost (e.g. OpenRouter usage.cost)
+                    reported_cost: float | None = None
+                    if hasattr(resp_usage, "cost") and resp_usage.cost is not None:
+                        with contextlib.suppress(TypeError, ValueError):
+                            reported_cost = float(resp_usage.cost)
+                    elif hasattr(resp_usage, "model_extra") and isinstance(
+                        resp_usage.model_extra, dict
+                    ):
+                        c = resp_usage.model_extra.get("cost")
+                        if c is not None:
+                            with contextlib.suppress(TypeError, ValueError):
+                                reported_cost = float(c)
+                    elif isinstance(resp_usage, dict) and "cost" in resp_usage:
+                        with contextlib.suppress(TypeError, ValueError):
+                            reported_cost = float(resp_usage["cost"])
+
+                    cost = calculate_cost(task.model, tin, tout, reported_cost=reported_cost)
                     usage.cost_usd += cost
 
                 choice = response.choices[0]
@@ -274,9 +328,9 @@ class ReferenceAgent:
                         elif task.servers:
                             server_name = task.servers[0].name
 
-                        target_session = sessions.get(server_name) if server_name else None
-                        if target_session is None and sessions:
-                            target_session = next(iter(sessions.values()))
+                        target_client = clients.get(server_name) if server_name else None
+                        if target_client is None and clients:
+                            target_client = next(iter(clients.values()))
 
                         try:
                             args = (
@@ -287,12 +341,12 @@ class ReferenceAgent:
 
                         tool_output: str
                         usage.tool_calls += 1
-                        if target_session is None:
+                        if target_client is None:
                             tool_output = f"ERROR: unknown MCP server for tool {fn_name}"
                         else:
                             try:
                                 tool_res = await asyncio.wait_for(
-                                    target_session.call_tool(tool_name, args),
+                                    target_client.call_tool(tool_name, args),
                                     timeout=TOOL_TIMEOUT_SECONDS,
                                 )
                                 tool_output = extract_tool_result_text(tool_res)

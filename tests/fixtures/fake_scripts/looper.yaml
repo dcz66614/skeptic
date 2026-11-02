@@ -1,0 +1,4 @@
+# FakeLLM script for looper (S13.5)
+name: looper
+strategy: looper
+description: Repeats the identical tool call every step without providing final answer

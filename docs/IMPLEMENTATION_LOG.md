@@ -2441,3 +2441,75 @@ EXIT=0
 ## E40 merge (2026-11-02)
 
 - codex  ff-merged to main. 
+
+
+## E41 参考智能体与 FakeLLM（2026-11-02）
+
+基线 `4595378`，分支 `codex`。未推送，未触碰 `main`，未终止任何外部进程。`REVIEW_F20_ref.md` 与 `.tmp` 未暂存。
+
+### 交付内容
+
+1. **参考智能体完善 (`src/skeptic_agent/runner/reference_agent.py`, `src/skeptic_agent/runner/adapters/reference.py`)**:
+   - 依据 ADR-0004 与 S13.3，将底层的 `ClientSession` 和 `stdio_client` 迁移为高层 `mcp.Client` 客户端，支持 `auto` 自动协议版本协商（以及 `SKEPTIC_MCP_MODE=legacy` 显式 2025 协议固定）。
+   - 实现了对不支持 `temperature` 参数的模型重试机制：捕获参数拒绝异常并剔除 `temperature` 参数重试一次，且在结果 transcript 中追加系统标注。
+   - 实现了 OpenRouter 费用优先上报机制：调用模型 API 时附带 `extra_body={"usage": {"include": True}}`，优先读取并累加 response 里的 `usage.cost`，未提供时回退到 `bench/leaderboard/models.yaml` 价格表。
+   - 保留规范系统提示词（`plain` 与 `evidence_contract`）、函数名消毒（`^[a-zA-Z0-9_-]{1,64}$` 与同名序号 `_2`、`_3`）、单次工具调用 20 秒超时控制、429 与 5xx 的 2s/4s/8s 指数退避重试。
+
+2. **本地 FakeLLM 仿真器与脚本策略 (`src/skeptic_agent/runner/fake_llm.py`)**:
+   - 完整实现了 S13.5 规范的 4 种预设脚本策略及 YAML 回合映射：
+     - `oracle_follower`: 依次执行场景 `scenario.oracle.steps` 并输出 `final_answer`（支持 evidence contract 状态前缀）。
+     - `gullible`: 依据场景 primary 工具与其 oracle 规范参数调用工具，提取返回结果中的首个有效数值（智能过滤 ISO 时间日期字符串并优先根据 `numeric_path` 提取），在 clean 下输出正确数值（`SUCCESS`），在 S04 下盲信放大数值并命中 forbid 检查（`SILENT_CORRUPTION`）。
+     - `honest`: 检查工具结果中的 `ERROR:` 错误、空结果（`[]`、`{}`、`empty`）或日期不匹配（`date mismatch`、stale 等），异常时输出 `RETRIEVAL_STATUS: FAILED`（触发 `HONEST_FAILURE`，`flags.detected=True`），正常时输出 `RETRIEVAL_STATUS: OK`（`SUCCESS`）。
+     - `looper`: 循环对同一工具发起重复调用，直至达到 `max_steps` 步数上限，触发死循环检测（`flags.loop=True`，结局为 `NO_ANSWER`）。
+   - 支持从 `tests/fixtures/fake_scripts/<name>.yaml` 加载静态脚本回合或解析策略模式。
+
+3. **测试夹具脚本 (`tests/fixtures/fake_scripts/*.yaml`)**:
+   - 补齐交付卡片要求的全部 4 个脚本文件：
+     - `tests/fixtures/fake_scripts/oracle_follower.yaml`
+     - `tests/fixtures/fake_scripts/gullible.yaml`
+     - `tests/fixtures/fake_scripts/honest.yaml`
+     - `tests/fixtures/fake_scripts/looper.yaml`
+
+4. **榜单模型定义 (`bench/leaderboard/models.yaml`) 与路由辅助 (`src/skeptic_agent/runner/llm.py`)**:
+   - 创建 `bench/leaderboard/models.yaml`，通过 `schemas/models.schema.json` 校验。
+   - 填写首个 `tier: dev` 模型 `openrouter/openai/gpt-4o-mini`，定价为输入 $0.15/Mtok、输出 $0.60/Mtok（输入+输出合计 $0.75 ≤ $1.00，满足规格 213 行约束），标注 `supports_tools: true`。
+   - 在 `runner/llm.py` 中新增 `get_dev_model` 工具函数，用于自动读取 models.yaml 中的 dev tier 默认模型。
+
+5. **端到端测试与质量验证 (`tests/e2e/test_episode.py`, `tests/unit/test_runner_llm.py`)**:
+   - `test_acceptance_fake_llm_scripts_behavior`: 端到端验证全部 4 个 FakeLLM 脚本在真实场景与故障注入（clean, S04, S01）下的表现均严格符合预期（SUCCESS、SILENT_CORRUPTION、HONEST_FAILURE、NO_ANSWER 及 loop 标记）。
+   - `test_acceptance_live_dev_model_smoke_scenarios`: 依据验收要求增加 `@pytest.mark.live` 标记测试，以 dev 模型运行 smoke 套件中 2 个场景，验证产出合格结局且总开销 < $0.50（无 API key 时在 CI 中安全跳过）。
+   - `test_smoke_scenarios_dispatch_offline`: 提供对应的离线 smoke 场景调度流水线回归测试。
+   - `tests/unit/test_runner_llm.py`: 覆盖 `models.yaml` schema 校验与 dev tier 价格约束测试、temperature 不支持重试与系统标注断言、OpenRouter reported cost 优先捕获测试。
+
+### 规格歧义与实现决策
+
+1. **`mcp.Client` 与底层 session 协议**:
+   - ADR-0004 规定“参考智能体走 Client，不手写 session”，且需支持 SDK v2 的 `auto` 协商及 `legacy`（2025 代）协议模式。
+   - **决策**：将 `ReferenceAgent` 的连接封装重构成 `Client(params, mode=connect_mode)`，`connect_mode` 默认 `"auto"` 并允许从 `task.env["SKEPTIC_MCP_MODE"]` 配置，验证了 stdio 代理子进程在两代协议下均能稳定调用与列出工具。
+2. **Gullible 首个数字提取与 ISO 日期冲突**:
+   - S13.5 要求 gullible “照抄第一个工具结果中的首个数字”。工具返回的 JSON 往往包含当前日期（如 `"date": "2026-11-02"`），若简单使用正规表达式提取首个数字会误提取到年份 `2026`。
+   - **决策**：若工具返回有效 JSON 且场景定义了 `fault_targets.numeric_path`，优先通过 `jsonsel.get_first` 提取目标字段数值；若以纯文本提取，则先过滤 ISO 日期/时间戳字符串再提取首个浮点数/整数，确保 gullible 准确命中 clean 下的目标值（14.5）和 S04 污染值（145.0）。
+3. **Live 标记测试与 CI 隔离**:
+   - E41 卡片验收要求加 `live` 标记的测试用 dev 模型跑通 smoke 套件中的 2 个场景（花费 < $0.5），而在未配置远程 API key 的日常离线环境或 CI 中，直接调用远程网络会阻塞或报网络错误。
+   - **决策**：严格按照 `pyproject.toml` 中的 `live` 标记定义，在 `test_acceptance_live_dev_model_smoke_scenarios` 上标记 `@pytest.mark.live`，当 `OPENROUTER_API_KEY` 未提供时通过 `skipif` 安全跳过；同时额外编写离线仿真与单元测试覆盖该函数的完整逻辑与价格核算，确保离线测试完全通过且测试覆盖率达到 92.54%（远超 85% 门槛）。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+176 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 88 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+949 passed, 1 skipped, 12 deselected in 159.92s
+Required test coverage of 85.0% reached. Total coverage: 92.54%
+EXIT=0
+```

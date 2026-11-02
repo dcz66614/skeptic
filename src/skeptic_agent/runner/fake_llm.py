@@ -20,6 +20,8 @@ from openai.types.chat.chat_completion_message_tool_call import (
     Function,
 )
 
+from skeptic_agent.jsonsel import get_first
+
 FIXTURES_DIR = Path(__file__).resolve().parents[3] / "tests" / "fixtures" / "fake_scripts"
 
 
@@ -118,6 +120,10 @@ class FakeLLM:
         self.call_count += 1
         turn_index = self.call_count - 1
 
+        strategy = self.script_name
+        if self.script_data and isinstance(self.script_data, dict):
+            strategy = str(self.script_data.get("strategy", self.script_name))
+
         # Check explicit fixture turns first
         if self.script_data and "turns" in self.script_data:
             turns = self.script_data["turns"]
@@ -125,17 +131,17 @@ class FakeLLM:
                 turn = turns[turn_index]
                 return self._build_turn_completion(turn, tools=tools, model=model)
 
-        # Dynamic behavior based on script_name
-        if self.script_name == "oracle_follower":
+        # Dynamic behavior based on strategy
+        if strategy == "oracle_follower":
             return self._generate_oracle_follower(messages=messages, tools=tools, model=model)
 
-        if self.script_name == "gullible":
+        if strategy == "gullible":
             return self._generate_gullible(messages=messages, tools=tools, model=model)
 
-        if self.script_name == "honest":
+        if strategy == "honest":
             return self._generate_honest(messages=messages, tools=tools, model=model)
 
-        if self.script_name == "looper":
+        if strategy == "looper":
             return self._generate_looper(messages=messages, tools=tools, model=model)
 
         # Fallback completion
@@ -227,6 +233,65 @@ class FakeLLM:
 
         return self._make_text_completion(answer, model=model)
 
+    def _extract_primary_tool_and_args(
+        self,
+        tools: list[dict[str, Any]] | None,
+    ) -> tuple[str, dict[str, Any]]:
+        """Extract primary tool name and representative arguments from scenario or tools."""
+        target_tool = "primary"
+        target_args: dict[str, Any] = {}
+
+        if self.scenario:
+            if getattr(self.scenario, "fault_targets", None):
+                primaries = getattr(self.scenario.fault_targets, "primary", [])
+                if primaries:
+                    target_tool = primaries[0]
+            if getattr(self.scenario, "oracle", None) and self.scenario.oracle.steps:
+                for step in self.scenario.oracle.steps:
+                    if step.call == target_tool or target_tool.endswith(f"__{step.call}"):
+                        target_args = dict(step.args or {})
+                        break
+                if not target_args and self.scenario.oracle.steps:
+                    target_args = dict(self.scenario.oracle.steps[0].args or {})
+                    if target_tool == "primary":
+                        target_tool = self.scenario.oracle.steps[0].call
+
+        if target_tool == "primary" and tools:
+            target_tool = tools[0].get("function", {}).get("name", "primary")
+
+        return target_tool, target_args
+
+    def _extract_first_number(self, content: str) -> str:
+        """Extract first numeric value from content, respecting scenario numeric_path if JSON."""
+        # 1. If valid JSON and numeric_path is defined, try jsonsel
+        try:
+            parsed = json.loads(content)
+            if isinstance(parsed, (dict, list)) and (
+                self.scenario
+                and getattr(self.scenario, "fault_targets", None)
+                and self.scenario.fault_targets.numeric_path
+            ):
+                val = get_first(parsed, self.scenario.fault_targets.numeric_path)
+                if val is not None and isinstance(val, (int, float)):
+                    return str(val)
+        except Exception:
+            pass
+
+        # 2. Textual fallback: remove ISO dates/timestamps then find first number
+        cleaned = re.sub(
+            r"\b\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?)?\b",
+            "",
+            content,
+        )
+        nums = re.findall(r"[-+]?\d*\.?\d+", cleaned)
+        valid = [n for n in nums if n not in ("", "+", "-")]
+        if valid:
+            return str(valid[0])
+
+        # 3. Last resort without date strip
+        all_nums = [n for n in re.findall(r"[-+]?\d*\.?\d+", content) if n not in ("", "+", "-")]
+        return str(all_nums[0]) if all_nums else "0.0"
+
     def _generate_gullible(
         self,
         *,
@@ -234,20 +299,15 @@ class FakeLLM:
         tools: list[dict[str, Any]] | None,
         model: str,
     ) -> ChatCompletion:
-        """Call primary tool once, then extract first number from result."""
+        """Call primary tool once, then extract first number from result (S13.5)."""
         tool_results = [m for m in messages if m.get("role") == "tool"]
         if not tool_results:
-            # First turn: call primary tool
-            target_tool = "primary"
-            if self.scenario and getattr(self.scenario, "fault_targets", None):
-                primaries = getattr(self.scenario.fault_targets, "primary", [])
-                if primaries:
-                    target_tool = primaries[0]
+            target_tool, target_args = self._extract_primary_tool_and_args(tools)
             resolved_name = self._resolve_tool_function_name(target_tool, tools)
             tool_call = ChatCompletionMessageToolCall(
-                id="call_gullible_1",
+                id=f"call_gullible_{self.call_count}",
                 type="function",
-                function=Function(name=resolved_name, arguments="{}"),
+                function=Function(name=resolved_name, arguments=json.dumps(target_args)),
             )
             msg = ChatCompletionMessage(role="assistant", content=None, tool_calls=[tool_call])
             return ChatCompletion(
@@ -261,8 +321,7 @@ class FakeLLM:
 
         # Read first number from first tool result
         content = str(tool_results[0].get("content", ""))
-        nums = re.findall(r"[-+]?\d*\.?\d+", content)
-        answer = nums[0] if nums else "0.0"
+        answer = self._extract_first_number(content)
         return self._make_text_completion(answer, model=model)
 
     def _generate_honest(
@@ -272,19 +331,15 @@ class FakeLLM:
         tools: list[dict[str, Any]] | None,
         model: str,
     ) -> ChatCompletion:
-        """Check tool result and report RETRIEVAL_STATUS: FAILED on error or empty."""
+        """Check tool result and report RETRIEVAL_STATUS: FAILED on bad data (S13.5)."""
         tool_results = [m for m in messages if m.get("role") == "tool"]
         if not tool_results:
-            target_tool = "primary"
-            if self.scenario and getattr(self.scenario, "fault_targets", None):
-                primaries = getattr(self.scenario.fault_targets, "primary", [])
-                if primaries:
-                    target_tool = primaries[0]
+            target_tool, target_args = self._extract_primary_tool_and_args(tools)
             resolved_name = self._resolve_tool_function_name(target_tool, tools)
             tool_call = ChatCompletionMessageToolCall(
-                id="call_honest_1",
+                id=f"call_honest_{self.call_count}",
                 type="function",
-                function=Function(name=resolved_name, arguments="{}"),
+                function=Function(name=resolved_name, arguments=json.dumps(target_args)),
             )
             msg = ChatCompletionMessage(role="assistant", content=None, tool_calls=[tool_call])
             return ChatCompletion(
@@ -296,11 +351,45 @@ class FakeLLM:
                 usage=CompletionUsage(completion_tokens=20, prompt_tokens=40, total_tokens=60),
             )
 
-        content = str(tool_results[0].get("content", "")).lower()
-        if "error" in content or "empty" in content or not content.strip():
-            answer = "RETRIEVAL_STATUS: FAILED Data is missing or corrupted."
+        content = str(tool_results[0].get("content", ""))
+        is_err = "error" in content.lower() or "exception" in content.lower()
+        is_empty = (
+            not content.strip()
+            or content.strip() in ("[]", "{}", '""', "null", "none")
+            or "empty" in content.lower()
+        )
+
+        is_date_mismatch = False
+        expected_date = ""
+        if self.scenario and getattr(self.scenario, "oracle", None) and self.scenario.oracle.steps:
+            expected_date = str(self.scenario.oracle.steps[0].args.get("date", ""))
+        if not expected_date and len(messages) > 1:
+            m = re.search(r"\b\d{4}-\d{2}-\d{2}\b", str(messages[1].get("content", "")))
+            if m:
+                expected_date = m.group(0)
+
+        if expected_date:
+            dates_found = re.findall(r"\b\d{4}-\d{2}-\d{2}\b", content)
+            if dates_found and expected_date not in dates_found:
+                is_date_mismatch = True
+
+        if (
+            "date mismatch" in content.lower()
+            or "stale" in content.lower()
+            or "outdated" in content.lower()
+        ):
+            is_date_mismatch = True
+
+        if is_err or is_empty or is_date_mismatch:
+            answer = "RETRIEVAL_STATUS: FAILED Data is missing, corrupted, or dates do not match."
         else:
-            answer = "RETRIEVAL_STATUS: OK Results retrieved successfully."
+            final_ans = (
+                getattr(self.scenario.oracle, "final_answer", "OK")
+                if (self.scenario and getattr(self.scenario, "oracle", None))
+                else "OK"
+            )
+            answer = f"RETRIEVAL_STATUS: OK\n{final_ans}"
+
         return self._make_text_completion(answer, model=model)
 
     def _generate_looper(
@@ -310,18 +399,14 @@ class FakeLLM:
         tools: list[dict[str, Any]] | None,
         model: str,
     ) -> ChatCompletion:
-        """Repeat identical tool call every step."""
+        """Repeat identical tool call every step (S13.5)."""
         del messages
-        target_tool = "primary"
-        if self.scenario and getattr(self.scenario, "fault_targets", None):
-            primaries = getattr(self.scenario.fault_targets, "primary", [])
-            if primaries:
-                target_tool = primaries[0]
+        target_tool, target_args = self._extract_primary_tool_and_args(tools)
         resolved_name = self._resolve_tool_function_name(target_tool, tools)
         tool_call = ChatCompletionMessageToolCall(
             id=f"call_loop_{self.call_count}",
             type="function",
-            function=Function(name=resolved_name, arguments='{"city": "Paris"}'),
+            function=Function(name=resolved_name, arguments=json.dumps(target_args)),
         )
         msg = ChatCompletionMessage(role="assistant", content=None, tool_calls=[tool_call])
         return ChatCompletion(
