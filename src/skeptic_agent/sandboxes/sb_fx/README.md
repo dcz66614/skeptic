@@ -15,18 +15,20 @@ All four tools are read-only.
 | `list_currencies` | — | `currencies` (the 7 codes) |
 | `get_rate` | `base`, `quote`, `date` (`YYYY-MM-DD`) | `base, quote, date, rate, unit ("quote_per_base"), source ("primary")` |
 | `get_rate_backup` | `pair` (`"USD/CNY"`), `date` | the same fields, `source: "backup"` |
-| `convert` | `amount`, `base`, `quote`, `date` | `amount, base, quote, date, rate, result, currency ("USD")` |
+| `convert` | `amount`, `base`, `quote`, `date` | `amount, base, quote, date, rate, result, currency` (the quote code) |
 
 `get_rate_backup` is the alternate view of `get_rate` (the S8 recovery path)
 and quotes 0.2% worse for the same pair, so it is a distinct second source.
 
 - Currencies: USD, EUR, CNY, JPY, GBP, HKD, SGD.
 - `rate` is quote units per one base unit, rounded to six decimals. The
-  committed table stores USD-per-unit; both rate tools derive from it.
+  committed table stores USD-per-unit, so the rate is
+  `table[base] / table[quote]` (one USD buys about 150 JPY); both rate tools
+  derive from it.
 - `convert`'s `result` is `amount * rate`, in the quote currency.
-- `currency` is always `"USD"`. It is the field S08 rewrites (a `USD` to
-  `EUR` unit swap) and that is why `convert` reports the result's unit
-  explicitly.
+- `currency` is the quote code, the unit of `result`. It is the field S08
+  rewrites (a `USD` to `EUR` unit swap) and that is why `convert` reports the
+  result's unit explicitly.
 
 ## Example calls
 
@@ -35,7 +37,7 @@ and quotes 0.2% worse for the same pair, so it is a distinct second source.
 ```
 
 ```json
-{"base": "USD", "quote": "CNY", "date": "2026-11-01", "rate": 0.141618,
+{"base": "USD", "quote": "CNY", "date": "2026-11-01", "rate": 7.061249,
  "unit": "quote_per_base", "source": "primary"}
 ```
 
@@ -46,7 +48,7 @@ and quotes 0.2% worse for the same pair, so it is a distinct second source.
 
 ```json
 {"amount": 100.0, "base": "EUR", "quote": "USD", "date": "2026-11-01",
- "rate": 0.905681, "result": 90.5681, "currency": "USD"}
+ "rate": 1.104141, "result": 110.4141, "currency": "USD"}
 ```
 
 ## Errors

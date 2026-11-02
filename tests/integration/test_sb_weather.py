@@ -176,6 +176,17 @@ async def test_list_cities_success(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
+async def test_list_cities_misuse_rejects_an_unexpected_argument(
+    tmp_path: Path,
+) -> None:
+    """``list_cities`` takes no arguments; an unexpected one is an error."""
+    async with Client(weather.server(_state(tmp_path))) as client:
+        result = await client.call_tool("list_cities", {"unexpected": "Paris"})
+    assert result.is_error
+    assert "unexpected" in result.content[0].text
+
+
+@pytest.mark.asyncio
 async def test_get_forecast_misuse_rejects_a_null_date(tmp_path: Path) -> None:
     """A date argument is typed; ``null`` is refused instead of guessed."""
     async with Client(weather.server(_state(tmp_path))) as client:

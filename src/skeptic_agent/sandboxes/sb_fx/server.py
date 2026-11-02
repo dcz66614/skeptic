@@ -5,11 +5,11 @@
 committed table stores USD-per-unit for each of the 7 currencies; every pair
 is derived from it, so the two rate tools cannot disagree.
 
-``convert``'s ``currency`` is always ``"USD"``: the result is in US dollars,
-which is the field S08 rewrites (a ``USD`` to ``EUR`` unit swap). ``amount``
-may be negative (a refund) but not zero, and the amount must be fine enough
-for the quote currency (no more than two decimals for USD, HKD and CNY;
-whole units for JPY).
+``convert``'s ``currency`` is the quote currency, the unit of ``result``
+(S9.2); that is the field S08 rewrites (a ``USD`` to ``EUR`` unit swap).
+``amount`` may be negative (a refund) but not zero, and the amount must be
+fine enough for the quote currency (no more than two decimals for USD, HKD
+and CNY; whole units for JPY).
 """
 
 import copy
@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from mcp.server import MCPServer
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from skeptic_agent.sandboxes.sb_common.clock import parse_instant
 from skeptic_agent.sandboxes.sb_common.data import load_json
@@ -45,9 +45,6 @@ START_DAY = parse_instant("2026-10-19T00:00:00Z")
 DAYS = 14
 """S9.2: 14 days, 2026-10-19 to 2026-11-01."""
 
-QUOTE_CURRENCY: Literal["USD"] = "USD"
-"""Every result is a US-dollar amount (S9.2 ``currency``, the S08 target)."""
-
 SMALLEST_DECIMALS: dict[str, int] = {"USD": 2, "EUR": 2, "CNY": 2, "HKD": 2, "SGD": 2, "JPY": 0}
 """The finest amount each quote currency has (JPY has no subunit in use)."""
 
@@ -59,7 +56,12 @@ BACKUP_SPREAD = 0.002
 
 
 class NoArguments(BaseModel):
-    """No arguments; the S9.1 read tools still publish an object schema."""
+    """No arguments; the S9.1 read tools still publish an object schema.
+
+    An unexpected argument is rejected rather than silently ignored.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class RateArguments(BaseModel):
@@ -109,7 +111,7 @@ class Conversion(BaseModel):
     date: str
     rate: float
     result: float
-    currency: Literal["USD"]
+    currency: str
 
 
 def load_rates() -> dict[str, dict[str, float]]:
@@ -201,6 +203,35 @@ def _check_amount(amount: float, currency: str) -> float:
     return amount
 
 
+def _quote_per_base(
+    table: dict[str, dict[str, float]],
+    base: str,
+    quote: str,
+    day: str,
+    rounded: bool = True,
+) -> float:
+    """Derive the quote-per-base rate from the USD-per-unit table.
+
+    The table stores the USD value of one unit of each currency, so one
+    ``base`` is worth ``table[base]`` dollars and one ``quote``
+    ``table[quote]`` dollars. A unit of ``base`` therefore buys
+    ``table[base] / table[quote]`` units of ``quote``.
+
+    Args:
+        table: The ``{currency: {date: usd_per_unit}}`` dict.
+        base: The base currency.
+        quote: The quote currency.
+        day: The rate date, which is also the table key.
+        rounded: Whether to round to six decimals (the backup applies its
+            spread to the unrounded value).
+
+    Returns:
+        The quote units per one base unit.
+    """
+    rate = table[base][day] / table[quote][day]
+    return round(rate, 6) if rounded else rate
+
+
 async def list_currencies(arguments: NoArguments, tool: SandboxTool) -> Currencies:
     """List the currencies the sandbox quotes against USD.
 
@@ -236,7 +267,7 @@ async def get_rate(arguments: RateArguments, tool: SandboxTool) -> Rate:
         base=base,
         quote=quote,
         date=day,
-        rate=round(table[quote][day] / table[base][day], 6),
+        rate=_quote_per_base(table, base, quote, day),
         unit="quote_per_base",
         source="primary",
     )
@@ -266,7 +297,7 @@ async def get_rate_backup(arguments: BackupArguments, tool: SandboxTool) -> Rate
     base_code = _check_currency(tool, base)
     quote_code = _check_currency(tool, quote)
     table = _table(tool)
-    primary = table[quote_code][day] / table[base_code][day]
+    primary = _quote_per_base(table, base_code, quote_code, day, rounded=False)
     return Rate(
         base=base_code,
         quote=quote_code,
@@ -285,7 +316,8 @@ async def convert(arguments: ConvertArguments, tool: SandboxTool) -> Conversion:
         tool: The bound tool.
 
     Returns:
-        The amount, the applied rate, the result and ``currency: "USD"``.
+        The amount, the applied rate, the result and its ``currency`` (the
+        quote code).
 
     Raises:
         ToolFailure: On an invalid date, an unknown currency or an amount that
@@ -296,7 +328,7 @@ async def convert(arguments: ConvertArguments, tool: SandboxTool) -> Conversion:
     quote = _check_currency(tool, arguments.quote)
     amount = _check_amount(arguments.amount, quote)
     table = _table(tool)
-    rate = round(table[quote][day] / table[base][day], 6)
+    rate = _quote_per_base(table, base, quote, day)
     return Conversion(
         amount=amount,
         base=base,
@@ -304,7 +336,7 @@ async def convert(arguments: ConvertArguments, tool: SandboxTool) -> Conversion:
         date=day,
         rate=rate,
         result=float(Decimal(str(amount)) * Decimal(str(rate))),
-        currency=QUOTE_CURRENCY,
+        currency=quote,
     )
 
 

@@ -18,7 +18,7 @@ from datetime import date as Date
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from skeptic_agent.sandboxes.sb_common.data import load_json
 from skeptic_agent.sandboxes.sb_common.server import (
@@ -57,7 +57,12 @@ Condition = Literal["clear", "partly cloudy", "cloudy", "rain", "showers"]
 
 
 class NoArguments(BaseModel):
-    """No arguments; the S9.1 read tools still publish an object schema."""
+    """No arguments; the S9.1 read tools still publish an object schema.
+
+    An unexpected argument is rejected rather than silently ignored.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class CityArguments(BaseModel):

@@ -1466,3 +1466,83 @@ EXIT=0
 ```
 
 No dependency was added; `uv.lock` is unchanged.
+## S31fix fx rate direction, convert currency, list misuse tests (2026-11-02)
+
+Base `fd2af51`, branch `codex`. Nothing pushed, `main` untouched, no process
+killed, `REVIEW_F20_ref.md` and `.tmp` not staged.
+
+Three S31 review findings, each checked against S9.2 and the S31 card first.
+
+1. **Rate direction was inverted.** `rates.json` stores USD-per-unit for each
+   currency (S9.2, the generator's documented shape), so one base unit buys
+   `table[base] / table[quote]` quote units. `get_rate`, `get_rate_backup` and
+   `convert` all divided the other way (`table[quote] / table[base]`), so
+   USD->CNY returned about 0.14 instead of about 7.06 and USD->JPY about 0.0066
+   instead of about 150. All three now call one helper, `_quote_per_base`, which
+   is the single place the direction lives; the backup still applies its 0.2%
+   spread to the unrounded value. `tests/integration/test_sb_fx.py`'s
+   `_expected_rate` helper had the same inversion and is fixed; a new test
+   asserts USD->JPY is about 150.
+2. **`convert` returned a hardcoded `USD`.** S9.2 lists `currency` among the
+   convert fields and notes it is the field S08 uses, so it must name the
+   result's unit. The result is `amount * rate` in the quote currency, so
+   `currency` is now the quote code (`Conversion.currency: str`, the now-unused
+   `QUOTE_CURRENCY` constant removed). S08's `USD`->`EUR` swap still applies:
+   it rewrites whichever unit string is there, e.g. a USD->CNY conversion
+   reporting `currency: "CNY"` is left alone and a USD->USD one is swapped.
+   A new test converts USD->CNY and asserts `currency == "CNY"` and the result.
+3. **No misuse test for the two list tools.** S31's acceptance line wants every
+   tool to have a success case and a misuse case. `list_cities` and
+   `list_currencies` take no arguments, so the misuse case is an unexpected
+   argument. The SDK builds its own argument model from each callable's
+   signature and silently drops keys the signature does not declare, so such a
+   call was answered as a normal success before reaching the tool. `make_server`
+   now rebuilds that generated model with `extra="forbid"`
+   (`_forbid_unknown_arguments`), so the SDK raises the `ValidationError` that
+   already becomes an `isError` result. Both sandboxes' `NoArguments` models
+   also declare `extra="forbid"`, and the wrapper now turns a `ValidationError`
+   from the S9.2 `input` model into the S9.1 `Error: <reason>` result. New tests
+   in `test_sb_fx.py` and `test_sb_weather.py` call each list tool with an
+   unexpected argument and expect `isError` naming that argument.
+
+Other changes:
+
+- `sb_fx/README.md`: the rate direction, the `convert` example outputs and the
+  `currency` explanation now match the fixed tools (USD->CNY 7.061249,
+  EUR->USD 1.104141).
+
+Spec ambiguities and how they were resolved:
+
+- S9.2 does not spell out the direction of `rate` beyond `unit:
+  "quote_per_base"`. The unit string decides it: with the table stored as
+  USD-per-unit, quote-per-base is `table[base] / table[quote]`. The generator's
+  docstring and the "one USD buys about 150 JPY" expectation both agree.
+- S9.2 does not say whether `convert`'s `currency` is the base or the quote. It
+  is the unit of `result`, which is in the quote currency, so it is the quote
+  code; S08 then rewrites that unit string in place, as it does any unit leaf.
+- The SDK dropping unknown arguments is SDK behaviour, not an S9.1 rule. S9.1
+  item 7 wants an `isError` for a bad call, so the generated model is made
+  strict rather than adding a separate validation layer per sandbox.
+
+Validation (same commands as S31):
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+100 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 41 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+622 passed, 12 deselected in 103.22s (0:01:43)
+Required test coverage of 85.0% reached. Total coverage: 95.63%
+EXIT=0
+```
+
+No dependency was added; `uv.lock` is unchanged.

@@ -164,8 +164,8 @@ def _expected_rate(base: str, quote: str) -> float:
     Returns:
         The rate, rounded to six decimals.
     """
-    returns = generate.build_rates()
-    return round(returns[quote][DAY] / returns[base][DAY], 6)
+    table = generate.build_rates()
+    return round(table[base][DAY] / table[quote][DAY], 6)
 
 
 @pytest.mark.asyncio
@@ -174,6 +174,27 @@ async def test_list_currencies_success(tmp_path: Path) -> None:
     async with Client(fx.server(_state(tmp_path))) as client:
         result = await client.call_tool("list_currencies", {})
     assert result.structured_content == {"currencies": list(fx.CURRENCY_ORDER)}
+
+
+@pytest.mark.asyncio
+async def test_get_rate_usd_to_jpy_is_about_150(tmp_path: Path) -> None:
+    """The table is USD-per-unit, so USD->JPY is yen per dollar (about 150)."""
+    async with Client(fx.server(_state(tmp_path))) as client:
+        result = await client.call_tool("get_rate", {"base": "USD", "quote": "JPY", "date": DAY})
+    structured = result.structured_content
+    assert structured is not None
+    assert float(structured["rate"]) == pytest.approx(150.0, abs=5.0)
+
+
+@pytest.mark.asyncio
+async def test_list_currencies_misuse_rejects_an_unexpected_argument(
+    tmp_path: Path,
+) -> None:
+    """``list_currencies`` takes no arguments; an unexpected one is an error."""
+    async with Client(fx.server(_state(tmp_path))) as client:
+        result = await client.call_tool("list_currencies", {"unexpected": "USD"})
+    assert result.is_error
+    assert "unexpected" in _text(result)
 
 
 @pytest.mark.asyncio
@@ -270,6 +291,19 @@ async def test_convert_success(tmp_path: Path) -> None:
     assert structured["rate"] == _expected_rate("EUR", "USD")
     assert structured["result"] == pytest.approx(100 * _expected_rate("EUR", "USD"))
     assert structured["currency"] == "USD"
+
+
+@pytest.mark.asyncio
+async def test_convert_currency_is_the_quote_code(tmp_path: Path) -> None:
+    """S9.2/S08: ``currency`` names the result's unit, which is the quote."""
+    async with Client(fx.server(_state(tmp_path))) as client:
+        result = await client.call_tool(
+            "convert", {"amount": 100, "base": "USD", "quote": "CNY", "date": DAY}
+        )
+    structured = result.structured_content
+    assert structured is not None
+    assert structured["currency"] == "CNY"
+    assert float(structured["result"]) == pytest.approx(100 * _expected_rate("USD", "CNY"))
 
 
 @pytest.mark.asyncio

@@ -38,7 +38,7 @@ from typing import Annotated, Any
 
 from mcp.server import MCPServer
 from mcp.types import CallToolResult, ContentBlock, TextContent, ToolAnnotations
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, ValidationError, create_model
 
 from skeptic_agent.sandboxes.sb_common.state import STATE_FILE_ENV, SandboxState
 
@@ -182,6 +182,21 @@ def _ok(result: BaseModel) -> CallToolResult:
     )
 
 
+def _validation_reason(error: ValidationError) -> str:
+    """Render a Pydantic validation error as the S9.1 business-error reason.
+
+    Args:
+        error: The validation error the ``input`` model raised.
+
+    Returns:
+        The first error's message with its location, for example
+        ``unexpected: Extra inputs are not permitted``.
+    """
+    first = error.errors()[0]
+    location = ".".join(str(part) for part in first["loc"])
+    return f"{location}: {first['msg']}" if location else str(first["msg"])
+
+
 def _business_error(reason: str) -> CallToolResult:
     """Wrap a business error in the S9.1 error result.
 
@@ -221,7 +236,10 @@ def _make_tool_function(tool: SandboxTool) -> Callable[..., Coroutine[Any, Any, 
             The success result, or ``isError`` ``Error: <reason>`` on a
             :class:`ToolFailure`.
         """
-        parsed = spec.input.model_validate(arguments)
+        try:
+            parsed = spec.input.model_validate(arguments)
+        except ValidationError as error:
+            return _business_error(_validation_reason(error))
         try:
             result = await spec.handler(parsed, tool)
         except ToolFailure as failure:
@@ -280,7 +298,30 @@ def make_server(name: str, tools: Sequence[ToolSpec], state: SandboxState) -> MC
             annotations=spec.annotations(),
             structured_output=True,
         )(_make_tool_function(tool))
+        registered = server._tool_manager.get_tool(spec.name)
+        assert registered is not None
+        _forbid_unknown_arguments(registered)
     return server
+
+
+def _forbid_unknown_arguments(registered: Any) -> None:
+    """Make the SDK's argument model reject keys the tool does not declare.
+
+    The SDK builds its own argument model from the callable's signature and,
+    by default, silently drops any key that signature does not declare. S9.1
+    item 7 wants a business error for an invalid call, so the model is rebuilt
+    with ``extra="forbid"``; the SDK then raises the ``ValidationError`` that
+    becomes an ``isError`` result.
+
+    Args:
+        registered: The SDK tool the factory just registered.
+    """
+    arguments_model = registered.fn_metadata.arg_model
+    registered.fn_metadata.arg_model = create_model(
+        arguments_model.__name__,
+        __base__=arguments_model,
+        __config__=ConfigDict(extra="forbid"),
+    )
 
 
 def _parse_listen(value: str) -> tuple[str, int]:
