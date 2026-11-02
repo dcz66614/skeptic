@@ -1466,7 +1466,6 @@ EXIT=0
 ```
 
 No dependency was added; `uv.lock` is unchanged.
-## S31fix fx rate direction, convert currency, list misuse tests (2026-11-02)
 
 Base `fd2af51`, branch `codex`. Nothing pushed, `main` untouched, no process
 killed, `REVIEW_F20_ref.md` and `.tmp` not staged.
@@ -1681,3 +1680,132 @@ No dependency was added; `uv.lock` is unchanged.
 ## S32 merge (2026-11-02)
 
 - codex 01d28c4 ff-merged to main. S32 sb_stocks + sb_crm. Self-review PASS (688 passed, cov 95.63%); agy detailed review PASS.
+
+## S33 sb_orders and sb_calendar (2026-11-02)
+
+Base `cbd8329`, branch `codex`. Nothing pushed, `main` untouched, no process
+killed, `REVIEW_F20_ref.md` and `.tmp` not staged.
+
+The fifth and sixth of the ten sandboxes of S9.2, built only on the S30
+`sb_common` factory (`ToolSpec`, `SandboxTool`, `ToolFailure`, `make_server`,
+`run_sandbox`, `SandboxState`).
+
+`src/skeptic_agent/sandboxes/sb_orders/`:
+
+- `data/generate.py` and the committed `data/orders.json`: 120 fictional
+  orders O-2001 to O-2120, seed `20261101`, spread over the 40 shared
+  customers (C-1001 to C-1040). Each of the four statuses (pending, shipped,
+  delivered, cancelled) is assigned 30 times and the list is shuffled by the
+  seeded RNG. Each order has one to three fictional products; `total` is the
+  sum of the item subtotals and every order is `USD`.
+- `server.py`: `list_orders` (optional status filter), `get_order`,
+  `get_order_status`, `cancel_order` and `refund_order`. Field names and
+  literals are the S9.2 ones verbatim; the order field order is `id,
+  customer_id, status, total, currency, items, created_at`, so S6 S04 sees
+  `total` first. The state is the S9.3 shape: `orders` keyed by id plus
+  `refunds` and `updated_at`. Only a pending order can be cancelled; only a
+  delivered order can be refunded, with `0 < amount <= total`. A violation is
+  a business error and leaves the state unchanged; both successful writes
+  call `tool.finish()`.
+- `README.md`: the five tools, example calls with real committed values, the
+  fictional-data notice.
+
+`src/skeptic_agent/sandboxes/sb_calendar/`:
+
+- `data/generate.py` and the committed `data/events.json`: 60 events
+  E-4001 to E-4060 over 2026-11-01 to 2026-11-14, seed `20261101`. The first
+  four days hold five events and the rest four. Every start/end carries the
+  S9.2 `+08:00` offset; each meeting is followed by a seeded gap, so
+  `find_free_slot` has a real answer. Attendees are fictional names from the
+  shared customer table; titles and locations are fictional too.
+- `server.py`: `list_events` (one day, earliest first), `get_event`,
+  `find_free_slot` (first gap between `earliest` and `latest`, default 09:00
+  to 18:00), `create_event` and `delete_event`. `create_event` rejects an
+  empty/oversized title, a malformed or reversed window, a date outside the
+  14-day calendar, a blank attendee and any overlap with an existing event;
+  new events get the next id and the location `"Remote"`. The state is an
+  `events` dict keyed by id.
+- `README.md`: the five tools, example calls with real committed values, the
+  fictional-data notice.
+
+Supporting changes:
+
+- `cli.py`: `SANDBOXES` gains `orders` and `calendar`, so `skeptic sandbox
+  run orders` / `skeptic sandbox run calendar` start the modules (S2, S9.1
+  item 2). `tests/unit/test_sandbox_run.py` accepts the two new names.
+- `tests/integration/test_sb_orders.py` (25) and `test_sb_calendar.py` (25):
+  every tool has a success case and at least one misuse case. Orders covers
+  the customer list, the status filter, order totals/items, the compact
+  status view, cancelling a pending order and rejecting shipped/pending
+  write attempts, refunding a delivered order and rejecting a non-delivered
+  order, zero and over-total refunds, empty reasons and unknown ids, each
+  write checked against the state file. Calendar covers a day's events and
+  their `+08:00` times, a known event, the first free slot, malformed and
+  out-of-window dates, a non-positive duration and an empty search window,
+  creating in a free window (state included), an overlap, reversed/outside
+  windows, blank titles and attendees, and deleting an event. Both files also
+  check schemas and read/write annotations, both protocol generations, the
+  startup state file, `python -m`, `skeptic sandbox run <name>` and `--http`
+  with its state file.
+- `tests/unit/test_sb_orders_calendar_data.py` (13): determinism, the
+  committed files against their generators, the S9.2 shapes (120 orders with
+  all four statuses, totals as item sums, shared customer ids; 60 events over
+  the fixed 14 days, six fields, `+08:00` instants, no same-day overlaps,
+  shared attendee names), and the committed data files.
+
+Spec ambiguities and how they were resolved:
+
+- S9.2 lists the order fields only once and does not spell out `items[]`.
+  Items are fictional products with `product_id`, `name`, `quantity`,
+  `unit_price` and `subtotal`, and `total` is their sum. The field order puts
+  `total` before `items`, so S6 S04's first numeric leaf is the order total.
+- `get_order_status` is not given return fields by S9.2. It returns the
+  compact pair `order_id, status`; `get_order` returns the full S9.2 order.
+- S9.2 gives `cancel_order`'s result as `status, order_id, new_status` and
+  says nothing about `refund_order`'s. Cancel returns exactly those three
+  fields (`new_status: "cancelled"`). Refund returns `status, order_id,
+  amount, currency`; every refund is also appended to the state's `refunds`
+  list, which is empty until a refund.
+- S9.2 does not say what happens to the cancellation `reason`. It is
+  validated (non-empty, at most 200 characters) but not stored, because the
+  S9.3 state shape has no reason field.
+- S9.2 says only "refund amount <= total", not whether repeated refunds may
+  add up past the total. The literal rule is implemented per request, with no
+  extra cumulative-refund mechanism.
+- `find_free_slot`'s return shape and the meaning of `earliest`/`latest` are
+  not specified. The bounds are local `HH:MM` times inside the named day
+  (defaults 09:00/18:00); the result is `date, duration_min, start, end`,
+  with `start` and `end` both `null` when the window has no long-enough gap.
+- S9.2's `create_event(title, start, end, attendees)` has no location, while
+  an event needs one. A created event is `location: "Remote"`; committed
+  events use fictional meeting rooms.
+- S9.2 says event times carry `+08:00` but does not say whether an incoming
+  time may use another offset. `create_event` requires an offset and
+  normalises it to `+08:00`, so stored times always match S9.2.
+- S9.2 does not fix the duration of a cancellation reason, title or note; the
+  limits chosen here are 200 characters for a reason and 200 for a title.
+- The write hints are not specified beyond S9.1 item 5. `cancel_order` and
+  `delete_event` are `destructive=true` (they remove a state), `refund_order`
+  and `create_event` are `destructive=false`; all four writes are
+  non-idempotent because a repeat fails once the order/event state changed.
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+126 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 57 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+753 passed, 12 deselected in 134.47s (0:02:14)
+Required test coverage of 85.0% reached. Total coverage: 95.55%
+EXIT=0
+```
+
+No dependency was added; `uv.lock` is unchanged.

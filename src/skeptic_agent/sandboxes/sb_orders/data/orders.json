@@ -1,0 +1,2966 @@
+{
+  "O-2001": {
+    "id": "O-2001",
+    "customer_id": "C-1001",
+    "status": "shipped",
+    "total": 521.97,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 3,
+        "unit_price": 119.0,
+        "subtotal": 357.0
+      },
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 3,
+        "unit_price": 12.99,
+        "subtotal": 38.97
+      },
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 3,
+        "unit_price": 42.0,
+        "subtotal": 126.0
+      }
+    ],
+    "created_at": "2026-07-07T20:31:01Z"
+  },
+  "O-2002": {
+    "id": "O-2002",
+    "customer_id": "C-1002",
+    "status": "pending",
+    "total": 38.97,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 3,
+        "unit_price": 12.99,
+        "subtotal": 38.97
+      }
+    ],
+    "created_at": "2026-07-16T16:43:27Z"
+  },
+  "O-2003": {
+    "id": "O-2003",
+    "customer_id": "C-1003",
+    "status": "pending",
+    "total": 246.99,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 1,
+        "unit_price": 42.0,
+        "subtotal": 42.0
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 3,
+        "unit_price": 64.0,
+        "subtotal": 192.0
+      },
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 1,
+        "unit_price": 12.99,
+        "subtotal": 12.99
+      }
+    ],
+    "created_at": "2026-10-27T13:02:21Z"
+  },
+  "O-2004": {
+    "id": "O-2004",
+    "customer_id": "C-1004",
+    "status": "pending",
+    "total": 237.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 1,
+        "unit_price": 89.0,
+        "subtotal": 89.0
+      },
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 2,
+        "unit_price": 74.25,
+        "subtotal": 148.5
+      }
+    ],
+    "created_at": "2026-10-19T08:00:56Z"
+  },
+  "O-2005": {
+    "id": "O-2005",
+    "customer_id": "C-1005",
+    "status": "pending",
+    "total": 576.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 3,
+        "unit_price": 14.5,
+        "subtotal": 43.5
+      },
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 1,
+        "unit_price": 34.5,
+        "subtotal": 34.5
+      },
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 2,
+        "unit_price": 249.0,
+        "subtotal": 498.0
+      }
+    ],
+    "created_at": "2026-08-31T02:34:57Z"
+  },
+  "O-2006": {
+    "id": "O-2006",
+    "customer_id": "C-1006",
+    "status": "pending",
+    "total": 149.7,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 3,
+        "unit_price": 49.9,
+        "subtotal": 149.7
+      }
+    ],
+    "created_at": "2026-10-08T12:05:31Z"
+  },
+  "O-2007": {
+    "id": "O-2007",
+    "customer_id": "C-1007",
+    "status": "pending",
+    "total": 286.98,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 2,
+        "unit_price": 12.99,
+        "subtotal": 25.98
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 3,
+        "unit_price": 64.0,
+        "subtotal": 192.0
+      },
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 2,
+        "unit_price": 34.5,
+        "subtotal": 69.0
+      }
+    ],
+    "created_at": "2026-09-21T05:39:07Z"
+  },
+  "O-2008": {
+    "id": "O-2008",
+    "customer_id": "C-1008",
+    "status": "cancelled",
+    "total": 441.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 3,
+        "unit_price": 64.0,
+        "subtotal": 192.0
+      },
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 1,
+        "unit_price": 249.0,
+        "subtotal": 249.0
+      }
+    ],
+    "created_at": "2026-07-28T15:24:49Z"
+  },
+  "O-2009": {
+    "id": "O-2009",
+    "customer_id": "C-1009",
+    "status": "cancelled",
+    "total": 42.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 1,
+        "unit_price": 42.0,
+        "subtotal": 42.0
+      }
+    ],
+    "created_at": "2026-07-06T16:12:06Z"
+  },
+  "O-2010": {
+    "id": "O-2010",
+    "customer_id": "C-1010",
+    "status": "cancelled",
+    "total": 69.4,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-104",
+        "name": "Drift Notebook",
+        "quantity": 2,
+        "unit_price": 9.75,
+        "subtotal": 19.5
+      },
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 1,
+        "unit_price": 49.9,
+        "subtotal": 49.9
+      }
+    ],
+    "created_at": "2026-07-01T23:53:16Z"
+  },
+  "O-2011": {
+    "id": "O-2011",
+    "customer_id": "C-1011",
+    "status": "delivered",
+    "total": 679.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 1,
+        "unit_price": 249.0,
+        "subtotal": 249.0
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 3,
+        "unit_price": 64.0,
+        "subtotal": 192.0
+      },
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 2,
+        "unit_price": 119.0,
+        "subtotal": 238.0
+      }
+    ],
+    "created_at": "2026-10-12T09:48:56Z"
+  },
+  "O-2012": {
+    "id": "O-2012",
+    "customer_id": "C-1012",
+    "status": "shipped",
+    "total": 873.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 3,
+        "unit_price": 42.0,
+        "subtotal": 126.0
+      },
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 3,
+        "unit_price": 249.0,
+        "subtotal": 747.0
+      }
+    ],
+    "created_at": "2026-08-24T05:28:33Z"
+  },
+  "O-2013": {
+    "id": "O-2013",
+    "customer_id": "C-1013",
+    "status": "cancelled",
+    "total": 12.99,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 1,
+        "unit_price": 12.99,
+        "subtotal": 12.99
+      }
+    ],
+    "created_at": "2026-09-13T08:01:20Z"
+  },
+  "O-2014": {
+    "id": "O-2014",
+    "customer_id": "C-1014",
+    "status": "delivered",
+    "total": 119.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 1,
+        "unit_price": 119.0,
+        "subtotal": 119.0
+      }
+    ],
+    "created_at": "2026-08-30T08:24:39Z"
+  },
+  "O-2015": {
+    "id": "O-2015",
+    "customer_id": "C-1015",
+    "status": "pending",
+    "total": 155.9,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 1,
+        "unit_price": 64.0,
+        "subtotal": 64.0
+      },
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 1,
+        "unit_price": 42.0,
+        "subtotal": 42.0
+      },
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 1,
+        "unit_price": 49.9,
+        "subtotal": 49.9
+      }
+    ],
+    "created_at": "2026-07-29T12:37:04Z"
+  },
+  "O-2016": {
+    "id": "O-2016",
+    "customer_id": "C-1016",
+    "status": "shipped",
+    "total": 184.8,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 2,
+        "unit_price": 49.9,
+        "subtotal": 99.8
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 1,
+        "unit_price": 64.0,
+        "subtotal": 64.0
+      },
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 1,
+        "unit_price": 21.0,
+        "subtotal": 21.0
+      }
+    ],
+    "created_at": "2026-09-30T22:59:33Z"
+  },
+  "O-2017": {
+    "id": "O-2017",
+    "customer_id": "C-1017",
+    "status": "shipped",
+    "total": 519.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 1,
+        "unit_price": 21.0,
+        "subtotal": 21.0
+      },
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 2,
+        "unit_price": 249.0,
+        "subtotal": 498.0
+      }
+    ],
+    "created_at": "2026-10-07T10:58:58Z"
+  },
+  "O-2018": {
+    "id": "O-2018",
+    "customer_id": "C-1018",
+    "status": "delivered",
+    "total": 25.98,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 2,
+        "unit_price": 12.99,
+        "subtotal": 25.98
+      }
+    ],
+    "created_at": "2026-08-29T12:57:34Z"
+  },
+  "O-2019": {
+    "id": "O-2019",
+    "customer_id": "C-1019",
+    "status": "delivered",
+    "total": 427.7,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 1,
+        "unit_price": 249.0,
+        "subtotal": 249.0
+      },
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 3,
+        "unit_price": 49.9,
+        "subtotal": 149.7
+      },
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 2,
+        "unit_price": 14.5,
+        "subtotal": 29.0
+      }
+    ],
+    "created_at": "2026-10-20T05:17:42Z"
+  },
+  "O-2020": {
+    "id": "O-2020",
+    "customer_id": "C-1020",
+    "status": "pending",
+    "total": 136.98,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 1,
+        "unit_price": 42.0,
+        "subtotal": 42.0
+      },
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 2,
+        "unit_price": 12.99,
+        "subtotal": 25.98
+      },
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 2,
+        "unit_price": 34.5,
+        "subtotal": 69.0
+      }
+    ],
+    "created_at": "2026-10-13T21:22:17Z"
+  },
+  "O-2021": {
+    "id": "O-2021",
+    "customer_id": "C-1021",
+    "status": "cancelled",
+    "total": 34.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 1,
+        "unit_price": 34.5,
+        "subtotal": 34.5
+      }
+    ],
+    "created_at": "2026-07-31T23:05:14Z"
+  },
+  "O-2022": {
+    "id": "O-2022",
+    "customer_id": "C-1022",
+    "status": "delivered",
+    "total": 381.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 1,
+        "unit_price": 119.0,
+        "subtotal": 119.0
+      },
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 2,
+        "unit_price": 42.0,
+        "subtotal": 84.0
+      },
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 2,
+        "unit_price": 89.0,
+        "subtotal": 178.0
+      }
+    ],
+    "created_at": "2026-09-24T00:22:11Z"
+  },
+  "O-2023": {
+    "id": "O-2023",
+    "customer_id": "C-1023",
+    "status": "pending",
+    "total": 122.97,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 2,
+        "unit_price": 42.0,
+        "subtotal": 84.0
+      },
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 3,
+        "unit_price": 12.99,
+        "subtotal": 38.97
+      }
+    ],
+    "created_at": "2026-08-22T18:54:59Z"
+  },
+  "O-2024": {
+    "id": "O-2024",
+    "customer_id": "C-1024",
+    "status": "shipped",
+    "total": 981.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 2,
+        "unit_price": 21.0,
+        "subtotal": 42.0
+      },
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 3,
+        "unit_price": 249.0,
+        "subtotal": 747.0
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 3,
+        "unit_price": 64.0,
+        "subtotal": 192.0
+      }
+    ],
+    "created_at": "2026-09-20T13:08:05Z"
+  },
+  "O-2025": {
+    "id": "O-2025",
+    "customer_id": "C-1025",
+    "status": "delivered",
+    "total": 126.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 3,
+        "unit_price": 42.0,
+        "subtotal": 126.0
+      }
+    ],
+    "created_at": "2026-07-04T05:17:26Z"
+  },
+  "O-2026": {
+    "id": "O-2026",
+    "customer_id": "C-1026",
+    "status": "delivered",
+    "total": 148.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 2,
+        "unit_price": 74.25,
+        "subtotal": 148.5
+      }
+    ],
+    "created_at": "2026-10-05T10:47:34Z"
+  },
+  "O-2027": {
+    "id": "O-2027",
+    "customer_id": "C-1027",
+    "status": "cancelled",
+    "total": 137.25,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 1,
+        "unit_price": 21.0,
+        "subtotal": 21.0
+      },
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 1,
+        "unit_price": 74.25,
+        "subtotal": 74.25
+      },
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 1,
+        "unit_price": 42.0,
+        "subtotal": 42.0
+      }
+    ],
+    "created_at": "2026-10-10T13:57:29Z"
+  },
+  "O-2028": {
+    "id": "O-2028",
+    "customer_id": "C-1028",
+    "status": "delivered",
+    "total": 801.99,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 1,
+        "unit_price": 42.0,
+        "subtotal": 42.0
+      },
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 3,
+        "unit_price": 249.0,
+        "subtotal": 747.0
+      },
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 1,
+        "unit_price": 12.99,
+        "subtotal": 12.99
+      }
+    ],
+    "created_at": "2026-09-04T00:50:51Z"
+  },
+  "O-2029": {
+    "id": "O-2029",
+    "customer_id": "C-1029",
+    "status": "pending",
+    "total": 99.8,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 2,
+        "unit_price": 49.9,
+        "subtotal": 99.8
+      }
+    ],
+    "created_at": "2026-08-31T05:33:36Z"
+  },
+  "O-2030": {
+    "id": "O-2030",
+    "customer_id": "C-1030",
+    "status": "cancelled",
+    "total": 999.25,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 1,
+        "unit_price": 74.25,
+        "subtotal": 74.25
+      },
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 3,
+        "unit_price": 249.0,
+        "subtotal": 747.0
+      },
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 2,
+        "unit_price": 89.0,
+        "subtotal": 178.0
+      }
+    ],
+    "created_at": "2026-07-08T06:54:42Z"
+  },
+  "O-2031": {
+    "id": "O-2031",
+    "customer_id": "C-1031",
+    "status": "pending",
+    "total": 43.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 3,
+        "unit_price": 14.5,
+        "subtotal": 43.5
+      }
+    ],
+    "created_at": "2026-10-20T08:27:46Z"
+  },
+  "O-2032": {
+    "id": "O-2032",
+    "customer_id": "C-1032",
+    "status": "cancelled",
+    "total": 343.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 1,
+        "unit_price": 42.0,
+        "subtotal": 42.0
+      },
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 1,
+        "unit_price": 34.5,
+        "subtotal": 34.5
+      },
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 3,
+        "unit_price": 89.0,
+        "subtotal": 267.0
+      }
+    ],
+    "created_at": "2026-10-31T03:59:33Z"
+  },
+  "O-2033": {
+    "id": "O-2033",
+    "customer_id": "C-1033",
+    "status": "pending",
+    "total": 675.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 2,
+        "unit_price": 74.25,
+        "subtotal": 148.5
+      },
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 2,
+        "unit_price": 14.5,
+        "subtotal": 29.0
+      },
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 2,
+        "unit_price": 249.0,
+        "subtotal": 498.0
+      }
+    ],
+    "created_at": "2026-09-18T06:47:18Z"
+  },
+  "O-2034": {
+    "id": "O-2034",
+    "customer_id": "C-1034",
+    "status": "pending",
+    "total": 622.15,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 2,
+        "unit_price": 249.0,
+        "subtotal": 498.0
+      },
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 1,
+        "unit_price": 49.9,
+        "subtotal": 49.9
+      },
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 1,
+        "unit_price": 74.25,
+        "subtotal": 74.25
+      }
+    ],
+    "created_at": "2026-09-26T06:50:39Z"
+  },
+  "O-2035": {
+    "id": "O-2035",
+    "customer_id": "C-1035",
+    "status": "shipped",
+    "total": 178.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 2,
+        "unit_price": 89.0,
+        "subtotal": 178.0
+      }
+    ],
+    "created_at": "2026-09-26T23:54:16Z"
+  },
+  "O-2036": {
+    "id": "O-2036",
+    "customer_id": "C-1036",
+    "status": "delivered",
+    "total": 69.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 2,
+        "unit_price": 34.5,
+        "subtotal": 69.0
+      }
+    ],
+    "created_at": "2026-07-30T08:38:49Z"
+  },
+  "O-2037": {
+    "id": "O-2037",
+    "customer_id": "C-1037",
+    "status": "cancelled",
+    "total": 681.8,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 2,
+        "unit_price": 249.0,
+        "subtotal": 498.0
+      },
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 2,
+        "unit_price": 42.0,
+        "subtotal": 84.0
+      },
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 2,
+        "unit_price": 49.9,
+        "subtotal": 99.8
+      }
+    ],
+    "created_at": "2026-08-06T07:47:26Z"
+  },
+  "O-2038": {
+    "id": "O-2038",
+    "customer_id": "C-1038",
+    "status": "pending",
+    "total": 816.4,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 1,
+        "unit_price": 49.9,
+        "subtotal": 49.9
+      },
+      {
+        "product_id": "P-104",
+        "name": "Drift Notebook",
+        "quantity": 2,
+        "unit_price": 9.75,
+        "subtotal": 19.5
+      },
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 3,
+        "unit_price": 249.0,
+        "subtotal": 747.0
+      }
+    ],
+    "created_at": "2026-10-25T16:22:54Z"
+  },
+  "O-2039": {
+    "id": "O-2039",
+    "customer_id": "C-1039",
+    "status": "shipped",
+    "total": 535.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 3,
+        "unit_price": 119.0,
+        "subtotal": 357.0
+      },
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 2,
+        "unit_price": 89.0,
+        "subtotal": 178.0
+      }
+    ],
+    "created_at": "2026-09-17T23:52:42Z"
+  },
+  "O-2040": {
+    "id": "O-2040",
+    "customer_id": "C-1040",
+    "status": "delivered",
+    "total": 222.75,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 3,
+        "unit_price": 74.25,
+        "subtotal": 222.75
+      }
+    ],
+    "created_at": "2026-07-24T14:04:53Z"
+  },
+  "O-2041": {
+    "id": "O-2041",
+    "customer_id": "C-1001",
+    "status": "cancelled",
+    "total": 427.74,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 3,
+        "unit_price": 74.25,
+        "subtotal": 222.75
+      },
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 1,
+        "unit_price": 12.99,
+        "subtotal": 12.99
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 3,
+        "unit_price": 64.0,
+        "subtotal": 192.0
+      }
+    ],
+    "created_at": "2026-10-25T15:07:12Z"
+  },
+  "O-2042": {
+    "id": "O-2042",
+    "customer_id": "C-1002",
+    "status": "delivered",
+    "total": 163.8,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 2,
+        "unit_price": 49.9,
+        "subtotal": 99.8
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 1,
+        "unit_price": 64.0,
+        "subtotal": 64.0
+      }
+    ],
+    "created_at": "2026-08-14T21:53:55Z"
+  },
+  "O-2043": {
+    "id": "O-2043",
+    "customer_id": "C-1003",
+    "status": "shipped",
+    "total": 375.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 1,
+        "unit_price": 249.0,
+        "subtotal": 249.0
+      },
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 3,
+        "unit_price": 42.0,
+        "subtotal": 126.0
+      }
+    ],
+    "created_at": "2026-10-09T14:21:28Z"
+  },
+  "O-2044": {
+    "id": "O-2044",
+    "customer_id": "C-1004",
+    "status": "shipped",
+    "total": 107.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 1,
+        "unit_price": 64.0,
+        "subtotal": 64.0
+      },
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 3,
+        "unit_price": 14.5,
+        "subtotal": 43.5
+      }
+    ],
+    "created_at": "2026-07-03T00:41:42Z"
+  },
+  "O-2045": {
+    "id": "O-2045",
+    "customer_id": "C-1005",
+    "status": "shipped",
+    "total": 431.25,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 3,
+        "unit_price": 119.0,
+        "subtotal": 357.0
+      },
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 1,
+        "unit_price": 74.25,
+        "subtotal": 74.25
+      }
+    ],
+    "created_at": "2026-09-23T09:18:38Z"
+  },
+  "O-2046": {
+    "id": "O-2046",
+    "customer_id": "C-1006",
+    "status": "delivered",
+    "total": 690.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 2,
+        "unit_price": 249.0,
+        "subtotal": 498.0
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 3,
+        "unit_price": 64.0,
+        "subtotal": 192.0
+      }
+    ],
+    "created_at": "2026-10-01T15:07:13Z"
+  },
+  "O-2047": {
+    "id": "O-2047",
+    "customer_id": "C-1007",
+    "status": "cancelled",
+    "total": 853.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 2,
+        "unit_price": 21.0,
+        "subtotal": 42.0
+      },
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 3,
+        "unit_price": 249.0,
+        "subtotal": 747.0
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 1,
+        "unit_price": 64.0,
+        "subtotal": 64.0
+      }
+    ],
+    "created_at": "2026-07-04T11:26:13Z"
+  },
+  "O-2048": {
+    "id": "O-2048",
+    "customer_id": "C-1008",
+    "status": "shipped",
+    "total": 313.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 1,
+        "unit_price": 64.0,
+        "subtotal": 64.0
+      },
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 1,
+        "unit_price": 249.0,
+        "subtotal": 249.0
+      }
+    ],
+    "created_at": "2026-09-22T11:40:36Z"
+  },
+  "O-2049": {
+    "id": "O-2049",
+    "customer_id": "C-1009",
+    "status": "cancelled",
+    "total": 189.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 2,
+        "unit_price": 64.0,
+        "subtotal": 128.0
+      },
+      {
+        "product_id": "P-104",
+        "name": "Drift Notebook",
+        "quantity": 2,
+        "unit_price": 9.75,
+        "subtotal": 19.5
+      },
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 1,
+        "unit_price": 42.0,
+        "subtotal": 42.0
+      }
+    ],
+    "created_at": "2026-10-04T07:03:36Z"
+  },
+  "O-2050": {
+    "id": "O-2050",
+    "customer_id": "C-1010",
+    "status": "cancelled",
+    "total": 71.25,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-104",
+        "name": "Drift Notebook",
+        "quantity": 3,
+        "unit_price": 9.75,
+        "subtotal": 29.25
+      },
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 2,
+        "unit_price": 21.0,
+        "subtotal": 42.0
+      }
+    ],
+    "created_at": "2026-10-22T07:21:30Z"
+  },
+  "O-2051": {
+    "id": "O-2051",
+    "customer_id": "C-1011",
+    "status": "shipped",
+    "total": 94.98,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 2,
+        "unit_price": 12.99,
+        "subtotal": 25.98
+      },
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 2,
+        "unit_price": 34.5,
+        "subtotal": 69.0
+      }
+    ],
+    "created_at": "2026-10-25T01:17:44Z"
+  },
+  "O-2052": {
+    "id": "O-2052",
+    "customer_id": "C-1012",
+    "status": "shipped",
+    "total": 34.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 1,
+        "unit_price": 34.5,
+        "subtotal": 34.5
+      }
+    ],
+    "created_at": "2026-08-31T05:22:00Z"
+  },
+  "O-2053": {
+    "id": "O-2053",
+    "customer_id": "C-1013",
+    "status": "shipped",
+    "total": 119.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 1,
+        "unit_price": 119.0,
+        "subtotal": 119.0
+      }
+    ],
+    "created_at": "2026-09-19T17:47:01Z"
+  },
+  "O-2054": {
+    "id": "O-2054",
+    "customer_id": "C-1014",
+    "status": "delivered",
+    "total": 66.99,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 1,
+        "unit_price": 12.99,
+        "subtotal": 12.99
+      },
+      {
+        "product_id": "P-104",
+        "name": "Drift Notebook",
+        "quantity": 2,
+        "unit_price": 9.75,
+        "subtotal": 19.5
+      },
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 1,
+        "unit_price": 34.5,
+        "subtotal": 34.5
+      }
+    ],
+    "created_at": "2026-08-25T08:23:25Z"
+  },
+  "O-2055": {
+    "id": "O-2055",
+    "customer_id": "C-1015",
+    "status": "delivered",
+    "total": 182.9,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 1,
+        "unit_price": 49.9,
+        "subtotal": 49.9
+      },
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 2,
+        "unit_price": 34.5,
+        "subtotal": 69.0
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 1,
+        "unit_price": 64.0,
+        "subtotal": 64.0
+      }
+    ],
+    "created_at": "2026-07-13T17:49:09Z"
+  },
+  "O-2056": {
+    "id": "O-2056",
+    "customer_id": "C-1016",
+    "status": "cancelled",
+    "total": 357.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 3,
+        "unit_price": 119.0,
+        "subtotal": 357.0
+      }
+    ],
+    "created_at": "2026-10-14T23:07:13Z"
+  },
+  "O-2057": {
+    "id": "O-2057",
+    "customer_id": "C-1017",
+    "status": "delivered",
+    "total": 801.98,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 3,
+        "unit_price": 249.0,
+        "subtotal": 747.0
+      },
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 2,
+        "unit_price": 12.99,
+        "subtotal": 25.98
+      },
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 2,
+        "unit_price": 14.5,
+        "subtotal": 29.0
+      }
+    ],
+    "created_at": "2026-08-04T17:52:07Z"
+  },
+  "O-2058": {
+    "id": "O-2058",
+    "customer_id": "C-1018",
+    "status": "cancelled",
+    "total": 173.99,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 2,
+        "unit_price": 21.0,
+        "subtotal": 42.0
+      },
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 1,
+        "unit_price": 119.0,
+        "subtotal": 119.0
+      },
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 1,
+        "unit_price": 12.99,
+        "subtotal": 12.99
+      }
+    ],
+    "created_at": "2026-09-02T23:18:20Z"
+  },
+  "O-2059": {
+    "id": "O-2059",
+    "customer_id": "C-1019",
+    "status": "delivered",
+    "total": 127.4,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 1,
+        "unit_price": 14.5,
+        "subtotal": 14.5
+      },
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 3,
+        "unit_price": 21.0,
+        "subtotal": 63.0
+      },
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 1,
+        "unit_price": 49.9,
+        "subtotal": 49.9
+      }
+    ],
+    "created_at": "2026-09-25T18:06:04Z"
+  },
+  "O-2060": {
+    "id": "O-2060",
+    "customer_id": "C-1020",
+    "status": "pending",
+    "total": 502.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 1,
+        "unit_price": 42.0,
+        "subtotal": 42.0
+      },
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 3,
+        "unit_price": 119.0,
+        "subtotal": 357.0
+      },
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 3,
+        "unit_price": 34.5,
+        "subtotal": 103.5
+      }
+    ],
+    "created_at": "2026-08-08T07:40:07Z"
+  },
+  "O-2061": {
+    "id": "O-2061",
+    "customer_id": "C-1021",
+    "status": "shipped",
+    "total": 573.88,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 2,
+        "unit_price": 249.0,
+        "subtotal": 498.0
+      },
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 2,
+        "unit_price": 12.99,
+        "subtotal": 25.98
+      },
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 1,
+        "unit_price": 49.9,
+        "subtotal": 49.9
+      }
+    ],
+    "created_at": "2026-09-27T12:20:13Z"
+  },
+  "O-2062": {
+    "id": "O-2062",
+    "customer_id": "C-1022",
+    "status": "pending",
+    "total": 42.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 1,
+        "unit_price": 42.0,
+        "subtotal": 42.0
+      }
+    ],
+    "created_at": "2026-08-01T15:11:17Z"
+  },
+  "O-2063": {
+    "id": "O-2063",
+    "customer_id": "C-1023",
+    "status": "delivered",
+    "total": 42.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 2,
+        "unit_price": 21.0,
+        "subtotal": 42.0
+      }
+    ],
+    "created_at": "2026-10-14T09:45:23Z"
+  },
+  "O-2064": {
+    "id": "O-2064",
+    "customer_id": "C-1024",
+    "status": "delivered",
+    "total": 262.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 2,
+        "unit_price": 42.0,
+        "subtotal": 84.0
+      },
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 2,
+        "unit_price": 89.0,
+        "subtotal": 178.0
+      }
+    ],
+    "created_at": "2026-09-18T01:51:31Z"
+  },
+  "O-2065": {
+    "id": "O-2065",
+    "customer_id": "C-1025",
+    "status": "cancelled",
+    "total": 523.98,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 2,
+        "unit_price": 12.99,
+        "subtotal": 25.98
+      },
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 2,
+        "unit_price": 249.0,
+        "subtotal": 498.0
+      }
+    ],
+    "created_at": "2026-10-21T14:40:50Z"
+  },
+  "O-2066": {
+    "id": "O-2066",
+    "customer_id": "C-1026",
+    "status": "delivered",
+    "total": 198.4,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 1,
+        "unit_price": 49.9,
+        "subtotal": 49.9
+      },
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 2,
+        "unit_price": 74.25,
+        "subtotal": 148.5
+      }
+    ],
+    "created_at": "2026-09-07T22:31:43Z"
+  },
+  "O-2067": {
+    "id": "O-2067",
+    "customer_id": "C-1027",
+    "status": "cancelled",
+    "total": 199.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 1,
+        "unit_price": 21.0,
+        "subtotal": 21.0
+      },
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 2,
+        "unit_price": 89.0,
+        "subtotal": 178.0
+      }
+    ],
+    "created_at": "2026-08-01T19:36:52Z"
+  },
+  "O-2068": {
+    "id": "O-2068",
+    "customer_id": "C-1028",
+    "status": "cancelled",
+    "total": 309.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 1,
+        "unit_price": 42.0,
+        "subtotal": 42.0
+      },
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 3,
+        "unit_price": 89.0,
+        "subtotal": 267.0
+      }
+    ],
+    "created_at": "2026-09-02T09:34:20Z"
+  },
+  "O-2069": {
+    "id": "O-2069",
+    "customer_id": "C-1029",
+    "status": "delivered",
+    "total": 186.25,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 2,
+        "unit_price": 14.5,
+        "subtotal": 29.0
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 2,
+        "unit_price": 64.0,
+        "subtotal": 128.0
+      },
+      {
+        "product_id": "P-104",
+        "name": "Drift Notebook",
+        "quantity": 3,
+        "unit_price": 9.75,
+        "subtotal": 29.25
+      }
+    ],
+    "created_at": "2026-07-29T01:50:18Z"
+  },
+  "O-2070": {
+    "id": "O-2070",
+    "customer_id": "C-1030",
+    "status": "shipped",
+    "total": 155.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 3,
+        "unit_price": 42.0,
+        "subtotal": 126.0
+      },
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 2,
+        "unit_price": 14.5,
+        "subtotal": 29.0
+      }
+    ],
+    "created_at": "2026-07-26T11:02:31Z"
+  },
+  "O-2071": {
+    "id": "O-2071",
+    "customer_id": "C-1031",
+    "status": "cancelled",
+    "total": 59.97,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 3,
+        "unit_price": 12.99,
+        "subtotal": 38.97
+      },
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 1,
+        "unit_price": 21.0,
+        "subtotal": 21.0
+      }
+    ],
+    "created_at": "2026-07-18T00:16:44Z"
+  },
+  "O-2072": {
+    "id": "O-2072",
+    "customer_id": "C-1032",
+    "status": "cancelled",
+    "total": 590.75,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 1,
+        "unit_price": 249.0,
+        "subtotal": 249.0
+      },
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 3,
+        "unit_price": 74.25,
+        "subtotal": 222.75
+      },
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 1,
+        "unit_price": 119.0,
+        "subtotal": 119.0
+      }
+    ],
+    "created_at": "2026-07-25T08:23:21Z"
+  },
+  "O-2073": {
+    "id": "O-2073",
+    "customer_id": "C-1033",
+    "status": "cancelled",
+    "total": 89.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 1,
+        "unit_price": 89.0,
+        "subtotal": 89.0
+      }
+    ],
+    "created_at": "2026-08-05T00:32:48Z"
+  },
+  "O-2074": {
+    "id": "O-2074",
+    "customer_id": "C-1034",
+    "status": "delivered",
+    "total": 84.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 2,
+        "unit_price": 42.0,
+        "subtotal": 84.0
+      }
+    ],
+    "created_at": "2026-08-10T12:57:08Z"
+  },
+  "O-2075": {
+    "id": "O-2075",
+    "customer_id": "C-1035",
+    "status": "cancelled",
+    "total": 38.97,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 3,
+        "unit_price": 12.99,
+        "subtotal": 38.97
+      }
+    ],
+    "created_at": "2026-07-31T01:25:44Z"
+  },
+  "O-2076": {
+    "id": "O-2076",
+    "customer_id": "C-1036",
+    "status": "shipped",
+    "total": 1014.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 3,
+        "unit_price": 249.0,
+        "subtotal": 747.0
+      },
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 3,
+        "unit_price": 89.0,
+        "subtotal": 267.0
+      }
+    ],
+    "created_at": "2026-08-30T07:04:33Z"
+  },
+  "O-2077": {
+    "id": "O-2077",
+    "customer_id": "C-1037",
+    "status": "delivered",
+    "total": 497.99,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 1,
+        "unit_price": 12.99,
+        "subtotal": 12.99
+      },
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 3,
+        "unit_price": 119.0,
+        "subtotal": 357.0
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 2,
+        "unit_price": 64.0,
+        "subtotal": 128.0
+      }
+    ],
+    "created_at": "2026-08-01T04:01:31Z"
+  },
+  "O-2078": {
+    "id": "O-2078",
+    "customer_id": "C-1038",
+    "status": "shipped",
+    "total": 498.8,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 2,
+        "unit_price": 21.0,
+        "subtotal": 42.0
+      },
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 3,
+        "unit_price": 119.0,
+        "subtotal": 357.0
+      },
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 2,
+        "unit_price": 49.9,
+        "subtotal": 99.8
+      }
+    ],
+    "created_at": "2026-07-26T14:46:57Z"
+  },
+  "O-2079": {
+    "id": "O-2079",
+    "customer_id": "C-1039",
+    "status": "shipped",
+    "total": 34.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 1,
+        "unit_price": 34.5,
+        "subtotal": 34.5
+      }
+    ],
+    "created_at": "2026-09-23T00:19:55Z"
+  },
+  "O-2080": {
+    "id": "O-2080",
+    "customer_id": "C-1040",
+    "status": "shipped",
+    "total": 134.25,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 2,
+        "unit_price": 42.0,
+        "subtotal": 84.0
+      },
+      {
+        "product_id": "P-104",
+        "name": "Drift Notebook",
+        "quantity": 3,
+        "unit_price": 9.75,
+        "subtotal": 29.25
+      },
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 1,
+        "unit_price": 21.0,
+        "subtotal": 21.0
+      }
+    ],
+    "created_at": "2026-08-24T00:58:14Z"
+  },
+  "O-2081": {
+    "id": "O-2081",
+    "customer_id": "C-1001",
+    "status": "shipped",
+    "total": 99.8,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 2,
+        "unit_price": 49.9,
+        "subtotal": 99.8
+      }
+    ],
+    "created_at": "2026-07-26T16:37:09Z"
+  },
+  "O-2082": {
+    "id": "O-2082",
+    "customer_id": "C-1002",
+    "status": "pending",
+    "total": 49.9,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 1,
+        "unit_price": 49.9,
+        "subtotal": 49.9
+      }
+    ],
+    "created_at": "2026-08-04T13:12:06Z"
+  },
+  "O-2083": {
+    "id": "O-2083",
+    "customer_id": "C-1003",
+    "status": "cancelled",
+    "total": 144.98,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 2,
+        "unit_price": 12.99,
+        "subtotal": 25.98
+      },
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 1,
+        "unit_price": 119.0,
+        "subtotal": 119.0
+      }
+    ],
+    "created_at": "2026-09-20T08:14:36Z"
+  },
+  "O-2084": {
+    "id": "O-2084",
+    "customer_id": "C-1004",
+    "status": "shipped",
+    "total": 341.7,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 3,
+        "unit_price": 64.0,
+        "subtotal": 192.0
+      },
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 3,
+        "unit_price": 49.9,
+        "subtotal": 149.7
+      }
+    ],
+    "created_at": "2026-10-27T16:15:51Z"
+  },
+  "O-2085": {
+    "id": "O-2085",
+    "customer_id": "C-1005",
+    "status": "shipped",
+    "total": 135.75,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 3,
+        "unit_price": 42.0,
+        "subtotal": 126.0
+      },
+      {
+        "product_id": "P-104",
+        "name": "Drift Notebook",
+        "quantity": 1,
+        "unit_price": 9.75,
+        "subtotal": 9.75
+      }
+    ],
+    "created_at": "2026-08-27T13:50:40Z"
+  },
+  "O-2086": {
+    "id": "O-2086",
+    "customer_id": "C-1006",
+    "status": "cancelled",
+    "total": 63.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-104",
+        "name": "Drift Notebook",
+        "quantity": 2,
+        "unit_price": 9.75,
+        "subtotal": 19.5
+      },
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 3,
+        "unit_price": 14.5,
+        "subtotal": 43.5
+      }
+    ],
+    "created_at": "2026-08-25T17:01:15Z"
+  },
+  "O-2087": {
+    "id": "O-2087",
+    "customer_id": "C-1007",
+    "status": "shipped",
+    "total": 34.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 1,
+        "unit_price": 34.5,
+        "subtotal": 34.5
+      }
+    ],
+    "created_at": "2026-10-28T11:50:12Z"
+  },
+  "O-2088": {
+    "id": "O-2088",
+    "customer_id": "C-1008",
+    "status": "cancelled",
+    "total": 599.75,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 1,
+        "unit_price": 249.0,
+        "subtotal": 249.0
+      },
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 3,
+        "unit_price": 74.25,
+        "subtotal": 222.75
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 2,
+        "unit_price": 64.0,
+        "subtotal": 128.0
+      }
+    ],
+    "created_at": "2026-09-03T00:34:48Z"
+  },
+  "O-2089": {
+    "id": "O-2089",
+    "customer_id": "C-1009",
+    "status": "delivered",
+    "total": 544.75,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 2,
+        "unit_price": 42.0,
+        "subtotal": 84.0
+      },
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 2,
+        "unit_price": 119.0,
+        "subtotal": 238.0
+      },
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 3,
+        "unit_price": 74.25,
+        "subtotal": 222.75
+      }
+    ],
+    "created_at": "2026-09-20T03:18:58Z"
+  },
+  "O-2090": {
+    "id": "O-2090",
+    "customer_id": "C-1010",
+    "status": "cancelled",
+    "total": 103.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 1,
+        "unit_price": 89.0,
+        "subtotal": 89.0
+      },
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 1,
+        "unit_price": 14.5,
+        "subtotal": 14.5
+      }
+    ],
+    "created_at": "2026-07-06T08:50:49Z"
+  },
+  "O-2091": {
+    "id": "O-2091",
+    "customer_id": "C-1011",
+    "status": "delivered",
+    "total": 221.75,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 2,
+        "unit_price": 89.0,
+        "subtotal": 178.0
+      },
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 1,
+        "unit_price": 14.5,
+        "subtotal": 14.5
+      },
+      {
+        "product_id": "P-104",
+        "name": "Drift Notebook",
+        "quantity": 3,
+        "unit_price": 9.75,
+        "subtotal": 29.25
+      }
+    ],
+    "created_at": "2026-09-25T23:50:17Z"
+  },
+  "O-2092": {
+    "id": "O-2092",
+    "customer_id": "C-1012",
+    "status": "pending",
+    "total": 209.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 1,
+        "unit_price": 119.0,
+        "subtotal": 119.0
+      },
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 2,
+        "unit_price": 34.5,
+        "subtotal": 69.0
+      },
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 1,
+        "unit_price": 21.0,
+        "subtotal": 21.0
+      }
+    ],
+    "created_at": "2026-10-06T05:21:28Z"
+  },
+  "O-2093": {
+    "id": "O-2093",
+    "customer_id": "C-1013",
+    "status": "cancelled",
+    "total": 29.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 2,
+        "unit_price": 14.5,
+        "subtotal": 29.0
+      }
+    ],
+    "created_at": "2026-07-28T08:29:31Z"
+  },
+  "O-2094": {
+    "id": "O-2094",
+    "customer_id": "C-1014",
+    "status": "delivered",
+    "total": 34.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 1,
+        "unit_price": 34.5,
+        "subtotal": 34.5
+      }
+    ],
+    "created_at": "2026-08-06T10:40:31Z"
+  },
+  "O-2095": {
+    "id": "O-2095",
+    "customer_id": "C-1015",
+    "status": "pending",
+    "total": 89.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 1,
+        "unit_price": 89.0,
+        "subtotal": 89.0
+      }
+    ],
+    "created_at": "2026-09-02T14:14:36Z"
+  },
+  "O-2096": {
+    "id": "O-2096",
+    "customer_id": "C-1016",
+    "status": "shipped",
+    "total": 69.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 2,
+        "unit_price": 34.5,
+        "subtotal": 69.0
+      }
+    ],
+    "created_at": "2026-10-08T06:15:18Z"
+  },
+  "O-2097": {
+    "id": "O-2097",
+    "customer_id": "C-1017",
+    "status": "cancelled",
+    "total": 128.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 2,
+        "unit_price": 64.0,
+        "subtotal": 128.0
+      }
+    ],
+    "created_at": "2026-10-01T15:45:08Z"
+  },
+  "O-2098": {
+    "id": "O-2098",
+    "customer_id": "C-1018",
+    "status": "pending",
+    "total": 177.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 2,
+        "unit_price": 74.25,
+        "subtotal": 148.5
+      },
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 2,
+        "unit_price": 14.5,
+        "subtotal": 29.0
+      }
+    ],
+    "created_at": "2026-09-22T11:45:53Z"
+  },
+  "O-2099": {
+    "id": "O-2099",
+    "customer_id": "C-1019",
+    "status": "shipped",
+    "total": 351.45,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-104",
+        "name": "Drift Notebook",
+        "quantity": 1,
+        "unit_price": 9.75,
+        "subtotal": 9.75
+      },
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 3,
+        "unit_price": 49.9,
+        "subtotal": 149.7
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 3,
+        "unit_price": 64.0,
+        "subtotal": 192.0
+      }
+    ],
+    "created_at": "2026-07-29T16:50:57Z"
+  },
+  "O-2100": {
+    "id": "O-2100",
+    "customer_id": "C-1020",
+    "status": "pending",
+    "total": 62.99,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 1,
+        "unit_price": 12.99,
+        "subtotal": 12.99
+      },
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 2,
+        "unit_price": 14.5,
+        "subtotal": 29.0
+      },
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 1,
+        "unit_price": 21.0,
+        "subtotal": 21.0
+      }
+    ],
+    "created_at": "2026-10-22T18:13:32Z"
+  },
+  "O-2101": {
+    "id": "O-2101",
+    "customer_id": "C-1021",
+    "status": "delivered",
+    "total": 237.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 2,
+        "unit_price": 42.0,
+        "subtotal": 84.0
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 1,
+        "unit_price": 64.0,
+        "subtotal": 64.0
+      },
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 1,
+        "unit_price": 89.0,
+        "subtotal": 89.0
+      }
+    ],
+    "created_at": "2026-09-30T19:05:53Z"
+  },
+  "O-2102": {
+    "id": "O-2102",
+    "customer_id": "C-1022",
+    "status": "pending",
+    "total": 249.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 1,
+        "unit_price": 249.0,
+        "subtotal": 249.0
+      }
+    ],
+    "created_at": "2026-08-07T18:24:40Z"
+  },
+  "O-2103": {
+    "id": "O-2103",
+    "customer_id": "C-1023",
+    "status": "cancelled",
+    "total": 222.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 3,
+        "unit_price": 34.5,
+        "subtotal": 103.5
+      },
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 1,
+        "unit_price": 119.0,
+        "subtotal": 119.0
+      }
+    ],
+    "created_at": "2026-07-03T12:41:27Z"
+  },
+  "O-2104": {
+    "id": "O-2104",
+    "customer_id": "C-1024",
+    "status": "delivered",
+    "total": 375.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 1,
+        "unit_price": 249.0,
+        "subtotal": 249.0
+      },
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 3,
+        "unit_price": 42.0,
+        "subtotal": 126.0
+      }
+    ],
+    "created_at": "2026-10-13T17:08:42Z"
+  },
+  "O-2105": {
+    "id": "O-2105",
+    "customer_id": "C-1025",
+    "status": "delivered",
+    "total": 238.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 2,
+        "unit_price": 119.0,
+        "subtotal": 238.0
+      }
+    ],
+    "created_at": "2026-07-27T21:23:44Z"
+  },
+  "O-2106": {
+    "id": "O-2106",
+    "customer_id": "C-1026",
+    "status": "shipped",
+    "total": 58.25,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 2,
+        "unit_price": 14.5,
+        "subtotal": 29.0
+      },
+      {
+        "product_id": "P-104",
+        "name": "Drift Notebook",
+        "quantity": 3,
+        "unit_price": 9.75,
+        "subtotal": 29.25
+      }
+    ],
+    "created_at": "2026-08-20T05:20:29Z"
+  },
+  "O-2107": {
+    "id": "O-2107",
+    "customer_id": "C-1027",
+    "status": "pending",
+    "total": 380.75,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 3,
+        "unit_price": 74.25,
+        "subtotal": 222.75
+      },
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 2,
+        "unit_price": 34.5,
+        "subtotal": 69.0
+      },
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 1,
+        "unit_price": 89.0,
+        "subtotal": 89.0
+      }
+    ],
+    "created_at": "2026-09-02T01:09:35Z"
+  },
+  "O-2108": {
+    "id": "O-2108",
+    "customer_id": "C-1028",
+    "status": "pending",
+    "total": 233.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 1,
+        "unit_price": 21.0,
+        "subtotal": 21.0
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 1,
+        "unit_price": 64.0,
+        "subtotal": 64.0
+      },
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 2,
+        "unit_price": 74.25,
+        "subtotal": 148.5
+      }
+    ],
+    "created_at": "2026-09-22T10:54:53Z"
+  },
+  "O-2109": {
+    "id": "O-2109",
+    "customer_id": "C-1029",
+    "status": "shipped",
+    "total": 380.67,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 3,
+        "unit_price": 49.9,
+        "subtotal": 149.7
+      },
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 3,
+        "unit_price": 64.0,
+        "subtotal": 192.0
+      },
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 3,
+        "unit_price": 12.99,
+        "subtotal": 38.97
+      }
+    ],
+    "created_at": "2026-09-09T17:02:30Z"
+  },
+  "O-2110": {
+    "id": "O-2110",
+    "customer_id": "C-1030",
+    "status": "shipped",
+    "total": 80.65,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 1,
+        "unit_price": 21.0,
+        "subtotal": 21.0
+      },
+      {
+        "product_id": "P-104",
+        "name": "Drift Notebook",
+        "quantity": 1,
+        "unit_price": 9.75,
+        "subtotal": 9.75
+      },
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 1,
+        "unit_price": 49.9,
+        "subtotal": 49.9
+      }
+    ],
+    "created_at": "2026-10-22T21:06:00Z"
+  },
+  "O-2111": {
+    "id": "O-2111",
+    "customer_id": "C-1031",
+    "status": "pending",
+    "total": 89.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 1,
+        "unit_price": 89.0,
+        "subtotal": 89.0
+      }
+    ],
+    "created_at": "2026-10-21T06:04:43Z"
+  },
+  "O-2112": {
+    "id": "O-2112",
+    "customer_id": "C-1032",
+    "status": "delivered",
+    "total": 63.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 3,
+        "unit_price": 21.0,
+        "subtotal": 63.0
+      }
+    ],
+    "created_at": "2026-07-10T05:57:32Z"
+  },
+  "O-2113": {
+    "id": "O-2113",
+    "customer_id": "C-1033",
+    "status": "pending",
+    "total": 140.99,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-108",
+        "name": "Harbor Stand",
+        "quantity": 2,
+        "unit_price": 64.0,
+        "subtotal": 128.0
+      },
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 1,
+        "unit_price": 12.99,
+        "subtotal": 12.99
+      }
+    ],
+    "created_at": "2026-09-11T21:37:34Z"
+  },
+  "O-2114": {
+    "id": "O-2114",
+    "customer_id": "C-1034",
+    "status": "pending",
+    "total": 123.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 1,
+        "unit_price": 34.5,
+        "subtotal": 34.5
+      },
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 1,
+        "unit_price": 89.0,
+        "subtotal": 89.0
+      }
+    ],
+    "created_at": "2026-08-03T05:04:54Z"
+  },
+  "O-2115": {
+    "id": "O-2115",
+    "customer_id": "C-1035",
+    "status": "delivered",
+    "total": 211.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 3,
+        "unit_price": 21.0,
+        "subtotal": 63.0
+      },
+      {
+        "product_id": "P-106",
+        "name": "Fjord Backpack",
+        "quantity": 2,
+        "unit_price": 74.25,
+        "subtotal": 148.5
+      }
+    ],
+    "created_at": "2026-09-28T11:06:29Z"
+  },
+  "O-2116": {
+    "id": "O-2116",
+    "customer_id": "C-1036",
+    "status": "pending",
+    "total": 117.87,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-109",
+        "name": "Island Cable",
+        "quantity": 3,
+        "unit_price": 12.99,
+        "subtotal": 38.97
+      },
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 2,
+        "unit_price": 14.5,
+        "subtotal": 29.0
+      },
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 1,
+        "unit_price": 49.9,
+        "subtotal": 49.9
+      }
+    ],
+    "created_at": "2026-08-19T15:18:11Z"
+  },
+  "O-2117": {
+    "id": "O-2117",
+    "customer_id": "C-1037",
+    "status": "shipped",
+    "total": 42.0,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-111",
+        "name": "Kestrel Mouse",
+        "quantity": 1,
+        "unit_price": 42.0,
+        "subtotal": 42.0
+      }
+    ],
+    "created_at": "2026-08-23T19:46:08Z"
+  },
+  "O-2118": {
+    "id": "O-2118",
+    "customer_id": "C-1038",
+    "status": "pending",
+    "total": 604.8,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-102",
+        "name": "Borealis Keyboard",
+        "quantity": 2,
+        "unit_price": 119.0,
+        "subtotal": 238.0
+      },
+      {
+        "product_id": "P-105",
+        "name": "Ember Headphones",
+        "quantity": 3,
+        "unit_price": 89.0,
+        "subtotal": 267.0
+      },
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 2,
+        "unit_price": 49.9,
+        "subtotal": 99.8
+      }
+    ],
+    "created_at": "2026-10-16T05:23:29Z"
+  },
+  "O-2119": {
+    "id": "O-2119",
+    "customer_id": "C-1039",
+    "status": "pending",
+    "total": 84.5,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-107",
+        "name": "Glacier Bottle",
+        "quantity": 1,
+        "unit_price": 21.0,
+        "subtotal": 21.0
+      },
+      {
+        "product_id": "P-110",
+        "name": "Juniper Sleeve",
+        "quantity": 1,
+        "unit_price": 34.5,
+        "subtotal": 34.5
+      },
+      {
+        "product_id": "P-103",
+        "name": "Cascade Mug",
+        "quantity": 2,
+        "unit_price": 14.5,
+        "subtotal": 29.0
+      }
+    ],
+    "created_at": "2026-07-28T00:10:31Z"
+  },
+  "O-2120": {
+    "id": "O-2120",
+    "customer_id": "C-1040",
+    "status": "cancelled",
+    "total": 547.9,
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P-101",
+        "name": "Aurora Desk Lamp",
+        "quantity": 1,
+        "unit_price": 49.9,
+        "subtotal": 49.9
+      },
+      {
+        "product_id": "P-112",
+        "name": "Lumen Monitor",
+        "quantity": 2,
+        "unit_price": 249.0,
+        "subtotal": 498.0
+      }
+    ],
+    "created_at": "2026-08-15T06:57:12Z"
+  }
+}

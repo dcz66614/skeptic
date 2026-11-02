@@ -38,11 +38,13 @@ SANDBOXES = {
     "fx": "sb_fx",
     "stocks": "sb_stocks",
     "crm": "sb_crm",
+    "orders": "sb_orders",
+    "calendar": "sb_calendar",
 }
 """The built-in sandboxes ``skeptic sandbox run`` can start (S2, S9.2).
 
-S31 adds ``weather`` and ``fx``; S32 adds ``stocks`` and ``crm``; S33-S35 add
-the other six here.
+S31 adds ``weather`` and ``fx``; S32 adds ``stocks`` and ``crm``; S33 adds
+``orders`` and ``calendar``; S34-S35 add the other four here.
 """
 
 

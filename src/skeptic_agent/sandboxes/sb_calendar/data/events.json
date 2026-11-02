@@ -1,0 +1,668 @@
+{
+  "E-4001": {
+    "id": "E-4001",
+    "title": "Weekly planning",
+    "start": "2026-11-01T09:00:00+08:00",
+    "end": "2026-11-01T09:30:00+08:00",
+    "attendees": [
+      "Farid Petrov",
+      "Hiro Kowalski"
+    ],
+    "location": "Room Orion"
+  },
+  "E-4002": {
+    "id": "E-4002",
+    "title": "Product stand-up",
+    "start": "2026-11-01T10:00:00+08:00",
+    "end": "2026-11-01T11:00:00+08:00",
+    "attendees": [
+      "Omar Okafor"
+    ],
+    "location": "Room Atlas"
+  },
+  "E-4003": {
+    "id": "E-4003",
+    "title": "Retrospective",
+    "start": "2026-11-01T11:15:00+08:00",
+    "end": "2026-11-01T12:00:00+08:00",
+    "attendees": [
+      "Jonas Hansen"
+    ],
+    "location": "Remote"
+  },
+  "E-4004": {
+    "id": "E-4004",
+    "title": "Vendor call",
+    "start": "2026-11-01T12:45:00+08:00",
+    "end": "2026-11-01T14:15:00+08:00",
+    "attendees": [
+      "Farid Petrov",
+      "Ines Kowalski"
+    ],
+    "location": "Room Orion"
+  },
+  "E-4005": {
+    "id": "E-4005",
+    "title": "Security review",
+    "start": "2026-11-01T14:45:00+08:00",
+    "end": "2026-11-01T15:15:00+08:00",
+    "attendees": [
+      "Bruno Brandt",
+      "Lars Petrov"
+    ],
+    "location": "Room Orion"
+  },
+  "E-4006": {
+    "id": "E-4006",
+    "title": "Design review",
+    "start": "2026-11-02T09:00:00+08:00",
+    "end": "2026-11-02T10:00:00+08:00",
+    "attendees": [
+      "Ada Castillo",
+      "Lars Brandt"
+    ],
+    "location": "Room Atlas"
+  },
+  "E-4007": {
+    "id": "E-4007",
+    "title": "Product stand-up",
+    "start": "2026-11-02T10:15:00+08:00",
+    "end": "2026-11-02T11:00:00+08:00",
+    "attendees": [
+      "Lars Brandt"
+    ],
+    "location": "Room Atlas"
+  },
+  "E-4008": {
+    "id": "E-4008",
+    "title": "Budget review",
+    "start": "2026-11-02T11:45:00+08:00",
+    "end": "2026-11-02T13:15:00+08:00",
+    "attendees": [
+      "Keiko Hansen"
+    ],
+    "location": "Room Lyra"
+  },
+  "E-4009": {
+    "id": "E-4009",
+    "title": "Retrospective",
+    "start": "2026-11-02T13:45:00+08:00",
+    "end": "2026-11-02T14:15:00+08:00",
+    "attendees": [
+      "Bruno Jensen",
+      "Pia Rossi"
+    ],
+    "location": "Room Lyra"
+  },
+  "E-4010": {
+    "id": "E-4010",
+    "title": "Retrospective",
+    "start": "2026-11-02T15:15:00+08:00",
+    "end": "2026-11-02T15:45:00+08:00",
+    "attendees": [
+      "Dmitri Rossi",
+      "Sven Okafor",
+      "Ines Okafor"
+    ],
+    "location": "Room Vega"
+  },
+  "E-4011": {
+    "id": "E-4011",
+    "title": "Retrospective",
+    "start": "2026-11-03T09:00:00+08:00",
+    "end": "2026-11-03T09:45:00+08:00",
+    "attendees": [
+      "Lars Petrov",
+      "Lars Brandt"
+    ],
+    "location": "Room Lyra"
+  },
+  "E-4012": {
+    "id": "E-4012",
+    "title": "Customer sync",
+    "start": "2026-11-03T10:30:00+08:00",
+    "end": "2026-11-03T12:00:00+08:00",
+    "attendees": [
+      "Elena Sato"
+    ],
+    "location": "Remote"
+  },
+  "E-4013": {
+    "id": "E-4013",
+    "title": "Weekly planning",
+    "start": "2026-11-03T12:30:00+08:00",
+    "end": "2026-11-03T13:00:00+08:00",
+    "attendees": [
+      "Lars Petrov",
+      "Rosa Petrov"
+    ],
+    "location": "Room Orion"
+  },
+  "E-4014": {
+    "id": "E-4014",
+    "title": "Retrospective",
+    "start": "2026-11-03T14:00:00+08:00",
+    "end": "2026-11-03T14:30:00+08:00",
+    "attendees": [
+      "Jonas Hansen",
+      "Omar Fischer",
+      "Rosa Petrov"
+    ],
+    "location": "Room Vega"
+  },
+  "E-4015": {
+    "id": "E-4015",
+    "title": "Budget review",
+    "start": "2026-11-03T15:00:00+08:00",
+    "end": "2026-11-03T16:00:00+08:00",
+    "attendees": [
+      "Jonas Quintero",
+      "Lars Brandt"
+    ],
+    "location": "Remote"
+  },
+  "E-4016": {
+    "id": "E-4016",
+    "title": "Product stand-up",
+    "start": "2026-11-04T09:00:00+08:00",
+    "end": "2026-11-04T10:30:00+08:00",
+    "attendees": [
+      "Keiko Hansen"
+    ],
+    "location": "Room Lyra"
+  },
+  "E-4017": {
+    "id": "E-4017",
+    "title": "Design review",
+    "start": "2026-11-04T11:00:00+08:00",
+    "end": "2026-11-04T11:30:00+08:00",
+    "attendees": [
+      "Greta Mori",
+      "Bruno Jensen",
+      "Dmitri Rossi"
+    ],
+    "location": "Room Vega"
+  },
+  "E-4018": {
+    "id": "E-4018",
+    "title": "Weekly planning",
+    "start": "2026-11-04T12:30:00+08:00",
+    "end": "2026-11-04T13:00:00+08:00",
+    "attendees": [
+      "Tara Petrov",
+      "Ada Quintero"
+    ],
+    "location": "Remote"
+  },
+  "E-4019": {
+    "id": "E-4019",
+    "title": "Security review",
+    "start": "2026-11-04T13:30:00+08:00",
+    "end": "2026-11-04T14:30:00+08:00",
+    "attendees": [
+      "Chloé Kowalski",
+      "Keiko Quintero"
+    ],
+    "location": "Room Vega"
+  },
+  "E-4020": {
+    "id": "E-4020",
+    "title": "Hiring panel",
+    "start": "2026-11-04T14:45:00+08:00",
+    "end": "2026-11-04T15:30:00+08:00",
+    "attendees": [
+      "Elena Sato"
+    ],
+    "location": "Room Vega"
+  },
+  "E-4021": {
+    "id": "E-4021",
+    "title": "Retrospective",
+    "start": "2026-11-05T09:00:00+08:00",
+    "end": "2026-11-05T09:30:00+08:00",
+    "attendees": [
+      "Omar Fischer",
+      "Hiro Rossi",
+      "Ines Kowalski"
+    ],
+    "location": "Room Orion"
+  },
+  "E-4022": {
+    "id": "E-4022",
+    "title": "Customer sync",
+    "start": "2026-11-05T10:30:00+08:00",
+    "end": "2026-11-05T11:00:00+08:00",
+    "attendees": [
+      "Nadia Kowalski",
+      "Mei Castillo",
+      "Chloé Kowalski"
+    ],
+    "location": "Remote"
+  },
+  "E-4023": {
+    "id": "E-4023",
+    "title": "Customer sync",
+    "start": "2026-11-05T11:30:00+08:00",
+    "end": "2026-11-05T12:30:00+08:00",
+    "attendees": [
+      "Farid Petrov",
+      "Keiko Quintero",
+      "Mei Castillo"
+    ],
+    "location": "Room Orion"
+  },
+  "E-4024": {
+    "id": "E-4024",
+    "title": "Design review",
+    "start": "2026-11-05T12:45:00+08:00",
+    "end": "2026-11-05T13:30:00+08:00",
+    "attendees": [
+      "Sven Eriksen",
+      "Rosa Dubois",
+      "Bruno Jensen"
+    ],
+    "location": "Room Lyra"
+  },
+  "E-4025": {
+    "id": "E-4025",
+    "title": "Weekly planning",
+    "start": "2026-11-06T09:00:00+08:00",
+    "end": "2026-11-06T09:30:00+08:00",
+    "attendees": [
+      "Lars Brandt",
+      "Rosa Petrov",
+      "Tara Eriksen"
+    ],
+    "location": "Room Lyra"
+  },
+  "E-4026": {
+    "id": "E-4026",
+    "title": "Vendor call",
+    "start": "2026-11-06T10:00:00+08:00",
+    "end": "2026-11-06T11:00:00+08:00",
+    "attendees": [
+      "Keiko Hansen",
+      "Chloé Kowalski"
+    ],
+    "location": "Remote"
+  },
+  "E-4027": {
+    "id": "E-4027",
+    "title": "Retrospective",
+    "start": "2026-11-06T11:15:00+08:00",
+    "end": "2026-11-06T12:00:00+08:00",
+    "attendees": [
+      "Pia Almeida",
+      "Jonas Quintero",
+      "Sven Okafor"
+    ],
+    "location": "Room Atlas"
+  },
+  "E-4028": {
+    "id": "E-4028",
+    "title": "Roadmap session",
+    "start": "2026-11-06T12:45:00+08:00",
+    "end": "2026-11-06T14:15:00+08:00",
+    "attendees": [
+      "Jonas Quintero",
+      "Lars Petrov"
+    ],
+    "location": "Room Vega"
+  },
+  "E-4029": {
+    "id": "E-4029",
+    "title": "Weekly planning",
+    "start": "2026-11-07T09:00:00+08:00",
+    "end": "2026-11-07T10:00:00+08:00",
+    "attendees": [
+      "Elena Thorne"
+    ],
+    "location": "Room Orion"
+  },
+  "E-4030": {
+    "id": "E-4030",
+    "title": "Security review",
+    "start": "2026-11-07T10:15:00+08:00",
+    "end": "2026-11-07T11:00:00+08:00",
+    "attendees": [
+      "Mei Okafor",
+      "Chloé Kowalski"
+    ],
+    "location": "Room Orion"
+  },
+  "E-4031": {
+    "id": "E-4031",
+    "title": "Retrospective",
+    "start": "2026-11-07T11:45:00+08:00",
+    "end": "2026-11-07T13:15:00+08:00",
+    "attendees": [
+      "Nadia Kowalski"
+    ],
+    "location": "Room Orion"
+  },
+  "E-4032": {
+    "id": "E-4032",
+    "title": "Roadmap session",
+    "start": "2026-11-07T13:45:00+08:00",
+    "end": "2026-11-07T14:15:00+08:00",
+    "attendees": [
+      "Keiko Quintero"
+    ],
+    "location": "Room Atlas"
+  },
+  "E-4033": {
+    "id": "E-4033",
+    "title": "Roadmap session",
+    "start": "2026-11-08T09:00:00+08:00",
+    "end": "2026-11-08T09:45:00+08:00",
+    "attendees": [
+      "Omar Fischer",
+      "Rosa Dubois",
+      "Hiro Kowalski"
+    ],
+    "location": "Room Orion"
+  },
+  "E-4034": {
+    "id": "E-4034",
+    "title": "Budget review",
+    "start": "2026-11-08T10:30:00+08:00",
+    "end": "2026-11-08T12:00:00+08:00",
+    "attendees": [
+      "Elena Sato",
+      "Omar Okafor",
+      "Elena Thorne"
+    ],
+    "location": "Room Atlas"
+  },
+  "E-4035": {
+    "id": "E-4035",
+    "title": "Budget review",
+    "start": "2026-11-08T12:30:00+08:00",
+    "end": "2026-11-08T13:00:00+08:00",
+    "attendees": [
+      "Lars Petrov",
+      "Ada Castillo",
+      "Lars Brandt"
+    ],
+    "location": "Room Orion"
+  },
+  "E-4036": {
+    "id": "E-4036",
+    "title": "Retrospective",
+    "start": "2026-11-08T14:00:00+08:00",
+    "end": "2026-11-08T14:30:00+08:00",
+    "attendees": [
+      "Dmitri Rossi"
+    ],
+    "location": "Room Lyra"
+  },
+  "E-4037": {
+    "id": "E-4037",
+    "title": "Retrospective",
+    "start": "2026-11-09T09:00:00+08:00",
+    "end": "2026-11-09T10:30:00+08:00",
+    "attendees": [
+      "Lars Brandt",
+      "Chloé Kowalski"
+    ],
+    "location": "Room Atlas"
+  },
+  "E-4038": {
+    "id": "E-4038",
+    "title": "Product stand-up",
+    "start": "2026-11-09T11:00:00+08:00",
+    "end": "2026-11-09T11:30:00+08:00",
+    "attendees": [
+      "Greta Mori",
+      "Bruno Brandt"
+    ],
+    "location": "Remote"
+  },
+  "E-4039": {
+    "id": "E-4039",
+    "title": "Hiring panel",
+    "start": "2026-11-09T12:30:00+08:00",
+    "end": "2026-11-09T13:00:00+08:00",
+    "attendees": [
+      "Nadia Kowalski"
+    ],
+    "location": "Room Atlas"
+  },
+  "E-4040": {
+    "id": "E-4040",
+    "title": "Vendor call",
+    "start": "2026-11-09T13:30:00+08:00",
+    "end": "2026-11-09T14:30:00+08:00",
+    "attendees": [
+      "Chloé Kowalski",
+      "Keiko Hansen",
+      "Dmitri Ito"
+    ],
+    "location": "Remote"
+  },
+  "E-4041": {
+    "id": "E-4041",
+    "title": "Retrospective",
+    "start": "2026-11-10T09:00:00+08:00",
+    "end": "2026-11-10T09:30:00+08:00",
+    "attendees": [
+      "Nadia Kowalski",
+      "Sven Okafor",
+      "Greta Almeida"
+    ],
+    "location": "Room Lyra"
+  },
+  "E-4042": {
+    "id": "E-4042",
+    "title": "Customer sync",
+    "start": "2026-11-10T10:30:00+08:00",
+    "end": "2026-11-10T11:00:00+08:00",
+    "attendees": [
+      "Bruno Brandt",
+      "Sven Okafor",
+      "Dmitri Rossi"
+    ],
+    "location": "Remote"
+  },
+  "E-4043": {
+    "id": "E-4043",
+    "title": "Customer sync",
+    "start": "2026-11-10T11:30:00+08:00",
+    "end": "2026-11-10T12:30:00+08:00",
+    "attendees": [
+      "Sven Eriksen"
+    ],
+    "location": "Room Lyra"
+  },
+  "E-4044": {
+    "id": "E-4044",
+    "title": "Roadmap session",
+    "start": "2026-11-10T12:45:00+08:00",
+    "end": "2026-11-10T13:30:00+08:00",
+    "attendees": [
+      "Ines Okafor",
+      "Elena Sato"
+    ],
+    "location": "Room Atlas"
+  },
+  "E-4045": {
+    "id": "E-4045",
+    "title": "Security review",
+    "start": "2026-11-11T09:00:00+08:00",
+    "end": "2026-11-11T09:30:00+08:00",
+    "attendees": [
+      "Rosa Dubois",
+      "Tara Eriksen",
+      "Greta Mori"
+    ],
+    "location": "Room Lyra"
+  },
+  "E-4046": {
+    "id": "E-4046",
+    "title": "Customer sync",
+    "start": "2026-11-11T10:00:00+08:00",
+    "end": "2026-11-11T11:00:00+08:00",
+    "attendees": [
+      "Mei Castillo",
+      "Greta Mori"
+    ],
+    "location": "Room Orion"
+  },
+  "E-4047": {
+    "id": "E-4047",
+    "title": "Hiring panel",
+    "start": "2026-11-11T11:15:00+08:00",
+    "end": "2026-11-11T12:00:00+08:00",
+    "attendees": [
+      "Bruno Jensen"
+    ],
+    "location": "Room Lyra"
+  },
+  "E-4048": {
+    "id": "E-4048",
+    "title": "Design review",
+    "start": "2026-11-11T12:45:00+08:00",
+    "end": "2026-11-11T14:15:00+08:00",
+    "attendees": [
+      "Greta Mori",
+      "Bruno Jensen",
+      "Ada Quintero"
+    ],
+    "location": "Room Vega"
+  },
+  "E-4049": {
+    "id": "E-4049",
+    "title": "Roadmap session",
+    "start": "2026-11-12T09:00:00+08:00",
+    "end": "2026-11-12T10:00:00+08:00",
+    "attendees": [
+      "Nadia Kowalski"
+    ],
+    "location": "Room Orion"
+  },
+  "E-4050": {
+    "id": "E-4050",
+    "title": "Security review",
+    "start": "2026-11-12T10:15:00+08:00",
+    "end": "2026-11-12T11:00:00+08:00",
+    "attendees": [
+      "Keiko Hansen",
+      "Bruno Jensen",
+      "Dmitri Rossi"
+    ],
+    "location": "Room Atlas"
+  },
+  "E-4051": {
+    "id": "E-4051",
+    "title": "Design review",
+    "start": "2026-11-12T11:45:00+08:00",
+    "end": "2026-11-12T13:15:00+08:00",
+    "attendees": [
+      "Chloé Kowalski",
+      "Ada Quintero",
+      "Tara Petrov"
+    ],
+    "location": "Remote"
+  },
+  "E-4052": {
+    "id": "E-4052",
+    "title": "Customer sync",
+    "start": "2026-11-12T13:45:00+08:00",
+    "end": "2026-11-12T14:15:00+08:00",
+    "attendees": [
+      "Chloé Kowalski",
+      "Pia Rossi"
+    ],
+    "location": "Remote"
+  },
+  "E-4053": {
+    "id": "E-4053",
+    "title": "Weekly planning",
+    "start": "2026-11-13T09:00:00+08:00",
+    "end": "2026-11-13T09:45:00+08:00",
+    "attendees": [
+      "Quentin Fischer",
+      "Sven Eriksen",
+      "Nadia Petrov"
+    ],
+    "location": "Remote"
+  },
+  "E-4054": {
+    "id": "E-4054",
+    "title": "Hiring panel",
+    "start": "2026-11-13T10:30:00+08:00",
+    "end": "2026-11-13T12:00:00+08:00",
+    "attendees": [
+      "Quentin Fischer",
+      "Bruno Jensen",
+      "Keiko Hansen"
+    ],
+    "location": "Room Lyra"
+  },
+  "E-4055": {
+    "id": "E-4055",
+    "title": "Vendor call",
+    "start": "2026-11-13T12:30:00+08:00",
+    "end": "2026-11-13T13:00:00+08:00",
+    "attendees": [
+      "Hiro Rossi",
+      "Greta Mori"
+    ],
+    "location": "Room Orion"
+  },
+  "E-4056": {
+    "id": "E-4056",
+    "title": "Customer sync",
+    "start": "2026-11-13T14:00:00+08:00",
+    "end": "2026-11-13T14:30:00+08:00",
+    "attendees": [
+      "Elena Sato",
+      "Farid Petrov"
+    ],
+    "location": "Room Lyra"
+  },
+  "E-4057": {
+    "id": "E-4057",
+    "title": "Hiring panel",
+    "start": "2026-11-14T09:00:00+08:00",
+    "end": "2026-11-14T10:30:00+08:00",
+    "attendees": [
+      "Tara Petrov"
+    ],
+    "location": "Room Lyra"
+  },
+  "E-4058": {
+    "id": "E-4058",
+    "title": "Retrospective",
+    "start": "2026-11-14T11:00:00+08:00",
+    "end": "2026-11-14T11:30:00+08:00",
+    "attendees": [
+      "Rosa Petrov"
+    ],
+    "location": "Room Vega"
+  },
+  "E-4059": {
+    "id": "E-4059",
+    "title": "Hiring panel",
+    "start": "2026-11-14T12:30:00+08:00",
+    "end": "2026-11-14T13:00:00+08:00",
+    "attendees": [
+      "Chloé Kowalski",
+      "Greta Mori",
+      "Tara Petrov"
+    ],
+    "location": "Room Vega"
+  },
+  "E-4060": {
+    "id": "E-4060",
+    "title": "Hiring panel",
+    "start": "2026-11-14T13:30:00+08:00",
+    "end": "2026-11-14T14:30:00+08:00",
+    "attendees": [
+      "Dmitri Rossi",
+      "Omar Okafor",
+      "Ines Kowalski"
+    ],
+    "location": "Remote"
+  }
+}
