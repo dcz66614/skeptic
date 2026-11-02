@@ -2745,3 +2745,81 @@ EXIT=0
 ## E44 merge (2026-11-02)
 
 - codex  ff-merged to main. 
+
+
+## E45 通用命令行智能体适配器（2026-11-02）
+
+基线 `2b48f2e`，分支 `codex`。未推送，未触碰 `main`，未终止任何外部进程。`REVIEW_F20_ref.md` 与 `.tmp` 未暂存。
+
+### 交付内容
+
+1. **通用命令行适配器 (`src/skeptic_agent/runner/adapters/command.py`, `src/skeptic_agent/runner/adapters/__init__.py`)**:
+   - 实现 `CommandAdapter` 满足 S13.2 的 `AgentAdapter` 协议，并在 `ADAPTERS["command"]` 注册。
+   - 依据 S13.1 与 S15 / ADR-0005 规范，在任务工作目录（`task.workdir`）自动生成多客户端兼容的 MCP 工具配置文件：
+     - `./.mcp.json`：项目级通用配置（Claude Code、Cursor、标准 MCP 客户端直接读取）；
+     - `./.cursor/mcp.json`：Cursor IDE 项目级 MCP 配置；
+     - `./.gemini/settings.json`：Gemini CLI 设置文件；
+     - `./.codex/config.toml`：Codex CLI 表 `[mcp_servers.<name>]` 结构。
+   - 实现预设命令模板解析与回退机制（`resolve_preset`）：
+     - 优先读取 `skeptic.yaml` 中的 `agents.<preset>.cmd`；
+     - 内置前沿命令行智能体预设模板（标注 beta）：
+       - Claude Code (`claude`): `["claude", "-p", "{prompt}", "--dangerously-skip-permissions"]`
+       - Codex CLI (`codex`): `["codex", "exec", "--prompt", "{prompt}", "--approval-level", "full-auto"]`
+       - Gemini CLI (`gemini`): `["gemini", "--prompt", "{prompt}", "--non-interactive"]`
+     - 内置本地工作进程 (`fake/oracle_follower` / `fake/*` / 真实模型): `[sys.executable, "-m", "skeptic_agent.runner.adapters.command", "--model", preset, ...]`。
+   - 实现参数占位符模板替换（`{prompt}`, `{workdir}`, `{timeout_s}`, `{model}`, `{preset}`, `{episode_id}`, `{prompt_variant}`, `{max_steps}`）。当命令参数中不包含 `{prompt}` 时，优雅通过标准输入（`stdin`）传递给子进程。
+   - Windows 兼容支持：检测 `shutil.which`，当目标可执行文件为 `.cmd` / `.bat` 批处理脚本时自动封装 `cmd.exe /c` 执行。
+   - 进程生命周期与异常管理：基于 `asyncio.create_subprocess_exec` 驱动，超时（`timeout_s`）时优雅发送 SIGTERM 终止并截断空回答（S13.3 规范，`steps=task.max_steps`, `error=None`），非零退出码归类为基础设施错误。
+   - 终端输出解析与脱敏：清洗 ANSI 颜色控制码，支持直接 JSON、内嵌 JSON 结构与纯文本回退。
+   - 内置 CLI 工作进程 (`_run_worker` / `main`): 解析工作目录下 `.mcp.json`，通过 `contextlib.AsyncExitStack` 管理 MCP stdio 客户端会话并在执行完毕后正确关闭，满足 `mcp.Client` 协议生命周期约束。
+
+2. **通用命令行适配器文档 (`docs/en/adapters/command.md`)**:
+   - 明确标注 beta 状态。
+   - 完整记录框架版本说明、Claude Code / Codex CLI / Gemini CLI 无界面运行命令模板、MCP 配置文件发现机制、S13.4 默认提示词规范、超时控制与子进程生命周期管理、`skeptic.yaml` 配置示例。
+
+3. **单元与端到端测试套件 (`tests/unit/test_command_adapter.py`, `tests/e2e/test_command_e2e.py`)**:
+   - `tests/unit/test_command_adapter.py`（12 个用例）：覆盖适配器协议注册、预设命令解析、`skeptic.yaml` 自定义覆盖、MCP 配置文件写出、模板变量替换、ANSI 码脱敏、JSON/文本输出解析、子进程输入/输出、进程超时截断与异常退出码捕获。
+   - `tests/e2e/test_command_e2e.py`：
+     - 验证 `weather.forecast.paris-max.001` 在 clean baseline 与 S04 故障注入下的全流程端到端执行，生成的 cassette 通过 schema 校验，结果记录通过 `skeptic.result/v1` 校验。
+     - 离线验证 smoke 套件 2 个场景调度流水线。
+     - 覆盖未安装/未授权外部 CLI 时的优雅报错分支（符合 E45 注意事项）。
+     - 包含加 `@pytest.mark.live` 标记的 dev 模型真实网络测试 `test_acceptance_live_dev_model_smoke_scenarios_command`（总开销 < $0.50，在无 key 环境通过 skipif 安全跳过）。
+
+### 规格歧义与实现决策
+
+1. **外部 CLI 工具在 CI / 离线环境的依赖隔离**:
+   - E45 计划明确指出：通用命令行智能体（Claude Code、Codex CLI、Gemini CLI）依赖本机已安装并登录授权的 CLI 环境。CI 与离线评测环境下通常无法预先获得外部 CLI 商业授权。
+   - **决策**：在适配器中实现内置工作进程 `python -m skeptic_agent.runner.adapters.command`，既作为通用的轻量 CLI 智能体模板，又能直接加载 `FakeLLM` 脚本与本地 MCP 工具进行完整且确定性的离线验收；同时在单元测试中增加真实 subprocess 管道测试，端到端测试中将外部 CLI 测试与 dev 模型 live 测试通过 pytest skipif 安全隔离。
+2. **多客户端 MCP 配置文件格式适配 (ADR-0005)**:
+   - 不同命令行客户端读取的 MCP 配置格式不同：Claude Code 与 Cursor 读取 `.mcp.json`，Gemini CLI 读取 `.gemini/settings.json`，而 Codex CLI 读取 `.codex/config.toml`。
+   - **决策**：在 `CommandAdapter` 启动外部命令前，在 `task.workdir` 中一次性生成全套兼容配置文件（`.mcp.json`、`.cursor/mcp.json`、`.gemini/settings.json`、`.codex/config.toml`），使得任何主流 CLI 智能体以当前工作目录作为 `cwd` 启动时，均能原生自动发现已包装的 Skeptic proxy 工具服务器。
+3. **Windows 平台 `.cmd` / `.bat` 子进程启动限制**:
+   - 在 Windows 环境下，通过 npm 全局安装的 CLI（如 `claude.cmd`, `gemini.cmd`）无法直接由 Windows 底层 `CreateProcess` 原生启动，否则会抛出 `WinError 193 (%1 不是有效的 Win32 应用程序)`。
+   - **决策**：在 `CommandAdapter` 启动子进程前，利用 `shutil.which` 检测目标执行文件扩展名，若在 Windows 下命中 `.cmd` 或 `.bat`，自动在参数头部注入 `["cmd.exe", "/c"]`，确保 Windows 与 POSIX 环境完全无缝兼容。
+4. **命令行输出格式解析与 ANSI 转义字符清洗**:
+   - 现代 CLI 智能体常包含 ANSI 彩色格式代码或打印终端控制符，直接抽取可能导致校验器（如数值提取或正则匹配）因多余控制字符而失效。
+   - **决策**：在 `_parse_cli_output` 中使用正则 `ANSI_ESCAPE_RE` 彻底剥离 ANSI escape 控制序列，并同时支持标准 JSON 结构化抽取与清洗后的纯文本回退。
+5. **MCP 客户端连接资源管理与生命周期关闭**:
+   - 适配器在子进程调度与工作进程执行期间必须确保外部 stdio 进程与 MCP 客户端连接正确释放，避免遗留僵尸进程。
+   - **决策**：在 `CommandAdapter` 中对子进程采用严格的 `communicate` 与 `finally` 异常终止机制；在工作进程模式下严格遵循 ADR-0004 与现有适配器规范，统一使用 `contextlib.AsyncExitStack` 管理 MCP 会话，确保任何退出分支下所有客户端与 stdio 句柄均被确定性关闭。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+196 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 93 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+1007 passed, 6 skipped, 12 deselected, 41 warnings in 347.74s (0:05:47)
+Required test coverage of 85.0% reached. Total coverage: 92.10%
+EXIT=0
+```
