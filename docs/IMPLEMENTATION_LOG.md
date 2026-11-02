@@ -1343,6 +1343,126 @@ EXIT=0
 
 No dependency was added; `mcp`, `pydantic` and `starlette`/`uvicorn` were
 already present and `uv.lock` is unchanged.
+
 ## S30 merge (2026-11-02)
 
 - codex 6d04ac4 ff-merged to main. Self-review PASS (562 passed, cov 95.85%); agy gemini-3.8-flash-high detailed review PASS. Sandboxes live under src/skeptic_agent/sandboxes/; generator at sb_common/generate.py.
+
+
+## S31 sb_weather and sb_fx (2026-11-02)
+
+Base `ea011ce`, branch `codex`. Nothing pushed, `main` untouched, no process
+killed, `REVIEW_F20_ref.md` and `.tmp` not staged.
+
+The first two of the ten sandboxes of S9.2, built only on the S30
+`sb_common` factory (`ToolSpec`, `SandboxTool`, `ToolFailure`,
+`make_server`, `run_sandbox`, `SandboxState`, `clock`). Both are all-read
+sandboxes, so their state file carries the data table and is written once at
+startup (S9.1 item 4); the tools never mutate it.
+
+`src/skeptic_agent/sandboxes/sb_weather/`:
+
+- `data/generate.py` and the committed `data/forecasts.json`: 12 real cities
+  over 14 days, 2026-11-01 to 2026-11-14, seed `20261101`. Each day has
+  `max_c`, `min_c`, `condition`, `unit: "C"` and `issued_at` (the forecast day
+  at 06:00 UTC); the first seven days also carry two model sources
+  (`source_a`, `source_b`) for the S09 third view.
+- `server.py`: `list_cities`, `get_forecast`, `get_forecast_v2` (alternate,
+  v2 field names), `get_forecast_consensus` (alternate, mean of the two
+  sources). Field names and `unit` literals are the S9.2 ones verbatim.
+- `README.md`: the four tools, example calls, the fictional-data notice.
+
+`src/skeptic_agent/sandboxes/sb_fx/`:
+
+- `data/generate.py` and the committed `data/rates.json`: 7 currencies over
+  14 days, 2026-10-19 to 2026-11-01, seed `20261101`, stored as USD-per-unit;
+  every pair is derived, so `get_rate` and `get_rate_backup` agree.
+- `server.py`: `list_currencies`, `get_rate` (`source: "primary"`),
+  `get_rate_backup` (`source: "backup"`, 0.2% worse, takes `"USD/CNY"`) and
+  `convert` (`amount, base, quote, date, rate, result, currency: "USD"`).
+- `README.md`: the four tools, example calls, the fictional-data notice.
+
+Supporting changes:
+
+- `tests/unit/test_sb_weather_fx_data.py` (11): determinism, the committed
+  files against their generators, the S9.2 shapes and dates, the two-source
+  window, USD at `1.0`, the S9.1 issued time.
+- `sb_common/server.py`: `ToolCall`'s first parameter is now `Any` instead of
+  `BaseModel`, so a tool body may name its own input model (the S30 tests'
+  handlers used argument-less shells; the S9.2 tools type their arguments).
+  `make_server` still validates the client's arguments into `ToolSpec.input`
+  before calling the body, so behaviour and JSON-RPC validation are unchanged.
+- `cli.py`: `skeptic sandbox run NAME` (S2, S9.1 item 2) starts a built-in
+  sandbox from a small `SANDBOXES` map (`weather`, `fx`), passing everything
+  after `--` to the module; S32-S35 add their eight names to that map.
+- `src/skeptic_agent/sandboxes/__init__.py` so `sb_weather`/`sb_fx` are
+  importable as a subpackage path (S30 shipped without it).
+
+Tests: `tests/integration/test_sb_weather.py` (18) and
+`tests/integration/test_sb_fx.py` (20). Every tool has a success case and at
+least one misuse case (unknown city / invalid date / day or pair out of the
+table, unknown currency, bad pair, zero amount, too-fine amount, a null or
+wrongly typed argument). Both files also check: the four `outputSchema`s and
+the read-only annotations, both protocol generations (`auto` and `legacy`),
+the state file at startup, the `python -m` stdio entry point, the `--http`
+entry point with its state file, and (weather) `skeptic sandbox run weather`
+starting the same server. `tests/unit/test_sandbox_run.py` (7) covers the new
+CLI command: known names, unknown name, argument forwarding, import failure,
+exit-code forwarding.
+
+Spec ambiguities and how they were resolved:
+
+- S9.1 item 4 says the state file follows "every write operation", and both
+  S31 sandboxes are read-only. `make_server` already writes the initial state
+  at startup, so the acceptance line's "state file updates after a write" has
+  no write to observe; the tests assert the startup file instead and no
+  read tool touches it.
+- `get_forecast_consensus` is the S09 third source, which needs a second
+  source to disagree with. S9.2 does not say what the sources are, so the
+  generator gives the first seven days two model values and the consensus is
+  their mean (rounded like every temperature); later days are single-source
+  and say so in `sources`. S09's `factor=1.5` then changes the consensus,
+  while a scenario's `conflict_pair` can still be `[get_forecast,
+  get_forecast_v2]` as S8.1 shows.
+- S9.2 does not fix `convert`'s `currency` value beyond "used by S08". S08
+  swaps unit strings `USD`/`EUR`/`CNY`/`JPY`, and the `convert` fields name
+  the pair separately, so `currency` is the result's own unit and is always
+  `"USD"` (a result amount is a dollar amount). `convert` also rejects a zero
+  amount and an amount finer than the quote currency allows (two decimals,
+  none for JPY), because those are request-level business errors rather than
+  data.
+- S9.2 gives `get_rate_backup` only a `pair` argument, not `source`; S9.2's
+  rate fields require `source`. `get_rate` reports `"primary"` and the backup
+  `"backup"`, and the backup quotes 0.2% worse so the two tools never return
+  the same number for a pair.
+- `get_forecast_v2`'s `summary` is not in any enumerable list. It is the
+  condition as a sentence (`Partly cloudy`), so both tools still describe the
+  same weather.
+- S30's `ToolCall` annotated the first handler parameter as `BaseModel`,
+  which no typed handler satisfies under `mypy --strict`. Widened to `Any`
+  rather than casting in ten sandboxes; the runtime validation contract is
+  unchanged (see above).
+- `data.py` in `sb_common` vs a `data/` package (S30's note): each sandbox
+  keeps its own `data/generate.py` next to its own JSON, importing only
+  `sb_common.data.load_json`, so both names coexist.
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+100 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 41 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+618 passed, 12 deselected in 93.65s (0:01:33)
+Required test coverage of 85.0% reached. Total coverage: 95.73%
+EXIT=0
+```
+
+No dependency was added; `uv.lock` is unchanged.

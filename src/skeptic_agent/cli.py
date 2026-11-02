@@ -1,6 +1,7 @@
 """Skeptic command-line interface."""
 
 import asyncio
+import importlib
 import json
 import sys
 from pathlib import Path
@@ -24,11 +25,22 @@ from skeptic_agent.record.replay import (
 app = typer.Typer(add_completion=False, invoke_without_command=True)
 proxy_app = typer.Typer(no_args_is_help=True)
 faults_app = typer.Typer(no_args_is_help=True)
+sandbox_app = typer.Typer(no_args_is_help=True)
 app.add_typer(proxy_app, name="proxy")
 app.add_typer(faults_app, name="faults")
+app.add_typer(sandbox_app, name="sandbox")
 
 DEFAULT_LISTEN: str = "127.0.0.1:8765"
 """The default ``--listen`` of ``skeptic proxy http`` (S2)."""
+
+SANDBOXES = {
+    "weather": "sb_weather",
+    "fx": "sb_fx",
+}
+"""The built-in sandboxes ``skeptic sandbox run`` can start (S2, S9.2).
+
+S31 adds ``weather`` and ``fx``; S32-S35 add the other eight here.
+"""
 
 
 @app.callback()
@@ -78,6 +90,48 @@ def faults_list(
             f"{entry['id']}  {entry['class']:<11}  {entry['name']:<24}  "
             f"{entry['persistence']:<11}  {entry['target']}"
         )
+
+
+@sandbox_app.command("run", context_settings={"allow_extra_args": True})
+def sandbox_run(
+    ctx: typer.Context,
+    name: str = typer.Argument(help="The built-in sandbox name, for example 'weather'."),
+) -> None:
+    """Start a built-in sandbox over stdio (S2, S9.1 item 2).
+
+    Everything after ``--`` is passed to the sandbox module, so
+    ``skeptic sandbox run weather -- --http 127.0.0.1:8766`` serves Streamable
+    HTTP and ``--state-file PATH`` sets the state file.
+
+    Args:
+        ctx: The Typer context; ``ctx.args`` holds the sandbox's arguments.
+        name: The sandbox name from :data:`SANDBOXES`.
+
+    Raises:
+        typer.Exit: With code 2 on an unknown name or a sandbox usage error,
+            otherwise with the sandbox module's own exit code.
+    """
+    module = SANDBOXES.get(name)
+    if module is None:
+        known = ", ".join(sorted(SANDBOXES))
+        typer.echo(f"error: unknown sandbox {name!r}; choose one of {known}", err=True)
+        raise typer.Exit(code=2)
+    command = list(ctx.args)
+    if "--" in sys.argv:
+        command = sys.argv[sys.argv.index("--") + 1 :]
+    if command and command[0] == "--":
+        command = command[1:]
+    try:
+        package = importlib.import_module(f"skeptic_agent.sandboxes.{module}.server")
+    except ImportError as error:
+        typer.echo(f"error: cannot load sandbox {name!r}: {error}", err=True)
+        raise typer.Exit(code=2) from error
+    sys.argv = [f"skeptic sandbox run {name}", *command]
+    try:
+        package.main()
+    except SystemExit as exit_info:
+        code = exit_info.code if isinstance(exit_info.code, int) else 0
+        raise typer.Exit(code=code) from exit_info
 
 
 @proxy_app.command("stdio", context_settings={"allow_extra_args": True})

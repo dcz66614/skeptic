@@ -1,0 +1,1706 @@
+{
+  "Beijing": {
+    "2026-11-01": {
+      "city": "Beijing",
+      "condition": "rain",
+      "date": "2026-11-01",
+      "issued_at": "2026-11-01T06:00:00Z",
+      "max_c": 15.6,
+      "min_c": 6.2,
+      "source_a": 15.6,
+      "source_b": 15.3,
+      "unit": "C"
+    },
+    "2026-11-02": {
+      "city": "Beijing",
+      "condition": "partly cloudy",
+      "date": "2026-11-02",
+      "issued_at": "2026-11-02T06:00:00Z",
+      "max_c": 18.4,
+      "min_c": 7.9,
+      "source_a": 18.4,
+      "source_b": 17.8,
+      "unit": "C"
+    },
+    "2026-11-03": {
+      "city": "Beijing",
+      "condition": "rain",
+      "date": "2026-11-03",
+      "issued_at": "2026-11-03T06:00:00Z",
+      "max_c": 16.4,
+      "min_c": 6.6,
+      "source_a": 16.4,
+      "source_b": 16.5,
+      "unit": "C"
+    },
+    "2026-11-04": {
+      "city": "Beijing",
+      "condition": "partly cloudy",
+      "date": "2026-11-04",
+      "issued_at": "2026-11-04T06:00:00Z",
+      "max_c": 17.7,
+      "min_c": 7.4,
+      "source_a": 17.7,
+      "source_b": 17.4,
+      "unit": "C"
+    },
+    "2026-11-05": {
+      "city": "Beijing",
+      "condition": "cloudy",
+      "date": "2026-11-05",
+      "issued_at": "2026-11-05T06:00:00Z",
+      "max_c": 19.5,
+      "min_c": 8.5,
+      "source_a": 19.5,
+      "source_b": 19.8,
+      "unit": "C"
+    },
+    "2026-11-06": {
+      "city": "Beijing",
+      "condition": "clear",
+      "date": "2026-11-06",
+      "issued_at": "2026-11-06T06:00:00Z",
+      "max_c": 15.8,
+      "min_c": 6.3,
+      "source_a": 15.8,
+      "source_b": 16.6,
+      "unit": "C"
+    },
+    "2026-11-07": {
+      "city": "Beijing",
+      "condition": "partly cloudy",
+      "date": "2026-11-07",
+      "issued_at": "2026-11-07T06:00:00Z",
+      "max_c": 19.7,
+      "min_c": 8.6,
+      "source_a": 19.7,
+      "source_b": 19.2,
+      "unit": "C"
+    },
+    "2026-11-08": {
+      "city": "Beijing",
+      "condition": "rain",
+      "date": "2026-11-08",
+      "issued_at": "2026-11-08T06:00:00Z",
+      "max_c": 15.3,
+      "min_c": 6.0,
+      "unit": "C"
+    },
+    "2026-11-09": {
+      "city": "Beijing",
+      "condition": "showers",
+      "date": "2026-11-09",
+      "issued_at": "2026-11-09T06:00:00Z",
+      "max_c": 14.9,
+      "min_c": 5.7,
+      "unit": "C"
+    },
+    "2026-11-10": {
+      "city": "Beijing",
+      "condition": "rain",
+      "date": "2026-11-10",
+      "issued_at": "2026-11-10T06:00:00Z",
+      "max_c": 19.0,
+      "min_c": 8.2,
+      "unit": "C"
+    },
+    "2026-11-11": {
+      "city": "Beijing",
+      "condition": "showers",
+      "date": "2026-11-11",
+      "issued_at": "2026-11-11T06:00:00Z",
+      "max_c": 18.8,
+      "min_c": 8.1,
+      "unit": "C"
+    },
+    "2026-11-12": {
+      "city": "Beijing",
+      "condition": "clear",
+      "date": "2026-11-12",
+      "issued_at": "2026-11-12T06:00:00Z",
+      "max_c": 18.7,
+      "min_c": 8.0,
+      "unit": "C"
+    },
+    "2026-11-13": {
+      "city": "Beijing",
+      "condition": "partly cloudy",
+      "date": "2026-11-13",
+      "issued_at": "2026-11-13T06:00:00Z",
+      "max_c": 14.9,
+      "min_c": 5.7,
+      "unit": "C"
+    },
+    "2026-11-14": {
+      "city": "Beijing",
+      "condition": "cloudy",
+      "date": "2026-11-14",
+      "issued_at": "2026-11-14T06:00:00Z",
+      "max_c": 14.6,
+      "min_c": 5.6,
+      "unit": "C"
+    }
+  },
+  "Berlin": {
+    "2026-11-01": {
+      "city": "Berlin",
+      "condition": "clear",
+      "date": "2026-11-01",
+      "issued_at": "2026-11-01T06:00:00Z",
+      "max_c": 10.8,
+      "min_c": 3.7,
+      "source_a": 10.8,
+      "source_b": 11.0,
+      "unit": "C"
+    },
+    "2026-11-02": {
+      "city": "Berlin",
+      "condition": "clear",
+      "date": "2026-11-02",
+      "issued_at": "2026-11-02T06:00:00Z",
+      "max_c": 10.6,
+      "min_c": 3.6,
+      "source_a": 10.6,
+      "source_b": 11.0,
+      "unit": "C"
+    },
+    "2026-11-03": {
+      "city": "Berlin",
+      "condition": "showers",
+      "date": "2026-11-03",
+      "issued_at": "2026-11-03T06:00:00Z",
+      "max_c": 13.8,
+      "min_c": 5.5,
+      "source_a": 13.8,
+      "source_b": 13.3,
+      "unit": "C"
+    },
+    "2026-11-04": {
+      "city": "Berlin",
+      "condition": "rain",
+      "date": "2026-11-04",
+      "issued_at": "2026-11-04T06:00:00Z",
+      "max_c": 12.0,
+      "min_c": 4.4,
+      "source_a": 12.0,
+      "source_b": 11.5,
+      "unit": "C"
+    },
+    "2026-11-05": {
+      "city": "Berlin",
+      "condition": "showers",
+      "date": "2026-11-05",
+      "issued_at": "2026-11-05T06:00:00Z",
+      "max_c": 11.7,
+      "min_c": 4.2,
+      "source_a": 11.7,
+      "source_b": 12.5,
+      "unit": "C"
+    },
+    "2026-11-06": {
+      "city": "Berlin",
+      "condition": "rain",
+      "date": "2026-11-06",
+      "issued_at": "2026-11-06T06:00:00Z",
+      "max_c": 14.8,
+      "min_c": 6.1,
+      "source_a": 14.8,
+      "source_b": 15.2,
+      "unit": "C"
+    },
+    "2026-11-07": {
+      "city": "Berlin",
+      "condition": "cloudy",
+      "date": "2026-11-07",
+      "issued_at": "2026-11-07T06:00:00Z",
+      "max_c": 11.4,
+      "min_c": 4.1,
+      "source_a": 11.4,
+      "source_b": 11.4,
+      "unit": "C"
+    },
+    "2026-11-08": {
+      "city": "Berlin",
+      "condition": "cloudy",
+      "date": "2026-11-08",
+      "issued_at": "2026-11-08T06:00:00Z",
+      "max_c": 13.0,
+      "min_c": 5.0,
+      "unit": "C"
+    },
+    "2026-11-09": {
+      "city": "Berlin",
+      "condition": "rain",
+      "date": "2026-11-09",
+      "issued_at": "2026-11-09T06:00:00Z",
+      "max_c": 12.8,
+      "min_c": 4.9,
+      "unit": "C"
+    },
+    "2026-11-10": {
+      "city": "Berlin",
+      "condition": "rain",
+      "date": "2026-11-10",
+      "issued_at": "2026-11-10T06:00:00Z",
+      "max_c": 14.2,
+      "min_c": 5.7,
+      "unit": "C"
+    },
+    "2026-11-11": {
+      "city": "Berlin",
+      "condition": "showers",
+      "date": "2026-11-11",
+      "issued_at": "2026-11-11T06:00:00Z",
+      "max_c": 11.1,
+      "min_c": 3.9,
+      "unit": "C"
+    },
+    "2026-11-12": {
+      "city": "Berlin",
+      "condition": "showers",
+      "date": "2026-11-12",
+      "issued_at": "2026-11-12T06:00:00Z",
+      "max_c": 15.0,
+      "min_c": 6.2,
+      "unit": "C"
+    },
+    "2026-11-13": {
+      "city": "Berlin",
+      "condition": "showers",
+      "date": "2026-11-13",
+      "issued_at": "2026-11-13T06:00:00Z",
+      "max_c": 11.9,
+      "min_c": 4.4,
+      "unit": "C"
+    },
+    "2026-11-14": {
+      "city": "Berlin",
+      "condition": "partly cloudy",
+      "date": "2026-11-14",
+      "issued_at": "2026-11-14T06:00:00Z",
+      "max_c": 12.5,
+      "min_c": 4.7,
+      "unit": "C"
+    }
+  },
+  "Boston": {
+    "2026-11-01": {
+      "city": "Boston",
+      "condition": "rain",
+      "date": "2026-11-01",
+      "issued_at": "2026-11-01T06:00:00Z",
+      "max_c": 16.0,
+      "min_c": 7.2,
+      "source_a": 16.0,
+      "source_b": 16.4,
+      "unit": "C"
+    },
+    "2026-11-02": {
+      "city": "Boston",
+      "condition": "cloudy",
+      "date": "2026-11-02",
+      "issued_at": "2026-11-02T06:00:00Z",
+      "max_c": 12.2,
+      "min_c": 4.9,
+      "source_a": 12.2,
+      "source_b": 12.7,
+      "unit": "C"
+    },
+    "2026-11-03": {
+      "city": "Boston",
+      "condition": "rain",
+      "date": "2026-11-03",
+      "issued_at": "2026-11-03T06:00:00Z",
+      "max_c": 11.7,
+      "min_c": 4.6,
+      "source_a": 11.7,
+      "source_b": 11.6,
+      "unit": "C"
+    },
+    "2026-11-04": {
+      "city": "Boston",
+      "condition": "cloudy",
+      "date": "2026-11-04",
+      "issued_at": "2026-11-04T06:00:00Z",
+      "max_c": 11.6,
+      "min_c": 4.6,
+      "source_a": 11.6,
+      "source_b": 11.7,
+      "unit": "C"
+    },
+    "2026-11-05": {
+      "city": "Boston",
+      "condition": "clear",
+      "date": "2026-11-05",
+      "issued_at": "2026-11-05T06:00:00Z",
+      "max_c": 11.7,
+      "min_c": 4.6,
+      "source_a": 11.7,
+      "source_b": 12.1,
+      "unit": "C"
+    },
+    "2026-11-06": {
+      "city": "Boston",
+      "condition": "showers",
+      "date": "2026-11-06",
+      "issued_at": "2026-11-06T06:00:00Z",
+      "max_c": 12.8,
+      "min_c": 5.3,
+      "source_a": 12.8,
+      "source_b": 12.3,
+      "unit": "C"
+    },
+    "2026-11-07": {
+      "city": "Boston",
+      "condition": "cloudy",
+      "date": "2026-11-07",
+      "issued_at": "2026-11-07T06:00:00Z",
+      "max_c": 11.9,
+      "min_c": 4.7,
+      "source_a": 11.9,
+      "source_b": 12.0,
+      "unit": "C"
+    },
+    "2026-11-08": {
+      "city": "Boston",
+      "condition": "partly cloudy",
+      "date": "2026-11-08",
+      "issued_at": "2026-11-08T06:00:00Z",
+      "max_c": 11.7,
+      "min_c": 4.6,
+      "unit": "C"
+    },
+    "2026-11-09": {
+      "city": "Boston",
+      "condition": "partly cloudy",
+      "date": "2026-11-09",
+      "issued_at": "2026-11-09T06:00:00Z",
+      "max_c": 16.2,
+      "min_c": 7.3,
+      "unit": "C"
+    },
+    "2026-11-10": {
+      "city": "Boston",
+      "condition": "partly cloudy",
+      "date": "2026-11-10",
+      "issued_at": "2026-11-10T06:00:00Z",
+      "max_c": 17.0,
+      "min_c": 7.8,
+      "unit": "C"
+    },
+    "2026-11-11": {
+      "city": "Boston",
+      "condition": "partly cloudy",
+      "date": "2026-11-11",
+      "issued_at": "2026-11-11T06:00:00Z",
+      "max_c": 14.7,
+      "min_c": 6.4,
+      "unit": "C"
+    },
+    "2026-11-12": {
+      "city": "Boston",
+      "condition": "rain",
+      "date": "2026-11-12",
+      "issued_at": "2026-11-12T06:00:00Z",
+      "max_c": 13.4,
+      "min_c": 5.6,
+      "unit": "C"
+    },
+    "2026-11-13": {
+      "city": "Boston",
+      "condition": "partly cloudy",
+      "date": "2026-11-13",
+      "issued_at": "2026-11-13T06:00:00Z",
+      "max_c": 12.1,
+      "min_c": 4.8,
+      "unit": "C"
+    },
+    "2026-11-14": {
+      "city": "Boston",
+      "condition": "clear",
+      "date": "2026-11-14",
+      "issued_at": "2026-11-14T06:00:00Z",
+      "max_c": 13.0,
+      "min_c": 5.4,
+      "unit": "C"
+    }
+  },
+  "Hangzhou": {
+    "2026-11-01": {
+      "city": "Hangzhou",
+      "condition": "showers",
+      "date": "2026-11-01",
+      "issued_at": "2026-11-01T06:00:00Z",
+      "max_c": 20.2,
+      "min_c": 14.3,
+      "source_a": 20.2,
+      "source_b": 20.3,
+      "unit": "C"
+    },
+    "2026-11-02": {
+      "city": "Hangzhou",
+      "condition": "rain",
+      "date": "2026-11-02",
+      "issued_at": "2026-11-02T06:00:00Z",
+      "max_c": 25.8,
+      "min_c": 17.7,
+      "source_a": 25.8,
+      "source_b": 26.0,
+      "unit": "C"
+    },
+    "2026-11-03": {
+      "city": "Hangzhou",
+      "condition": "clear",
+      "date": "2026-11-03",
+      "issued_at": "2026-11-03T06:00:00Z",
+      "max_c": 25.3,
+      "min_c": 17.4,
+      "source_a": 25.3,
+      "source_b": 26.1,
+      "unit": "C"
+    },
+    "2026-11-04": {
+      "city": "Hangzhou",
+      "condition": "cloudy",
+      "date": "2026-11-04",
+      "issued_at": "2026-11-04T06:00:00Z",
+      "max_c": 23.8,
+      "min_c": 16.5,
+      "source_a": 23.8,
+      "source_b": 24.6,
+      "unit": "C"
+    },
+    "2026-11-05": {
+      "city": "Hangzhou",
+      "condition": "cloudy",
+      "date": "2026-11-05",
+      "issued_at": "2026-11-05T06:00:00Z",
+      "max_c": 23.4,
+      "min_c": 16.2,
+      "source_a": 23.4,
+      "source_b": 22.7,
+      "unit": "C"
+    },
+    "2026-11-06": {
+      "city": "Hangzhou",
+      "condition": "clear",
+      "date": "2026-11-06",
+      "issued_at": "2026-11-06T06:00:00Z",
+      "max_c": 22.0,
+      "min_c": 15.4,
+      "source_a": 22.0,
+      "source_b": 21.4,
+      "unit": "C"
+    },
+    "2026-11-07": {
+      "city": "Hangzhou",
+      "condition": "clear",
+      "date": "2026-11-07",
+      "issued_at": "2026-11-07T06:00:00Z",
+      "max_c": 24.5,
+      "min_c": 16.9,
+      "source_a": 24.5,
+      "source_b": 24.4,
+      "unit": "C"
+    },
+    "2026-11-08": {
+      "city": "Hangzhou",
+      "condition": "partly cloudy",
+      "date": "2026-11-08",
+      "issued_at": "2026-11-08T06:00:00Z",
+      "max_c": 21.3,
+      "min_c": 15.0,
+      "unit": "C"
+    },
+    "2026-11-09": {
+      "city": "Hangzhou",
+      "condition": "showers",
+      "date": "2026-11-09",
+      "issued_at": "2026-11-09T06:00:00Z",
+      "max_c": 23.6,
+      "min_c": 16.4,
+      "unit": "C"
+    },
+    "2026-11-10": {
+      "city": "Hangzhou",
+      "condition": "clear",
+      "date": "2026-11-10",
+      "issued_at": "2026-11-10T06:00:00Z",
+      "max_c": 22.8,
+      "min_c": 15.9,
+      "unit": "C"
+    },
+    "2026-11-11": {
+      "city": "Hangzhou",
+      "condition": "partly cloudy",
+      "date": "2026-11-11",
+      "issued_at": "2026-11-11T06:00:00Z",
+      "max_c": 20.7,
+      "min_c": 14.6,
+      "unit": "C"
+    },
+    "2026-11-12": {
+      "city": "Hangzhou",
+      "condition": "clear",
+      "date": "2026-11-12",
+      "issued_at": "2026-11-12T06:00:00Z",
+      "max_c": 21.9,
+      "min_c": 15.3,
+      "unit": "C"
+    },
+    "2026-11-13": {
+      "city": "Hangzhou",
+      "condition": "cloudy",
+      "date": "2026-11-13",
+      "issued_at": "2026-11-13T06:00:00Z",
+      "max_c": 24.7,
+      "min_c": 17.0,
+      "unit": "C"
+    },
+    "2026-11-14": {
+      "city": "Hangzhou",
+      "condition": "showers",
+      "date": "2026-11-14",
+      "issued_at": "2026-11-14T06:00:00Z",
+      "max_c": 25.0,
+      "min_c": 17.2,
+      "unit": "C"
+    }
+  },
+  "Lyon": {
+    "2026-11-01": {
+      "city": "Lyon",
+      "condition": "partly cloudy",
+      "date": "2026-11-01",
+      "issued_at": "2026-11-01T06:00:00Z",
+      "max_c": 15.6,
+      "min_c": 6.8,
+      "source_a": 15.6,
+      "source_b": 15.8,
+      "unit": "C"
+    },
+    "2026-11-02": {
+      "city": "Lyon",
+      "condition": "cloudy",
+      "date": "2026-11-02",
+      "issued_at": "2026-11-02T06:00:00Z",
+      "max_c": 13.6,
+      "min_c": 5.5,
+      "source_a": 13.6,
+      "source_b": 14.2,
+      "unit": "C"
+    },
+    "2026-11-03": {
+      "city": "Lyon",
+      "condition": "cloudy",
+      "date": "2026-11-03",
+      "issued_at": "2026-11-03T06:00:00Z",
+      "max_c": 14.3,
+      "min_c": 6.0,
+      "source_a": 14.3,
+      "source_b": 14.8,
+      "unit": "C"
+    },
+    "2026-11-04": {
+      "city": "Lyon",
+      "condition": "clear",
+      "date": "2026-11-04",
+      "issued_at": "2026-11-04T06:00:00Z",
+      "max_c": 14.8,
+      "min_c": 6.3,
+      "source_a": 14.8,
+      "source_b": 15.5,
+      "unit": "C"
+    },
+    "2026-11-05": {
+      "city": "Lyon",
+      "condition": "partly cloudy",
+      "date": "2026-11-05",
+      "issued_at": "2026-11-05T06:00:00Z",
+      "max_c": 17.8,
+      "min_c": 8.1,
+      "source_a": 17.8,
+      "source_b": 18.4,
+      "unit": "C"
+    },
+    "2026-11-06": {
+      "city": "Lyon",
+      "condition": "clear",
+      "date": "2026-11-06",
+      "issued_at": "2026-11-06T06:00:00Z",
+      "max_c": 18.5,
+      "min_c": 8.5,
+      "source_a": 18.5,
+      "source_b": 18.7,
+      "unit": "C"
+    },
+    "2026-11-07": {
+      "city": "Lyon",
+      "condition": "showers",
+      "date": "2026-11-07",
+      "issued_at": "2026-11-07T06:00:00Z",
+      "max_c": 14.6,
+      "min_c": 6.1,
+      "source_a": 14.6,
+      "source_b": 14.6,
+      "unit": "C"
+    },
+    "2026-11-08": {
+      "city": "Lyon",
+      "condition": "showers",
+      "date": "2026-11-08",
+      "issued_at": "2026-11-08T06:00:00Z",
+      "max_c": 17.3,
+      "min_c": 7.8,
+      "unit": "C"
+    },
+    "2026-11-09": {
+      "city": "Lyon",
+      "condition": "clear",
+      "date": "2026-11-09",
+      "issued_at": "2026-11-09T06:00:00Z",
+      "max_c": 18.6,
+      "min_c": 8.6,
+      "unit": "C"
+    },
+    "2026-11-10": {
+      "city": "Lyon",
+      "condition": "showers",
+      "date": "2026-11-10",
+      "issued_at": "2026-11-10T06:00:00Z",
+      "max_c": 14.7,
+      "min_c": 6.2,
+      "unit": "C"
+    },
+    "2026-11-11": {
+      "city": "Lyon",
+      "condition": "showers",
+      "date": "2026-11-11",
+      "issued_at": "2026-11-11T06:00:00Z",
+      "max_c": 16.1,
+      "min_c": 7.0,
+      "unit": "C"
+    },
+    "2026-11-12": {
+      "city": "Lyon",
+      "condition": "partly cloudy",
+      "date": "2026-11-12",
+      "issued_at": "2026-11-12T06:00:00Z",
+      "max_c": 13.4,
+      "min_c": 5.5,
+      "unit": "C"
+    },
+    "2026-11-13": {
+      "city": "Lyon",
+      "condition": "rain",
+      "date": "2026-11-13",
+      "issued_at": "2026-11-13T06:00:00Z",
+      "max_c": 14.8,
+      "min_c": 6.3,
+      "unit": "C"
+    },
+    "2026-11-14": {
+      "city": "Lyon",
+      "condition": "partly cloudy",
+      "date": "2026-11-14",
+      "issued_at": "2026-11-14T06:00:00Z",
+      "max_c": 17.1,
+      "min_c": 7.6,
+      "unit": "C"
+    }
+  },
+  "Munich": {
+    "2026-11-01": {
+      "city": "Munich",
+      "condition": "showers",
+      "date": "2026-11-01",
+      "issued_at": "2026-11-01T06:00:00Z",
+      "max_c": 14.7,
+      "min_c": 4.6,
+      "source_a": 14.7,
+      "source_b": 15.1,
+      "unit": "C"
+    },
+    "2026-11-02": {
+      "city": "Munich",
+      "condition": "partly cloudy",
+      "date": "2026-11-02",
+      "issued_at": "2026-11-02T06:00:00Z",
+      "max_c": 12.0,
+      "min_c": 3.0,
+      "source_a": 12.0,
+      "source_b": 12.8,
+      "unit": "C"
+    },
+    "2026-11-03": {
+      "city": "Munich",
+      "condition": "clear",
+      "date": "2026-11-03",
+      "issued_at": "2026-11-03T06:00:00Z",
+      "max_c": 12.8,
+      "min_c": 3.5,
+      "source_a": 12.8,
+      "source_b": 12.4,
+      "unit": "C"
+    },
+    "2026-11-04": {
+      "city": "Munich",
+      "condition": "clear",
+      "date": "2026-11-04",
+      "issued_at": "2026-11-04T06:00:00Z",
+      "max_c": 14.5,
+      "min_c": 4.5,
+      "source_a": 14.5,
+      "source_b": 14.0,
+      "unit": "C"
+    },
+    "2026-11-05": {
+      "city": "Munich",
+      "condition": "cloudy",
+      "date": "2026-11-05",
+      "issued_at": "2026-11-05T06:00:00Z",
+      "max_c": 10.8,
+      "min_c": 2.3,
+      "source_a": 10.8,
+      "source_b": 11.3,
+      "unit": "C"
+    },
+    "2026-11-06": {
+      "city": "Munich",
+      "condition": "showers",
+      "date": "2026-11-06",
+      "issued_at": "2026-11-06T06:00:00Z",
+      "max_c": 11.6,
+      "min_c": 2.7,
+      "source_a": 11.6,
+      "source_b": 11.7,
+      "unit": "C"
+    },
+    "2026-11-07": {
+      "city": "Munich",
+      "condition": "clear",
+      "date": "2026-11-07",
+      "issued_at": "2026-11-07T06:00:00Z",
+      "max_c": 11.8,
+      "min_c": 2.9,
+      "source_a": 11.8,
+      "source_b": 12.5,
+      "unit": "C"
+    },
+    "2026-11-08": {
+      "city": "Munich",
+      "condition": "showers",
+      "date": "2026-11-08",
+      "issued_at": "2026-11-08T06:00:00Z",
+      "max_c": 13.8,
+      "min_c": 4.1,
+      "unit": "C"
+    },
+    "2026-11-09": {
+      "city": "Munich",
+      "condition": "showers",
+      "date": "2026-11-09",
+      "issued_at": "2026-11-09T06:00:00Z",
+      "max_c": 14.2,
+      "min_c": 4.3,
+      "unit": "C"
+    },
+    "2026-11-10": {
+      "city": "Munich",
+      "condition": "cloudy",
+      "date": "2026-11-10",
+      "issued_at": "2026-11-10T06:00:00Z",
+      "max_c": 14.4,
+      "min_c": 4.5,
+      "unit": "C"
+    },
+    "2026-11-11": {
+      "city": "Munich",
+      "condition": "cloudy",
+      "date": "2026-11-11",
+      "issued_at": "2026-11-11T06:00:00Z",
+      "max_c": 9.3,
+      "min_c": 1.4,
+      "unit": "C"
+    },
+    "2026-11-12": {
+      "city": "Munich",
+      "condition": "clear",
+      "date": "2026-11-12",
+      "issued_at": "2026-11-12T06:00:00Z",
+      "max_c": 10.7,
+      "min_c": 2.2,
+      "unit": "C"
+    },
+    "2026-11-13": {
+      "city": "Munich",
+      "condition": "cloudy",
+      "date": "2026-11-13",
+      "issued_at": "2026-11-13T06:00:00Z",
+      "max_c": 9.4,
+      "min_c": 1.4,
+      "unit": "C"
+    },
+    "2026-11-14": {
+      "city": "Munich",
+      "condition": "cloudy",
+      "date": "2026-11-14",
+      "issued_at": "2026-11-14T06:00:00Z",
+      "max_c": 9.1,
+      "min_c": 1.3,
+      "unit": "C"
+    }
+  },
+  "New York": {
+    "2026-11-01": {
+      "city": "New York",
+      "condition": "partly cloudy",
+      "date": "2026-11-01",
+      "issued_at": "2026-11-01T06:00:00Z",
+      "max_c": 18.1,
+      "min_c": 10.2,
+      "source_a": 18.1,
+      "source_b": 18.2,
+      "unit": "C"
+    },
+    "2026-11-02": {
+      "city": "New York",
+      "condition": "partly cloudy",
+      "date": "2026-11-02",
+      "issued_at": "2026-11-02T06:00:00Z",
+      "max_c": 15.7,
+      "min_c": 8.8,
+      "source_a": 15.7,
+      "source_b": 15.2,
+      "unit": "C"
+    },
+    "2026-11-03": {
+      "city": "New York",
+      "condition": "partly cloudy",
+      "date": "2026-11-03",
+      "issued_at": "2026-11-03T06:00:00Z",
+      "max_c": 13.2,
+      "min_c": 7.3,
+      "source_a": 13.2,
+      "source_b": 12.7,
+      "unit": "C"
+    },
+    "2026-11-04": {
+      "city": "New York",
+      "condition": "cloudy",
+      "date": "2026-11-04",
+      "issued_at": "2026-11-04T06:00:00Z",
+      "max_c": 13.1,
+      "min_c": 7.2,
+      "source_a": 13.1,
+      "source_b": 13.5,
+      "unit": "C"
+    },
+    "2026-11-05": {
+      "city": "New York",
+      "condition": "showers",
+      "date": "2026-11-05",
+      "issued_at": "2026-11-05T06:00:00Z",
+      "max_c": 16.1,
+      "min_c": 9.0,
+      "source_a": 16.1,
+      "source_b": 16.5,
+      "unit": "C"
+    },
+    "2026-11-06": {
+      "city": "New York",
+      "condition": "partly cloudy",
+      "date": "2026-11-06",
+      "issued_at": "2026-11-06T06:00:00Z",
+      "max_c": 14.8,
+      "min_c": 8.3,
+      "source_a": 14.8,
+      "source_b": 15.2,
+      "unit": "C"
+    },
+    "2026-11-07": {
+      "city": "New York",
+      "condition": "partly cloudy",
+      "date": "2026-11-07",
+      "issued_at": "2026-11-07T06:00:00Z",
+      "max_c": 18.2,
+      "min_c": 10.3,
+      "source_a": 18.2,
+      "source_b": 18.4,
+      "unit": "C"
+    },
+    "2026-11-08": {
+      "city": "New York",
+      "condition": "showers",
+      "date": "2026-11-08",
+      "issued_at": "2026-11-08T06:00:00Z",
+      "max_c": 16.8,
+      "min_c": 9.5,
+      "unit": "C"
+    },
+    "2026-11-09": {
+      "city": "New York",
+      "condition": "cloudy",
+      "date": "2026-11-09",
+      "issued_at": "2026-11-09T06:00:00Z",
+      "max_c": 14.9,
+      "min_c": 8.3,
+      "unit": "C"
+    },
+    "2026-11-10": {
+      "city": "New York",
+      "condition": "cloudy",
+      "date": "2026-11-10",
+      "issued_at": "2026-11-10T06:00:00Z",
+      "max_c": 14.9,
+      "min_c": 8.3,
+      "unit": "C"
+    },
+    "2026-11-11": {
+      "city": "New York",
+      "condition": "rain",
+      "date": "2026-11-11",
+      "issued_at": "2026-11-11T06:00:00Z",
+      "max_c": 18.0,
+      "min_c": 10.2,
+      "unit": "C"
+    },
+    "2026-11-12": {
+      "city": "New York",
+      "condition": "rain",
+      "date": "2026-11-12",
+      "issued_at": "2026-11-12T06:00:00Z",
+      "max_c": 18.1,
+      "min_c": 10.2,
+      "unit": "C"
+    },
+    "2026-11-13": {
+      "city": "New York",
+      "condition": "rain",
+      "date": "2026-11-13",
+      "issued_at": "2026-11-13T06:00:00Z",
+      "max_c": 15.6,
+      "min_c": 8.8,
+      "unit": "C"
+    },
+    "2026-11-14": {
+      "city": "New York",
+      "condition": "cloudy",
+      "date": "2026-11-14",
+      "issued_at": "2026-11-14T06:00:00Z",
+      "max_c": 16.3,
+      "min_c": 9.2,
+      "unit": "C"
+    }
+  },
+  "Osaka": {
+    "2026-11-01": {
+      "city": "Osaka",
+      "condition": "clear",
+      "date": "2026-11-01",
+      "issued_at": "2026-11-01T06:00:00Z",
+      "max_c": 19.9,
+      "min_c": 13.7,
+      "source_a": 19.9,
+      "source_b": 19.3,
+      "unit": "C"
+    },
+    "2026-11-02": {
+      "city": "Osaka",
+      "condition": "partly cloudy",
+      "date": "2026-11-02",
+      "issued_at": "2026-11-02T06:00:00Z",
+      "max_c": 21.8,
+      "min_c": 14.9,
+      "source_a": 21.8,
+      "source_b": 21.4,
+      "unit": "C"
+    },
+    "2026-11-03": {
+      "city": "Osaka",
+      "condition": "showers",
+      "date": "2026-11-03",
+      "issued_at": "2026-11-03T06:00:00Z",
+      "max_c": 22.6,
+      "min_c": 15.4,
+      "source_a": 22.6,
+      "source_b": 22.4,
+      "unit": "C"
+    },
+    "2026-11-04": {
+      "city": "Osaka",
+      "condition": "showers",
+      "date": "2026-11-04",
+      "issued_at": "2026-11-04T06:00:00Z",
+      "max_c": 19.5,
+      "min_c": 13.5,
+      "source_a": 19.5,
+      "source_b": 18.9,
+      "unit": "C"
+    },
+    "2026-11-05": {
+      "city": "Osaka",
+      "condition": "rain",
+      "date": "2026-11-05",
+      "issued_at": "2026-11-05T06:00:00Z",
+      "max_c": 19.1,
+      "min_c": 13.2,
+      "source_a": 19.1,
+      "source_b": 18.4,
+      "unit": "C"
+    },
+    "2026-11-06": {
+      "city": "Osaka",
+      "condition": "cloudy",
+      "date": "2026-11-06",
+      "issued_at": "2026-11-06T06:00:00Z",
+      "max_c": 19.5,
+      "min_c": 13.5,
+      "source_a": 19.5,
+      "source_b": 19.7,
+      "unit": "C"
+    },
+    "2026-11-07": {
+      "city": "Osaka",
+      "condition": "partly cloudy",
+      "date": "2026-11-07",
+      "issued_at": "2026-11-07T06:00:00Z",
+      "max_c": 20.3,
+      "min_c": 14.0,
+      "source_a": 20.3,
+      "source_b": 19.9,
+      "unit": "C"
+    },
+    "2026-11-08": {
+      "city": "Osaka",
+      "condition": "cloudy",
+      "date": "2026-11-08",
+      "issued_at": "2026-11-08T06:00:00Z",
+      "max_c": 21.0,
+      "min_c": 14.4,
+      "unit": "C"
+    },
+    "2026-11-09": {
+      "city": "Osaka",
+      "condition": "cloudy",
+      "date": "2026-11-09",
+      "issued_at": "2026-11-09T06:00:00Z",
+      "max_c": 20.7,
+      "min_c": 14.2,
+      "unit": "C"
+    },
+    "2026-11-10": {
+      "city": "Osaka",
+      "condition": "showers",
+      "date": "2026-11-10",
+      "issued_at": "2026-11-10T06:00:00Z",
+      "max_c": 20.4,
+      "min_c": 14.0,
+      "unit": "C"
+    },
+    "2026-11-11": {
+      "city": "Osaka",
+      "condition": "clear",
+      "date": "2026-11-11",
+      "issued_at": "2026-11-11T06:00:00Z",
+      "max_c": 19.1,
+      "min_c": 13.3,
+      "unit": "C"
+    },
+    "2026-11-12": {
+      "city": "Osaka",
+      "condition": "rain",
+      "date": "2026-11-12",
+      "issued_at": "2026-11-12T06:00:00Z",
+      "max_c": 22.3,
+      "min_c": 15.2,
+      "unit": "C"
+    },
+    "2026-11-13": {
+      "city": "Osaka",
+      "condition": "partly cloudy",
+      "date": "2026-11-13",
+      "issued_at": "2026-11-13T06:00:00Z",
+      "max_c": 23.9,
+      "min_c": 16.1,
+      "unit": "C"
+    },
+    "2026-11-14": {
+      "city": "Osaka",
+      "condition": "clear",
+      "date": "2026-11-14",
+      "issued_at": "2026-11-14T06:00:00Z",
+      "max_c": 21.8,
+      "min_c": 14.9,
+      "unit": "C"
+    }
+  },
+  "Paris": {
+    "2026-11-01": {
+      "city": "Paris",
+      "condition": "cloudy",
+      "date": "2026-11-01",
+      "issued_at": "2026-11-01T06:00:00Z",
+      "max_c": 14.1,
+      "min_c": 7.4,
+      "source_a": 14.1,
+      "source_b": 14.2,
+      "unit": "C"
+    },
+    "2026-11-02": {
+      "city": "Paris",
+      "condition": "partly cloudy",
+      "date": "2026-11-02",
+      "issued_at": "2026-11-02T06:00:00Z",
+      "max_c": 14.5,
+      "min_c": 7.7,
+      "source_a": 14.5,
+      "source_b": 14.6,
+      "unit": "C"
+    },
+    "2026-11-03": {
+      "city": "Paris",
+      "condition": "partly cloudy",
+      "date": "2026-11-03",
+      "issued_at": "2026-11-03T06:00:00Z",
+      "max_c": 12.9,
+      "min_c": 6.8,
+      "source_a": 12.9,
+      "source_b": 13.7,
+      "unit": "C"
+    },
+    "2026-11-04": {
+      "city": "Paris",
+      "condition": "cloudy",
+      "date": "2026-11-04",
+      "issued_at": "2026-11-04T06:00:00Z",
+      "max_c": 15.3,
+      "min_c": 8.2,
+      "source_a": 15.3,
+      "source_b": 14.6,
+      "unit": "C"
+    },
+    "2026-11-05": {
+      "city": "Paris",
+      "condition": "partly cloudy",
+      "date": "2026-11-05",
+      "issued_at": "2026-11-05T06:00:00Z",
+      "max_c": 13.4,
+      "min_c": 7.1,
+      "source_a": 13.4,
+      "source_b": 13.1,
+      "unit": "C"
+    },
+    "2026-11-06": {
+      "city": "Paris",
+      "condition": "showers",
+      "date": "2026-11-06",
+      "issued_at": "2026-11-06T06:00:00Z",
+      "max_c": 16.0,
+      "min_c": 8.6,
+      "source_a": 16.0,
+      "source_b": 15.2,
+      "unit": "C"
+    },
+    "2026-11-07": {
+      "city": "Paris",
+      "condition": "rain",
+      "date": "2026-11-07",
+      "issued_at": "2026-11-07T06:00:00Z",
+      "max_c": 14.8,
+      "min_c": 7.9,
+      "source_a": 14.8,
+      "source_b": 14.8,
+      "unit": "C"
+    },
+    "2026-11-08": {
+      "city": "Paris",
+      "condition": "showers",
+      "date": "2026-11-08",
+      "issued_at": "2026-11-08T06:00:00Z",
+      "max_c": 15.9,
+      "min_c": 8.6,
+      "unit": "C"
+    },
+    "2026-11-09": {
+      "city": "Paris",
+      "condition": "clear",
+      "date": "2026-11-09",
+      "issued_at": "2026-11-09T06:00:00Z",
+      "max_c": 15.8,
+      "min_c": 8.5,
+      "unit": "C"
+    },
+    "2026-11-10": {
+      "city": "Paris",
+      "condition": "cloudy",
+      "date": "2026-11-10",
+      "issued_at": "2026-11-10T06:00:00Z",
+      "max_c": 17.1,
+      "min_c": 9.3,
+      "unit": "C"
+    },
+    "2026-11-11": {
+      "city": "Paris",
+      "condition": "rain",
+      "date": "2026-11-11",
+      "issued_at": "2026-11-11T06:00:00Z",
+      "max_c": 16.5,
+      "min_c": 8.9,
+      "unit": "C"
+    },
+    "2026-11-12": {
+      "city": "Paris",
+      "condition": "cloudy",
+      "date": "2026-11-12",
+      "issued_at": "2026-11-12T06:00:00Z",
+      "max_c": 13.9,
+      "min_c": 7.3,
+      "unit": "C"
+    },
+    "2026-11-13": {
+      "city": "Paris",
+      "condition": "clear",
+      "date": "2026-11-13",
+      "issued_at": "2026-11-13T06:00:00Z",
+      "max_c": 18.0,
+      "min_c": 9.8,
+      "unit": "C"
+    },
+    "2026-11-14": {
+      "city": "Paris",
+      "condition": "partly cloudy",
+      "date": "2026-11-14",
+      "issued_at": "2026-11-14T06:00:00Z",
+      "max_c": 17.6,
+      "min_c": 9.6,
+      "unit": "C"
+    }
+  },
+  "Shanghai": {
+    "2026-11-01": {
+      "city": "Shanghai",
+      "condition": "cloudy",
+      "date": "2026-11-01",
+      "issued_at": "2026-11-01T06:00:00Z",
+      "max_c": 20.2,
+      "min_c": 14.9,
+      "source_a": 20.2,
+      "source_b": 19.7,
+      "unit": "C"
+    },
+    "2026-11-02": {
+      "city": "Shanghai",
+      "condition": "showers",
+      "date": "2026-11-02",
+      "issued_at": "2026-11-02T06:00:00Z",
+      "max_c": 23.6,
+      "min_c": 17.0,
+      "source_a": 23.6,
+      "source_b": 23.7,
+      "unit": "C"
+    },
+    "2026-11-03": {
+      "city": "Shanghai",
+      "condition": "partly cloudy",
+      "date": "2026-11-03",
+      "issued_at": "2026-11-03T06:00:00Z",
+      "max_c": 20.3,
+      "min_c": 15.0,
+      "source_a": 20.3,
+      "source_b": 19.7,
+      "unit": "C"
+    },
+    "2026-11-04": {
+      "city": "Shanghai",
+      "condition": "clear",
+      "date": "2026-11-04",
+      "issued_at": "2026-11-04T06:00:00Z",
+      "max_c": 23.4,
+      "min_c": 16.8,
+      "source_a": 23.4,
+      "source_b": 22.9,
+      "unit": "C"
+    },
+    "2026-11-05": {
+      "city": "Shanghai",
+      "condition": "cloudy",
+      "date": "2026-11-05",
+      "issued_at": "2026-11-05T06:00:00Z",
+      "max_c": 19.8,
+      "min_c": 14.7,
+      "source_a": 19.8,
+      "source_b": 20.1,
+      "unit": "C"
+    },
+    "2026-11-06": {
+      "city": "Shanghai",
+      "condition": "rain",
+      "date": "2026-11-06",
+      "issued_at": "2026-11-06T06:00:00Z",
+      "max_c": 20.2,
+      "min_c": 14.9,
+      "source_a": 20.2,
+      "source_b": 20.3,
+      "unit": "C"
+    },
+    "2026-11-07": {
+      "city": "Shanghai",
+      "condition": "clear",
+      "date": "2026-11-07",
+      "issued_at": "2026-11-07T06:00:00Z",
+      "max_c": 22.4,
+      "min_c": 16.3,
+      "source_a": 22.4,
+      "source_b": 22.0,
+      "unit": "C"
+    },
+    "2026-11-08": {
+      "city": "Shanghai",
+      "condition": "cloudy",
+      "date": "2026-11-08",
+      "issued_at": "2026-11-08T06:00:00Z",
+      "max_c": 23.8,
+      "min_c": 17.1,
+      "unit": "C"
+    },
+    "2026-11-09": {
+      "city": "Shanghai",
+      "condition": "showers",
+      "date": "2026-11-09",
+      "issued_at": "2026-11-09T06:00:00Z",
+      "max_c": 24.6,
+      "min_c": 17.6,
+      "unit": "C"
+    },
+    "2026-11-10": {
+      "city": "Shanghai",
+      "condition": "rain",
+      "date": "2026-11-10",
+      "issued_at": "2026-11-10T06:00:00Z",
+      "max_c": 19.7,
+      "min_c": 14.6,
+      "unit": "C"
+    },
+    "2026-11-11": {
+      "city": "Shanghai",
+      "condition": "showers",
+      "date": "2026-11-11",
+      "issued_at": "2026-11-11T06:00:00Z",
+      "max_c": 19.6,
+      "min_c": 14.5,
+      "unit": "C"
+    },
+    "2026-11-12": {
+      "city": "Shanghai",
+      "condition": "cloudy",
+      "date": "2026-11-12",
+      "issued_at": "2026-11-12T06:00:00Z",
+      "max_c": 19.4,
+      "min_c": 14.4,
+      "unit": "C"
+    },
+    "2026-11-13": {
+      "city": "Shanghai",
+      "condition": "partly cloudy",
+      "date": "2026-11-13",
+      "issued_at": "2026-11-13T06:00:00Z",
+      "max_c": 20.7,
+      "min_c": 15.2,
+      "unit": "C"
+    },
+    "2026-11-14": {
+      "city": "Shanghai",
+      "condition": "cloudy",
+      "date": "2026-11-14",
+      "issued_at": "2026-11-14T06:00:00Z",
+      "max_c": 20.4,
+      "min_c": 15.0,
+      "unit": "C"
+    }
+  },
+  "Sydney": {
+    "2026-11-01": {
+      "city": "Sydney",
+      "condition": "cloudy",
+      "date": "2026-11-01",
+      "issued_at": "2026-11-01T06:00:00Z",
+      "max_c": 25.4,
+      "min_c": 17.2,
+      "source_a": 25.4,
+      "source_b": 25.8,
+      "unit": "C"
+    },
+    "2026-11-02": {
+      "city": "Sydney",
+      "condition": "clear",
+      "date": "2026-11-02",
+      "issued_at": "2026-11-02T06:00:00Z",
+      "max_c": 27.1,
+      "min_c": 18.3,
+      "source_a": 27.1,
+      "source_b": 26.9,
+      "unit": "C"
+    },
+    "2026-11-03": {
+      "city": "Sydney",
+      "condition": "showers",
+      "date": "2026-11-03",
+      "issued_at": "2026-11-03T06:00:00Z",
+      "max_c": 24.8,
+      "min_c": 16.9,
+      "source_a": 24.8,
+      "source_b": 24.6,
+      "unit": "C"
+    },
+    "2026-11-04": {
+      "city": "Sydney",
+      "condition": "rain",
+      "date": "2026-11-04",
+      "issued_at": "2026-11-04T06:00:00Z",
+      "max_c": 27.2,
+      "min_c": 18.3,
+      "source_a": 27.2,
+      "source_b": 27.7,
+      "unit": "C"
+    },
+    "2026-11-05": {
+      "city": "Sydney",
+      "condition": "rain",
+      "date": "2026-11-05",
+      "issued_at": "2026-11-05T06:00:00Z",
+      "max_c": 25.9,
+      "min_c": 17.5,
+      "source_a": 25.9,
+      "source_b": 26.4,
+      "unit": "C"
+    },
+    "2026-11-06": {
+      "city": "Sydney",
+      "condition": "rain",
+      "date": "2026-11-06",
+      "issued_at": "2026-11-06T06:00:00Z",
+      "max_c": 23.9,
+      "min_c": 16.3,
+      "source_a": 23.9,
+      "source_b": 24.3,
+      "unit": "C"
+    },
+    "2026-11-07": {
+      "city": "Sydney",
+      "condition": "showers",
+      "date": "2026-11-07",
+      "issued_at": "2026-11-07T06:00:00Z",
+      "max_c": 23.9,
+      "min_c": 16.3,
+      "source_a": 23.9,
+      "source_b": 23.6,
+      "unit": "C"
+    },
+    "2026-11-08": {
+      "city": "Sydney",
+      "condition": "rain",
+      "date": "2026-11-08",
+      "issued_at": "2026-11-08T06:00:00Z",
+      "max_c": 22.9,
+      "min_c": 15.7,
+      "unit": "C"
+    },
+    "2026-11-09": {
+      "city": "Sydney",
+      "condition": "rain",
+      "date": "2026-11-09",
+      "issued_at": "2026-11-09T06:00:00Z",
+      "max_c": 26.4,
+      "min_c": 17.8,
+      "unit": "C"
+    },
+    "2026-11-10": {
+      "city": "Sydney",
+      "condition": "cloudy",
+      "date": "2026-11-10",
+      "issued_at": "2026-11-10T06:00:00Z",
+      "max_c": 25.6,
+      "min_c": 17.4,
+      "unit": "C"
+    },
+    "2026-11-11": {
+      "city": "Sydney",
+      "condition": "showers",
+      "date": "2026-11-11",
+      "issued_at": "2026-11-11T06:00:00Z",
+      "max_c": 25.7,
+      "min_c": 17.4,
+      "unit": "C"
+    },
+    "2026-11-12": {
+      "city": "Sydney",
+      "condition": "cloudy",
+      "date": "2026-11-12",
+      "issued_at": "2026-11-12T06:00:00Z",
+      "max_c": 27.5,
+      "min_c": 18.5,
+      "unit": "C"
+    },
+    "2026-11-13": {
+      "city": "Sydney",
+      "condition": "showers",
+      "date": "2026-11-13",
+      "issued_at": "2026-11-13T06:00:00Z",
+      "max_c": 23.9,
+      "min_c": 16.3,
+      "unit": "C"
+    },
+    "2026-11-14": {
+      "city": "Sydney",
+      "condition": "cloudy",
+      "date": "2026-11-14",
+      "issued_at": "2026-11-14T06:00:00Z",
+      "max_c": 26.9,
+      "min_c": 18.1,
+      "unit": "C"
+    }
+  },
+  "Tokyo": {
+    "2026-11-01": {
+      "city": "Tokyo",
+      "condition": "clear",
+      "date": "2026-11-01",
+      "issued_at": "2026-11-01T06:00:00Z",
+      "max_c": 18.9,
+      "min_c": 12.7,
+      "source_a": 18.9,
+      "source_b": 18.9,
+      "unit": "C"
+    },
+    "2026-11-02": {
+      "city": "Tokyo",
+      "condition": "cloudy",
+      "date": "2026-11-02",
+      "issued_at": "2026-11-02T06:00:00Z",
+      "max_c": 22.8,
+      "min_c": 15.1,
+      "source_a": 22.8,
+      "source_b": 23.2,
+      "unit": "C"
+    },
+    "2026-11-03": {
+      "city": "Tokyo",
+      "condition": "clear",
+      "date": "2026-11-03",
+      "issued_at": "2026-11-03T06:00:00Z",
+      "max_c": 24.0,
+      "min_c": 15.8,
+      "source_a": 24.0,
+      "source_b": 23.3,
+      "unit": "C"
+    },
+    "2026-11-04": {
+      "city": "Tokyo",
+      "condition": "clear",
+      "date": "2026-11-04",
+      "issued_at": "2026-11-04T06:00:00Z",
+      "max_c": 23.4,
+      "min_c": 15.4,
+      "source_a": 23.4,
+      "source_b": 24.0,
+      "unit": "C"
+    },
+    "2026-11-05": {
+      "city": "Tokyo",
+      "condition": "cloudy",
+      "date": "2026-11-05",
+      "issued_at": "2026-11-05T06:00:00Z",
+      "max_c": 23.6,
+      "min_c": 15.6,
+      "source_a": 23.6,
+      "source_b": 24.0,
+      "unit": "C"
+    },
+    "2026-11-06": {
+      "city": "Tokyo",
+      "condition": "clear",
+      "date": "2026-11-06",
+      "issued_at": "2026-11-06T06:00:00Z",
+      "max_c": 22.6,
+      "min_c": 15.0,
+      "source_a": 22.6,
+      "source_b": 21.8,
+      "unit": "C"
+    },
+    "2026-11-07": {
+      "city": "Tokyo",
+      "condition": "rain",
+      "date": "2026-11-07",
+      "issued_at": "2026-11-07T06:00:00Z",
+      "max_c": 23.2,
+      "min_c": 15.3,
+      "source_a": 23.2,
+      "source_b": 22.5,
+      "unit": "C"
+    },
+    "2026-11-08": {
+      "city": "Tokyo",
+      "condition": "clear",
+      "date": "2026-11-08",
+      "issued_at": "2026-11-08T06:00:00Z",
+      "max_c": 22.0,
+      "min_c": 14.6,
+      "unit": "C"
+    },
+    "2026-11-09": {
+      "city": "Tokyo",
+      "condition": "rain",
+      "date": "2026-11-09",
+      "issued_at": "2026-11-09T06:00:00Z",
+      "max_c": 21.4,
+      "min_c": 14.3,
+      "unit": "C"
+    },
+    "2026-11-10": {
+      "city": "Tokyo",
+      "condition": "rain",
+      "date": "2026-11-10",
+      "issued_at": "2026-11-10T06:00:00Z",
+      "max_c": 21.6,
+      "min_c": 14.4,
+      "unit": "C"
+    },
+    "2026-11-11": {
+      "city": "Tokyo",
+      "condition": "rain",
+      "date": "2026-11-11",
+      "issued_at": "2026-11-11T06:00:00Z",
+      "max_c": 19.0,
+      "min_c": 12.8,
+      "unit": "C"
+    },
+    "2026-11-12": {
+      "city": "Tokyo",
+      "condition": "showers",
+      "date": "2026-11-12",
+      "issued_at": "2026-11-12T06:00:00Z",
+      "max_c": 22.8,
+      "min_c": 15.1,
+      "unit": "C"
+    },
+    "2026-11-13": {
+      "city": "Tokyo",
+      "condition": "cloudy",
+      "date": "2026-11-13",
+      "issued_at": "2026-11-13T06:00:00Z",
+      "max_c": 23.4,
+      "min_c": 15.4,
+      "unit": "C"
+    },
+    "2026-11-14": {
+      "city": "Tokyo",
+      "condition": "cloudy",
+      "date": "2026-11-14",
+      "issued_at": "2026-11-14T06:00:00Z",
+      "max_c": 19.2,
+      "min_c": 12.9,
+      "unit": "C"
+    }
+  }
+}

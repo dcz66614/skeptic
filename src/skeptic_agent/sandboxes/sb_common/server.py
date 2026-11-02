@@ -45,8 +45,13 @@ from skeptic_agent.sandboxes.sb_common.state import STATE_FILE_ENV, SandboxState
 HTTP_PATH = "/mcp"
 """The Streamable HTTP path ``MCPServer.run`` serves (ADR-0004)."""
 
-type ToolCall = Callable[[BaseModel, "SandboxTool"], Awaitable[BaseModel]]
-"""A sandbox tool's async body. It takes the validated arguments and the tool."""
+type ToolCall = Callable[[Any, "SandboxTool"], Awaitable[BaseModel]]
+"""A sandbox tool's async body. It takes the validated arguments and the tool.
+
+The arguments are typed ``Any`` so a tool body may declare its own ``input``
+model on the first parameter; the factory validates the client's arguments
+into exactly that model before calling the body.
+"""
 
 
 class ToolFailure(Exception):
