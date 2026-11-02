@@ -1546,3 +1546,7 @@ EXIT=0
 ```
 
 No dependency was added; `uv.lock` is unchanged.
+
+## S31 merge (2026-11-02)
+
+- codex 1ddbe38 ff-merged to main. S31 fd2af51 (sb_weather, sb_fx) + S31fix 1ddbe38 (fx rate direction, convert currency = quote, extra-argument rejection in sb_common, list misuse tests). Self-review PASS (622 passed, cov 95.63%); agy detailed re-review PASS.
