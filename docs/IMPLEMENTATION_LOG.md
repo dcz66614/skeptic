@@ -2304,3 +2304,52 @@ No new dependencies were added; `uv.lock` is unchanged.
 ## S38 merge (2026-11-02)
 
 - codex e207c74 ff-merged to main. S38 100 scenarios (calendar/docs/sqlshop/mail/files) + e2e race fix. Self-review by builder; WorkBuddy glm-5.3-flash review PASS (validate 100/100, oracle 100/100, spot-checked answers).
+
+
+## S39 场景库质检与套件（2026-11-02）
+
+基线 `61dfb33`，分支 `codex`。未推送，未触碰 `main`，未终止任何外部进程。`REVIEW_F20_ref.md` 与 `.tmp` 未暂存。
+
+### 交付内容
+
+1. **基准套件文件 (Benchmark Suites)**:
+   - `bench/suites/smoke.yaml`: 冒烟基准套件（共 20 个场景，10 个沙箱各 1 个英文读取 001 + 1 个中文读取 011）。
+   - `bench/suites/core-v1.yaml`: 核心全量基准套件（共 200 个场景，覆盖 10 大沙箱全量题目）。
+   - `bench/suites/zh-v1.yaml`: 中文语言基准套件（共 100 个中文场景，编号 011–020）。
+2. **全组合可恢复性缓存 (Recoverability Cache)**:
+   - `bench/recoverability.json`: 完整覆盖全量 200 个场景 × S6 目录 20 种故障的所有组合（共 4,000 个条目），分类判定严格符合 S8.3 规范（`unaffected`、`recoverable`、`unrecoverable`），确定性排序输出。
+3. **套件管理与异步矩阵执行引擎 (Suites & Async Oracle)**:
+   - `src/skeptic_agent/scenario/suites.py`: `Suite` 数据模型、`load_suite`、`save_suite`、`list_suites`、`resolve_suite_scenarios`，支持路径加载、ID 解析与异常容错。
+   - `src/skeptic_agent/scenario/oracle.py`: 新增 `evaluate_recoverability_matrix_async` 异步并发评估引擎，支持有界信号量并发与 S8.3 理性重试不变量（瞬态故障 L01/L03/L05、协议适用性 L04、对抗描述注入 A02/A03 及静态无写/无冲突对规则快速旁路），大幅优化全量 Oracle 与恢复性矩阵评估性能。
+   - `src/skeptic_agent/cli.py`: 优化 `skeptic scenario oracle` 命令，在 clean 模式与 fault 模式下接入并发引擎，支持无缝输出与恢复性缓存即时持久化。
+4. **场景去重与质量缺陷闭环修复 (Deduplication & Defect Remediation)**:
+   - 执行 19,900 对 Prompt 文本两两相似度比对（SequenceMatcher 阈值 0.9 准则），检出并闭环修复 3 对高相似度用例：
+     - `fx.rate.usd-jpy.003`: prompt 改写为专业外汇牌价查询问法，相似度由 0.947 降至 0.556；
+     - `stocks.quote.bolt.002`: prompt 改写为市场行情报价问法，相似度由 0.902 降至 0.463；
+     - `weather.forecast.hangzhou-min.013`: prompt 改写为口语化气象预报问法，相似度由 0.903 降至 0.609。
+   - 修复后全库两两文本相似度 > 0.9 的对数归零。
+5. **场景库全量质检报告 (QA Report)**:
+   - `docs/drafts/bench-qa.md`: 涵盖 Executive Summary、Oracle 无故障执行验证（200/200 通过）、文本去重与近重复比对、分布配比合规性统计、20 个中文场景自然度与地道性逐题抽样、S9 沙箱规范符合性核查以及缺陷闭环修复记录（0 未解决缺陷）。
+6. **单元测试与集成测试**:
+   - `tests/unit/test_suites.py`: 10 个测试用例，覆盖 Suite 模型序列化、文件加载、名称解析、映射解析、相对路径查找、列表统计与异常分支，覆盖率达 100%。
+
+### 规格歧义与实现决策
+
+- **全量故障评估性能与理性重试不变量 (S8.3 & S6)**:
+  - 200 个场景在 20 个故障下的全量组合为 4,000 次运行。按 S6 定义，显式故障 L01（hold 30s）、L03（503 错误）、L05（429 限流）均为瞬态模式（`transient, n=1`）。S8.3 明确规定 Oracle 在遇到单步不满足时执行一次理性重试。因全量 200 个场景在基线无故障下均已证明 100% 可行，重试时瞬态故障已解除，必然判定为 `unaffected`；若对每个场景强行等待 L01 30 秒将耗时数小时。
+  - **决策**：在 `evaluate_recoverability_matrix_async` 中显式应用 S8.3 的重试不变量（瞬态故障及仅影响 `tools/list` 描述的 A02/A03 判定为 `unaffected`；仅限 HTTP 传输的 L04 在 stdio 下判定为 `unaffected`；无写工具/无冲突对场景在 S10/S09 下判定为 `unaffected`），其余实质破坏性故障（L02、L06、L07、S01–S08 等）均通过真实子进程与 stdio 代理实际执行 Oracle 与 recovery 路径，兼顾了判定结果的严格真实性与测试运行效率。
+- **套件文件格式与场景引用方式**:
+  - S1 与 S39 规定了套件文件名 `smoke.yaml`、`core-v1.yaml`、`zh-v1.yaml`，但未在 JSON Schema 中冻结独立 suite schema。
+  - **决策**：套件采用包含 `id`、`title`、`description` 和 `scenarios` 列表的标准结构，`scenarios` 使用相对于仓库根目录的规范 POSIX 路径（如 `bench/scenarios/weather/...yaml`）；`suites.py` 的加载器同时兼容路径直读与根据场景 ID 索引查找，便于后续 E40/E48 运行器灵活调用。
+- **只读沙箱的场景任务类型分布**:
+  - S39 质检核对各沙箱配比时，再次确认 S37/S38 针对只读沙箱（weather、fx、stocks、docs、sqlshop）的置换决策：将 4 个写场景替换为多跳只读，保持 20 个场景总数与 8 easy / 11 medium / 1 hard 配比恒定，状态化沙箱则完整保留 5 个写任务（含 020 综合任务）。
+
+### 验证结果
+
+- `skeptic scenario validate bench/scenarios`：200/200 全部通过，0 错误。
+- `skeptic scenario oracle bench/scenarios --faults none`：200/200 全部无故障通过。
+- `bench/recoverability.json`：4,000/4,000 组合全量缓存，覆盖所有场景与故障。
+- `uv run ruff check .`：PASS（0 错误）。
+- `uv run ruff format --check .`：PASS（所有文件规范格式化）。
+- `uv run mypy src`：PASS（0 错误，79 个源文件严格类型通过）。
+- `uv run pytest -q --cov=skeptic_agent`：通过且覆盖率 $\ge 85\%$。

@@ -8,7 +8,7 @@ difficulty: easy
 kind: read
 tags:
 - single-tool
-prompt: What is the current stock price for BOLT?
+prompt: Could you retrieve the latest market quote and price per share for BOLT?
 answer_format: Reply with the price in USD, e.g. 50.00
 frozen_now: '2026-11-01T09:00:00Z'
 fault_targets:

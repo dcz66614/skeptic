@@ -1,0 +1,25 @@
+id: smoke
+title: Smoke Benchmark Suite
+description: Smoke benchmark suite containing 20 scenarios (1 English and 1 Chinese
+  per sandbox).
+scenarios:
+- bench/scenarios/calendar/calendar.events.day-events.001.yaml
+- bench/scenarios/calendar/calendar.event.first-title.011.yaml
+- bench/scenarios/crm/crm.customer.get.001.yaml
+- bench/scenarios/crm/crm.customer.get.011.yaml
+- bench/scenarios/docs/docs.content.security-key.001.yaml
+- bench/scenarios/docs/docs.content.security-key.011.yaml
+- bench/scenarios/files/files.file.readme.001.yaml
+- bench/scenarios/files/files.file.handbook.011.yaml
+- bench/scenarios/fx/fx.rate.usd-eur.001.yaml
+- bench/scenarios/fx/fx.rate.usd-cny.011.yaml
+- bench/scenarios/mail/mail.email.subject.001.yaml
+- bench/scenarios/mail/mail.email.subject.011.yaml
+- bench/scenarios/orders/orders.order.get.001.yaml
+- bench/scenarios/orders/orders.order.get.011.yaml
+- bench/scenarios/sqlshop/sqlshop.query.product-count.001.yaml
+- bench/scenarios/sqlshop/sqlshop.query.order-count.011.yaml
+- bench/scenarios/stocks/stocks.quote.acme.001.yaml
+- bench/scenarios/stocks/stocks.quote.echo.011.yaml
+- bench/scenarios/weather/weather.forecast.paris-max.001.yaml
+- bench/scenarios/weather/weather.forecast.beijing-max.011.yaml

@@ -405,11 +405,63 @@ def determine_recoverability(
     return result.recoverability
 
 
+async def evaluate_recoverability_matrix_async(
+    scenarios: Sequence[Scenario | Path | str],
+    faults: Sequence[str],
+    *,
+    seed: int = 0,
+    concurrency: int = 16,
+) -> dict[str, dict[str, str]]:
+    """Evaluate recoverability asynchronously for multiple scenarios across faults (S8.3, S39).
+
+    Args:
+        scenarios: List of scenario instances or file paths.
+        faults: Fault IDs to evaluate.
+        seed: Random seed.
+        concurrency: Maximum concurrent Oracle evaluations.
+
+    Returns:
+        Mapping of scenario_id -> {fault_id -> recoverability}.
+    """
+    scen_objs = [
+        load_scenario(item) if not isinstance(item, Scenario) else item for item in scenarios
+    ]
+    sem = asyncio.Semaphore(concurrency)
+    matrix: dict[str, dict[str, str]] = {s.id: {} for s in scen_objs}
+
+    async def run_pair(scen: Scenario, fault: str) -> None:
+        # S8.3 rational retry invariants: transient faults pass on retry
+        if fault in ("L01", "L03", "L04", "L05", "A02", "A03"):
+            matrix[scen.id][fault] = "unaffected"
+            return
+
+        ft = scen.fault_targets
+        decoys = scen.decoys
+        if fault == "S10" and not ft.write_tools:
+            matrix[scen.id][fault] = "unaffected"
+            return
+        if fault == "S09" and (not ft.conflict_pair or len(ft.conflict_pair) < 2):
+            matrix[scen.id][fault] = "unaffected"
+            return
+        if fault == "S05" and not (ft.entity_arg and decoys and decoys.entity):
+            matrix[scen.id][fault] = "unaffected"
+            return
+
+        async with sem:
+            res = await run_oracle_async(scen, fault=fault, seed=seed)
+            matrix[scen.id][fault] = res.recoverability
+
+    tasks = [run_pair(scen, fault) for scen in scen_objs for fault in faults]
+    await asyncio.gather(*tasks)
+    return matrix
+
+
 def evaluate_recoverability_matrix(
     scenarios: Sequence[Scenario | Path | str],
     faults: Sequence[str],
     *,
     seed: int = 0,
+    concurrency: int = 16,
 ) -> dict[str, dict[str, str]]:
     """Evaluate recoverability for multiple scenarios across faults (S8.3, S39).
 
@@ -417,15 +469,11 @@ def evaluate_recoverability_matrix(
         scenarios: List of scenario instances or file paths.
         faults: Fault IDs to evaluate.
         seed: Random seed.
+        concurrency: Max concurrent Oracle evaluations.
 
     Returns:
         Mapping of scenario_id -> {fault_id -> recoverability}.
     """
-    matrix: dict[str, dict[str, str]] = {}
-    for item in scenarios:
-        scen = load_scenario(item) if not isinstance(item, Scenario) else item
-        matrix[scen.id] = {}
-        for fault in faults:
-            rec = determine_recoverability(scen, fault, seed=seed)
-            matrix[scen.id][fault] = rec
-    return matrix
+    return asyncio.run(
+        evaluate_recoverability_matrix_async(scenarios, faults, seed=seed, concurrency=concurrency)
+    )

@@ -8,7 +8,7 @@ difficulty: easy
 kind: read
 tags:
 - single-tool
-prompt: 请问杭州在 2026-11-02 的预测最低气温是多少摄氏度？
+prompt: 查询杭州在 2026-11-02 的天气预报情况，预计当天的最低温度会达到多少摄氏度？
 answer_format: 请直接回答摄氏度数值，例如 15.0
 frozen_now: '2026-11-01T09:00:00Z'
 fault_targets:

@@ -444,8 +444,14 @@ def scenario_oracle(
     Raises:
         typer.Exit: With code 0 when successful, 1 when clean Oracle run fails, 2 on usage error.
     """
-    from skeptic_agent.scenario.model import load_scenario
-    from skeptic_agent.scenario.oracle import run_oracle
+    import asyncio
+
+    from skeptic_agent.scenario.model import Scenario, load_scenario
+    from skeptic_agent.scenario.oracle import (
+        OracleRunResult,
+        evaluate_recoverability_matrix_async,
+        run_oracle_async,
+    )
     from skeptic_agent.scenario.recoverability import (
         RecoverabilityCache,
         load_recoverability,
@@ -483,29 +489,48 @@ def scenario_oracle(
     clean_mode = fault_list == [None]
     clean_failed = False
 
+    loaded_scenarios = []
     for file_path in scenario_files:
         try:
             scenario = load_scenario(file_path)
+            loaded_scenarios.append(scenario)
         except Exception as exc:
             typer.echo(f"error loading scenario {file_path}: {exc}", err=True)
             raise typer.Exit(code=2) from exc
 
-        if scenario.id not in cache:
-            cache[scenario.id] = {}
+    if clean_mode:
 
-        for fault_item in fault_list:
-            tag = fault_item or "none"
-            result = run_oracle(scenario, fault=fault_item, seed=seed)
-            if clean_mode:
-                if result.success:
-                    typer.echo(f"{scenario.id}: PASS")
-                else:
-                    err_msg = result.step_results[-1].error if result.step_results else "unknown"
-                    typer.echo(f"{scenario.id}: FAIL ({err_msg})", err=True)
-                    clean_failed = True
+        async def _run_clean_batch() -> list[OracleRunResult]:
+            sem = asyncio.Semaphore(16)
+
+            async def _run_one(scen: Scenario) -> OracleRunResult:
+                async with sem:
+                    return await run_oracle_async(scen, fault=None, seed=seed)
+
+            return list(await asyncio.gather(*[_run_one(s) for s in loaded_scenarios]))
+
+        results = asyncio.run(_run_clean_batch())
+        for scenario, result in zip(loaded_scenarios, results, strict=True):
+            if result.success:
+                typer.echo(f"{scenario.id}: PASS")
             else:
-                cache[scenario.id][tag] = result.recoverability
-                typer.echo(f"{scenario.id} [{tag}]: {result.recoverability}")
+                err_msg = result.step_results[-1].error if result.step_results else "unknown"
+                typer.echo(f"{scenario.id}: FAIL ({err_msg})", err=True)
+                clean_failed = True
+    else:
+        str_faults = [f for f in fault_list if f is not None]
+        matrix = asyncio.run(
+            evaluate_recoverability_matrix_async(
+                loaded_scenarios, str_faults, seed=seed, concurrency=16
+            )
+        )
+        for scenario in loaded_scenarios:
+            if scenario.id not in cache:
+                cache[scenario.id] = {}
+            for fault_item in str_faults:
+                rec = matrix.get(scenario.id, {}).get(fault_item, "unaffected")
+                cache[scenario.id][fault_item] = rec
+                typer.echo(f"{scenario.id} [{fault_item}]: {rec}")
 
     if write_recoverability:
         save_recoverability(cache, write_recoverability)

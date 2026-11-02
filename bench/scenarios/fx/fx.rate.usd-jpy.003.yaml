@@ -8,7 +8,7 @@ difficulty: easy
 kind: read
 tags:
 - single-tool
-prompt: What was the exchange rate from USD to JPY on 2026-10-25?
+prompt: Please check the foreign currency exchange rate from USD to JPY on 2026-10-25.
 answer_format: Reply with the exchange rate number, e.g. 145.50
 frozen_now: '2026-11-01T09:00:00Z'
 fault_targets:
