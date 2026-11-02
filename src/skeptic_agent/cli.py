@@ -817,6 +817,50 @@ def gate_cmd(
         raise typer.Exit(code=1) from exc
 
 
+@app.command("report")
+def report_cmd(
+    run_dir: Annotated[
+        Path,
+        typer.Argument(help="Path to run directory containing results.jsonl and/or summary.json."),
+    ],
+    format: Annotated[
+        str,
+        typer.Option(
+            "--format",
+            help="Comma-separated formats (html,md,json,junit,sarif,badge or 'all'). Default: all.",
+        ),
+    ] = "html,md,json,junit,sarif,badge",
+    out: Annotated[
+        Path | None,
+        typer.Option(
+            "--out",
+            help="Output directory for generated reports (default: RUN_DIR).",
+        ),
+    ] = None,
+) -> None:
+    """Generate evaluation reports in 6 formats (S2, S12, E49)."""
+    if not run_dir.exists():
+        typer.echo(f"error: run directory does not exist: {run_dir}", err=True)
+        raise typer.Exit(code=2)
+
+    from skeptic_agent.report.engine import generate_reports
+
+    try:
+        outputs = generate_reports(run_dir, out_dir=out, formats=format)
+        target_dir = out if out is not None else run_dir
+        report_names = ", ".join(p.name for p in outputs.values())
+        typer.echo(f"Generated {len(outputs)} report(s) in {target_dir}: {report_names}")
+    except ValueError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    except FileNotFoundError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    except Exception as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+
 def parse_listen(value: str) -> tuple[str, int]:
     """Split a ``HOST:PORT`` option value.
 
