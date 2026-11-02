@@ -2300,3 +2300,7 @@ No new dependencies were added; `uv.lock` is unchanged.
 - `uv run ruff format --check .`：PASS。
 - `uv run mypy src`：PASS。
 - `uv run pytest -q --cov=skeptic_agent`：920 passed，覆盖率 94.08%（$\ge 85\%$）。
+
+## S38 merge (2026-11-02)
+
+- codex e207c74 ff-merged to main. S38 100 scenarios (calendar/docs/sqlshop/mail/files) + e2e race fix. Self-review by builder; WorkBuddy glm-5.3-flash review PASS (validate 100/100, oracle 100/100, spot-checked answers).
