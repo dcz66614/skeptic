@@ -348,6 +348,18 @@ class GuardEngine(GuardStage):
         scenario = ctx.scenario if ctx.scenario is not None else self.scenario
 
         if pending.method == TOOLS_LIST:
+            # Capture tool definitions seen on the wire into ctx.tool_defs
+            if isinstance(msg, Response) and isinstance(msg.result, dict):
+                tools = msg.result.get("tools")
+                if isinstance(tools, list):
+                    for tool in tools:
+                        if (
+                            isinstance(tool, dict)
+                            and "name" in tool
+                            and isinstance(tool["name"], str)
+                        ):
+                            ctx.tool_defs[tool["name"]] = tool
+
             current_msg: Message = msg
             for guard_id in S2C_LIST_GUARD_ORDER:
                 guard = self._guards_by_id.get(guard_id)

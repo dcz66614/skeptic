@@ -3360,3 +3360,82 @@ EXIT=0
 ## E49fix2 merge (2026-11-03)
 
 - codex  ff-merged to main. 
+
+
+## G51 G02 Schema 校验、G03 过期检测、G04 空值与截断检测（2026-11-03）
+
+基线 `81aa85c`，分支 `codex`。实现 Skeptic 防护机制 G51 卡片所列内容，落地 G02 `schema_guard`、G03 `staleness_guard`（别名模块 `staleness` / `staleness_guard`）与 G04 `emptiness_guard`（别名模块 `emptiness` / `emptiness_guard`），完成在 S4.4 管道步骤 ③ 的拦截挂载与 S11 错误模板对齐，确保零新增依赖，测试产物与工作目录严格受限于 `tmp_path`。
+
+### 交付内容
+
+1. **G02 Schema 校验 (`src/skeptic_agent/guards/schema_guard.py`)**:
+   - 挂载点：S4.4 s2c 步骤 ③。
+   - 行为：提取响应中的 `structuredContent` 或解析文本中的 JSON 对象，对比工具声明的 `outputSchema`（优先级：Guard 参数覆盖 > `ctx.tool_defs` 捕获的工具定义 > 场景定义文件）。使用 `jsonschema.Draft202012Validator` 进行验证。
+   - 漂移检测（JSON Drift）：追踪同一工具调用前序是否曾返回合法 JSON；若前序返回有效 JSON 而当前调用返回无法解析的文本且缺少 `structuredContent`，则判定为漂移故障。
+   - 显式报错输出：逐字对齐 S11 模板：`[skeptic:schema_guard] Tool output failed validation: <first_error_truncated_200_chars>`，设置 `isError=True`。
+
+2. **G03 过期检测 (`src/skeptic_agent/guards/staleness.py` / `staleness_guard.py`)**:
+   - 挂载点：S4.4 s2c 步骤 ③。
+   - 行为：
+     - 条件 (a)：若请求参数显式指定了日期参数 $D$，而响应中所有日期与 $D$ 相差超过 1 天，触发拦截；
+     - 条件 (b)：若请求参数未指定日期，而响应中提取的所有日期早于当前基准时间超过 `max_age_days`（默认 30 天，基准时间由 `SKEPTIC_FROZEN_NOW` 环境变量、场景冻结时钟或当前系统时钟提供），触发拦截。
+   - 显式报错输出：逐字对齐 S11 模板：`[skeptic:staleness_guard] Result dates do not match the request or are older than <N> days (<example_date>). Treat as stale.`，设置 `isError=True`。
+   - 历史元数据与业务新鲜度隔离：通过 `_EXCLUDED_DATE_KEYS` 排除实体审计字段（`created_at`, `updated_at`, `registered_at`），防止实体创建历史误判为业务数据过期。
+
+3. **G04 空值与截断检测 (`src/skeptic_agent/guards/emptiness.py` / `emptiness_guard.py`)**:
+   - 挂载点：S4.4 s2c 步骤 ③。
+   - 行为：
+     - 条件 1：`structuredContent` 为空对象 `{}` 或空数组 `[]`（如 S01 `empty_ok`）；
+     - 条件 2：`content` 中文本块为空字符串或纯空白；
+     - 条件 3：文本块以 `{` 或 `[` 开头但 JSON 反序列化失败（如 S07 `malformed_ok`）；
+     - 条件 4：同一工具与相同规范化参数（canonical arguments）的调用中，响应数组长度缩水至 $< n / 2$（如 S02 `truncated`）。
+   - 豁免机制：支持 `allow_empty_tools` 参数（Unix glob 匹配模式，如 `["list_empty_*", "probe"]`）跳过空值拦截。
+   - 显式报错输出：逐字对齐 S11 模板：`[skeptic:emptiness_guard] Tool returned an empty or truncated result. Re-query with refined parameters or try an alternative tool.`，设置 `isError=True`。
+
+4. **代理管道、导出与 Oracle 联动支持**:
+   - `src/skeptic_agent/guards/__init__.py`: 统一注册并导出所有 8 个 Guard 及其类、S11 模板常量。
+   - `src/skeptic_agent/guards/base.py`: 在 `GuardEngine.on_s2c` 中自动拦截并解析 `tools/list` 服务端响应，将服务端声明的工具及其 `outputSchema` 动态存入 `ctx.tool_defs`。
+   - `src/skeptic_agent/guards/evidence_contract.py`: 遵循 S4.5 幂等与不变性，若响应已被前序 Guard 标记为 `isError=True` 则直接透传跳过，避免覆盖统一错误。
+   - `src/skeptic_agent/scenario/oracle.py`: 在 `_run_steps_sequence`、`run_oracle_async` 与 `run_oracle` 中增加 `guards` 参数支持，使 Oracle 评测支持透传 `--guards` 至底层 `proxy stdio`。
+
+5. **单元测试与端到端验收测试 (`tests/`)**:
+   - `tests/unit/test_guards_g51.py`: 24 个单元测试，覆盖模板常量严格匹配、G02 Schema 约束与边界、JSON drift、G03 请求参数匹配与 `max_age_days` 超期、历史实体元数据忽略、G04 四项空值与截断条件、数组缩水判定、豁免 glob、`GuardEngine` 自动捕获 `tools/list` 契约与别名模块导入。
+   - `tests/e2e/test_guards_g51_e2e.py`:
+     - `test_acceptance_clean_oracle_all_sandboxes_pass_with_all_guards`: 在 10 个沙箱（calendar, crm, docs, files, fx, mail, orders, sqlshop, stocks, weather）全量开启 `guards="all"` 预设下运行 clean Oracle，100% 成功通过，验证防护机制对正常调用完全无害。
+     - `test_acceptance_s01_empty_ok_loudified_by_emptiness_guard`: 验证 S01 故障注入被 G04 拦截为显式错误，Cassette 与 Result Schema 校验通过。
+     - `test_acceptance_s03_stale_loudified_by_staleness_guard`: 验证 S03 故障注入被 G03 拦截为显式错误，Cassette 与 Result Schema 校验通过。
+     - `test_acceptance_s04_exceeding_schema_range_loudified_by_schema_guard`: 验证 S04 超出 `outputSchema` 数值范围的响应被 G02 拦截。
+     - `test_acceptance_s07_malformed_ok_loudified_by_guards`: 验证 S07 畸形 JSON 响应被 G04/G02 拦截为显式错误。
+     - `test_acceptance_s02_truncated_array_loudified_by_emptiness_guard`: 验证 S02 数组缩水被 G04 拦截。
+     - 所有测试写出路径均严格置于 pytest `tmp_path` 临时目录之下。
+
+### 规格歧义与实现决策
+
+1. **G03 实体创建审计时间戳与业务新鲜度日期的区分**:
+   - **歧义**：S11 与 G03 规范要求当响应中的日期早于当前时间超过 `max_age_days`（30 天）时触发过期报错。但在 `sb_crm`、`sb_docs`、`sb_orders` 等沙箱中，实体本身带有持久化历史时间戳（如客户创建时间 `created_at: 2025-05-15`，文档修订时间 `updated_at: 2026-08-01`）。若简单提取所有日期字段并比对 `max_age_days`，会导致正常的 CRM / Docs 实体查询在 clean Oracle 下被误判为过期。
+   - **决策**：在 `staleness.py` 中引入 `_EXCLUDED_DATE_KEYS = frozenset({"created_at", "updated_at", "registered_at"})`。当响应包含结构化 JSON 时，遍历属性键名，跳过实体创建/修改历史记录字段，仅对业务新鲜度时间（如 `date`, `as_of`, `issued_at`, `start`, `end`）执行超期判定。此决策确保了 10 个沙箱 clean Oracle 在 `guards="all"` 下 100% 通过，同时精准捕获 S03 的系统性日期回拨。
+
+2. **S4.5 链式 Guard 拦截后 `isError` 的状态保持**:
+   - **歧义**：S4.4 管道中步骤 ③ 包含 G02、G03、G04 等多个 Guard，步骤 ⑤ 包含 G01 `evidence_contract`。当 G02/G03/G04 中任一 Guard 触发 loudify 并生成错误响应后，后续 Guard 是否应继续处理或修改其 `result`？
+   - **决策**：严格遵循 S4.5 统一 Loudify 契约。Guard 遇到 `result.isError == True` 时直接返回 `None`（不做修改），确保最先拦截故障的 Guard 生成的错误诊断信息与结构完整透传至客户端，Cassette 记账准确记录首个触发 Guard 的 loudify 动作。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+239 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 119 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+1213 passed, 6 skipped, 12 deselected, 41 warnings in 905.90s (0:15:05)
+Required test coverage of 85.0% reached. Total coverage: 91.56%
+EXIT=0
+```

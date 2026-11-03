@@ -51,6 +51,10 @@ class EvidenceContract(Guard):
         if msg.result.get("resultType", "complete") != "complete":
             return None
 
+        # Do not append evidence contract to error results
+        if msg.result.get("isError") is True:
+            return None
+
         result: dict[str, Any] = dict(msg.result)
         raw_content = result.get("content")
         content: list[dict[str, Any]] = (

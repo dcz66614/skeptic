@@ -182,6 +182,7 @@ async def _run_steps_sequence(
     fault_id: str | None = None,
     seed: int = 0,
     state_file: Path | None = None,
+    guards: str | Sequence[str] | None = None,
 ) -> tuple[bool, list[OracleStepResult]]:
     """Run a sequence of steps over stdio proxy in a fresh sandbox process.
 
@@ -217,6 +218,9 @@ async def _run_steps_sequence(
         ]
         if fault_id and fault_id.lower() != "none":
             args += ["--profile", fault_id]
+        if guards:
+            guards_arg = guards if isinstance(guards, str) else ",".join(guards)
+            args += ["--guards", guards_arg]
         if temp_state_path:
             args += ["--state-file", str(temp_state_path)]
 
@@ -264,6 +268,7 @@ async def run_oracle_async(
     *,
     seed: int = 0,
     state_file: Path | str | None = None,
+    guards: str | Sequence[str] | None = None,
 ) -> OracleRunResult:
     """Execute Oracle on a scenario under an optional fault (S8.3).
 
@@ -287,6 +292,7 @@ async def run_oracle_async(
         fault_id=target_fault,
         seed=seed,
         state_file=state_path,
+        guards=guards,
     )
 
     if steps_passed:
@@ -322,6 +328,7 @@ async def run_oracle_async(
             fault_id=target_fault,
             seed=seed,
             state_file=state_path,
+            guards=guards,
         )
         if rec_passed:
             return OracleRunResult(
@@ -342,6 +349,7 @@ async def run_oracle_async(
             fault_id=target_fault,
             seed=seed,
             state_file=state_path,
+            guards=guards,
         )
         if rec_passed:
             return OracleRunResult(
@@ -370,6 +378,7 @@ def run_oracle(
     *,
     seed: int = 0,
     state_file: Path | str | None = None,
+    guards: str | Sequence[str] | None = None,
 ) -> OracleRunResult:
     """Synchronous entry point for running Oracle on a scenario (S8.3).
 
@@ -378,11 +387,14 @@ def run_oracle(
         fault: Fault ID, 'none', or None.
         seed: Random seed.
         state_file: Optional explicit state file.
+        guards: Guard list or preset name.
 
     Returns:
         OracleRunResult.
     """
-    return asyncio.run(run_oracle_async(scenario, fault=fault, seed=seed, state_file=state_file))
+    return asyncio.run(
+        run_oracle_async(scenario, fault=fault, seed=seed, state_file=state_file, guards=guards)
+    )
 
 
 def determine_recoverability(
