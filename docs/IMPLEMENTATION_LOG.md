@@ -3520,3 +3520,7 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 90.74%
 EXIT=0
 ```
+
+## G52 merge (2026-11-03)
+
+- codex  ff-merged to main. 
