@@ -1,0 +1,965 @@
+{
+  "schema": "skeptic.findings/v1",
+  "findings": [
+    {
+      "id": "FINDING-001",
+      "severity": "medium",
+      "fault_id": "L01",
+      "tool": "get_forecast",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.get-forecast.sample-01.001__L01__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__L01__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__L01__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.get-forecast.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'get_forecast' (fault L01). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-002",
+      "severity": "medium",
+      "fault_id": "L02",
+      "tool": "get_forecast",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.get-forecast.sample-01.001__L02__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__L02__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__L02__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.get-forecast.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'get_forecast' (fault L02). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-003",
+      "severity": "medium",
+      "fault_id": "L03",
+      "tool": "get_forecast",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.get-forecast.sample-01.001__L03__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__L03__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__L03__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.get-forecast.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'get_forecast' (fault L03). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": true
+    },
+    {
+      "id": "FINDING-004",
+      "severity": "medium",
+      "fault_id": "L05",
+      "tool": "get_forecast",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.get-forecast.sample-01.001__L05__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__L05__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__L05__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.get-forecast.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'get_forecast' (fault L05). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": true
+    },
+    {
+      "id": "FINDING-005",
+      "severity": "medium",
+      "fault_id": "L06",
+      "tool": "get_forecast",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.get-forecast.sample-01.001__L06__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__L06__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__L06__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.get-forecast.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'get_forecast' (fault L06). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-006",
+      "severity": "medium",
+      "fault_id": "S01",
+      "tool": "get_forecast",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.get-forecast.sample-01.001__S01__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__S01__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__S01__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.get-forecast.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'get_forecast' (fault S01). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-007",
+      "severity": "medium",
+      "fault_id": "S02",
+      "tool": "get_forecast",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.get-forecast.sample-01.001__S02__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__S02__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__S02__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.get-forecast.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'get_forecast' (fault S02). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-008",
+      "severity": "medium",
+      "fault_id": "S04",
+      "tool": "get_forecast",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.get-forecast.sample-01.001__S04__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__S04__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__S04__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.get-forecast.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'get_forecast' (fault S04). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-009",
+      "severity": "medium",
+      "fault_id": "S05",
+      "tool": "get_forecast",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.get-forecast.sample-01.001__S05__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__S05__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__S05__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.get-forecast.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'get_forecast' (fault S05). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-010",
+      "severity": "medium",
+      "fault_id": "S06",
+      "tool": "get_forecast",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.get-forecast.sample-01.001__S06__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__S06__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__S06__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.get-forecast.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'get_forecast' (fault S06). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-011",
+      "severity": "medium",
+      "fault_id": "S07",
+      "tool": "get_forecast",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.get-forecast.sample-01.001__S07__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__S07__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__S07__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.get-forecast.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'get_forecast' (fault S07). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-012",
+      "severity": "medium",
+      "fault_id": "S08",
+      "tool": "get_forecast",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.get-forecast.sample-01.001__S08__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__S08__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.get-forecast.sample-01.001__S08__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.get-forecast.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'get_forecast' (fault S08). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-013",
+      "severity": "high",
+      "fault_id": "L01",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__L01__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__L01__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__L01__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault L01). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-014",
+      "severity": "high",
+      "fault_id": "L02",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__L02__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__L02__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__L02__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault L02). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-015",
+      "severity": "high",
+      "fault_id": "L03",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__L03__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__L03__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__L03__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault L03). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-016",
+      "severity": "high",
+      "fault_id": "L05",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__L05__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__L05__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__L05__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault L05). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-017",
+      "severity": "high",
+      "fault_id": "L06",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__L06__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__L06__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__L06__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault L06). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-018",
+      "severity": "high",
+      "fault_id": "S01",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__S01__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S01__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S01__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault S01). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-019",
+      "severity": "high",
+      "fault_id": "S02",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__S02__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S02__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S02__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault S02). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-020",
+      "severity": "high",
+      "fault_id": "S03",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__S03__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S03__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S03__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault S03). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-021",
+      "severity": "high",
+      "fault_id": "S04",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__S04__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S04__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S04__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault S04). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-022",
+      "severity": "high",
+      "fault_id": "S05",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__S05__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S05__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S05__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault S05). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-023",
+      "severity": "high",
+      "fault_id": "S06",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__S06__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S06__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S06__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault S06). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-024",
+      "severity": "high",
+      "fault_id": "S07",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__S07__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S07__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S07__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault S07). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-025",
+      "severity": "high",
+      "fault_id": "S08",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__S08__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S08__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S08__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault S08). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-026",
+      "severity": "high",
+      "fault_id": "S10",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__S10__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S10__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__S10__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault S10). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-027",
+      "severity": "high",
+      "fault_id": "A01",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__A01__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__A01__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__A01__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault A01). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-028",
+      "severity": "high",
+      "fault_id": "A02",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__A02__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__A02__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__A02__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault A02). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-029",
+      "severity": "high",
+      "fault_id": "A03",
+      "tool": "write_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.write-file.sample-01.001__A03__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__A03__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.write-file.sample-01.001__A03__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.write-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'write_file' (fault A03). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-030",
+      "severity": "medium",
+      "fault_id": "L01",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__L01__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__L01__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__L01__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault L01). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-031",
+      "severity": "medium",
+      "fault_id": "L02",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__L02__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__L02__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__L02__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault L02). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-032",
+      "severity": "medium",
+      "fault_id": "L03",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__L03__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__L03__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__L03__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault L03). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-033",
+      "severity": "medium",
+      "fault_id": "L05",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__L05__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__L05__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__L05__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault L05). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-034",
+      "severity": "medium",
+      "fault_id": "L06",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__L06__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__L06__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__L06__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault L06). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-035",
+      "severity": "medium",
+      "fault_id": "S01",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__S01__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__S01__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__S01__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault S01). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-036",
+      "severity": "medium",
+      "fault_id": "S02",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__S02__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__S02__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__S02__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault S02). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-037",
+      "severity": "medium",
+      "fault_id": "S03",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__S03__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__S03__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__S03__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault S03). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-038",
+      "severity": "medium",
+      "fault_id": "S04",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__S04__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__S04__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__S04__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault S04). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-039",
+      "severity": "medium",
+      "fault_id": "S06",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__S06__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__S06__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__S06__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault S06). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-040",
+      "severity": "medium",
+      "fault_id": "S07",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__S07__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__S07__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__S07__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault S07). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-041",
+      "severity": "medium",
+      "fault_id": "S08",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__S08__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__S08__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__S08__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault S08). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-042",
+      "severity": "medium",
+      "fault_id": "A01",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__A01__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__A01__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__A01__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault A01). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-043",
+      "severity": "medium",
+      "fault_id": "A02",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__A02__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__A02__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__A02__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault A02). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-044",
+      "severity": "medium",
+      "fault_id": "A03",
+      "tool": "list_cities",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__weather.list-cities.sample-01.001__A03__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__A03__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__weather.list-cities.sample-01.001__A03__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/weather.list-cities.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'list_cities' (fault A03). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-045",
+      "severity": "medium",
+      "fault_id": "L01",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__L01__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__L01__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__L01__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault L01). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-046",
+      "severity": "medium",
+      "fault_id": "L02",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__L02__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__L02__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__L02__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault L02). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-047",
+      "severity": "medium",
+      "fault_id": "L03",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__L03__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__L03__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__L03__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault L03). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-048",
+      "severity": "medium",
+      "fault_id": "L05",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__L05__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__L05__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__L05__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault L05). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-049",
+      "severity": "medium",
+      "fault_id": "L06",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__L06__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__L06__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__L06__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault L06). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-050",
+      "severity": "medium",
+      "fault_id": "S01",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__S01__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S01__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S01__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault S01). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-051",
+      "severity": "medium",
+      "fault_id": "S02",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__S02__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S02__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S02__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault S02). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-052",
+      "severity": "medium",
+      "fault_id": "S03",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__S03__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S03__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S03__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault S03). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-053",
+      "severity": "medium",
+      "fault_id": "S04",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__S04__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S04__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S04__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault S04). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-054",
+      "severity": "medium",
+      "fault_id": "S05",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__S05__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S05__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S05__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault S05). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-055",
+      "severity": "medium",
+      "fault_id": "S06",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__S06__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S06__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S06__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault S06). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-056",
+      "severity": "medium",
+      "fault_id": "S07",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__S07__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S07__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S07__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault S07). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-057",
+      "severity": "medium",
+      "fault_id": "S08",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__S08__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S08__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__S08__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault S08). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-058",
+      "severity": "medium",
+      "fault_id": "A01",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__A01__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__A01__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__A01__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault A01). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-059",
+      "severity": "medium",
+      "fault_id": "A02",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__A02__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__A02__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__A02__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault A02). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    },
+    {
+      "id": "FINDING-060",
+      "severity": "medium",
+      "fault_id": "A03",
+      "tool": "read_file",
+      "outcome": "FALSE_SUCCESS",
+      "reproduced": "3/3",
+      "evidence": [
+        "baseline/cassettes/20261103-191146-946dfc__files.read-file.sample-01.001__A03__1.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__A03__2.jsonl",
+        "verify/cassettes/20261103-191529-f5e7b1__files.read-file.sample-01.001__A03__3.jsonl"
+      ],
+      "repro_command": "skeptic run --scenario audit/scenarios/files.read-file.sample-01.001.yaml --profile audit/profile.yaml --seeds 1",
+      "recommended_fix": "Agent accepted corrupted or empty output from 'read_file' (fault A03). Enable G01 Evidence Contract and G02 Schema Validation guard. Add explicit client validation ensuring required fields are non-empty.",
+      "fix_verified": false
+    }
+  ]
+}

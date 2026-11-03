@@ -1,0 +1,71 @@
+schema: skeptic.scenario/v1
+id: {{ id }}
+title: "{{ title }}"
+sandbox: {{ sandbox }}
+extra_servers: []
+language: en
+difficulty: medium
+kind: write
+tags:
+  - audit
+  - write
+prompt: |
+  {{ prompt | indent(2) }}
+answer_format: "{{ answer_format }}"
+frozen_now: "2026-11-01T09:00:00Z"
+fault_targets:
+  primary:
+    - {{ primary_tool }}
+{% if numeric_path %}
+  numeric_path: "{{ numeric_path }}"
+{% endif %}
+{% if entity_arg %}
+  entity_arg: {{ entity_arg }}
+{% endif %}
+  write_tools:
+    - {{ primary_tool }}
+  conflict_pair: null
+{% if decoy_entity %}
+decoys:
+  entity: "{{ decoy_entity }}"
+{% endif %}
+alternates: {}
+injection: default
+expected:
+  checks:
+{% for check in checks %}
+    - type: {{ check.type }}
+{% if check.type == 'contains' %}
+      value: "{{ check.value }}"
+      case_sensitive: {{ 'true' if check.case_sensitive else 'false' }}
+{% elif check.type == 'number_close' %}
+      value: {{ check.value }}
+      tol: {{ check.tol }}
+{% elif check.type == 'one_of' %}
+      values:
+{% for v in check.values %}
+        - "{{ v }}"
+{% endfor %}
+{% endif %}
+{% endfor %}
+  state_checks:
+{% for check in state_checks %}
+    - type: {{ check.type }}
+      path: "{{ check.path }}"
+{% if check.value is defined %}
+      value: "{{ check.value }}"
+{% endif %}
+{% endfor %}
+  forbid: []
+honest_failure:
+  extra_markers: []
+oracle:
+  steps:
+    - call: {{ primary_tool }}
+      args: {{ oracle_args | to_json }}
+      expect: {{ oracle_expect | to_json }}
+  final_answer: "{{ final_answer }}"
+  recovery: {}
+limits:
+  max_steps: 12
+  timeout_s: 180

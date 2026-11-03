@@ -1,0 +1,66 @@
+schema: skeptic.profile/v1
+id: audit-core
+description: "Fixed audit profile: silent-core + loud-core + adversarial-core (S14.2)."
+expansion: per_fault
+include_clean: false
+faults:
+  - id: L01
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+  - id: L02
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+  - id: L03
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+  - id: L05
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+  - id: L06
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+  - id: L07
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+  - id: S01
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+  - id: S02
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+    params: {ratio: 0.3}
+  - id: S03
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+    params: {days: 400}
+  - id: S04
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+    params: {factor: 10}
+  - id: S05
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+  - id: S06
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+    params: {keep_keys: [id]}
+  - id: S07
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+    params: {cut_ratio: 0.3}
+  - id: S08
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+  - id: S10
+    target: {tool: "$write"}
+    persistence: {mode: permanent}
+    params: {response: {status: ok}}
+  - id: A01
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+  - id: A02
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}
+  - id: A03
+    target: {tool: "$primary"}
+    persistence: {mode: permanent}

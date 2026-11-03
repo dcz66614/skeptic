@@ -1,0 +1,155 @@
+{
+  "project": "04-skill-demo",
+  "servers": {
+    "weather": {
+      "transport": "stdio",
+      "scope": "project",
+      "client": "generic",
+      "command": [
+        "python",
+        "-m",
+        "skeptic_agent.sandboxes.sb_weather"
+      ],
+      "sandbox": "sb_weather",
+      "tools": [
+        {
+          "name": "list_cities",
+          "description": "List the cities this weather service has forecasts for.",
+          "kind": "read",
+          "inputSchema": {
+            "additionalProperties": false,
+            "description": "No arguments; the S9.1 read tools still publish an object schema.\n\nAn unexpected argument is rejected rather than silently ignored.",
+            "properties": {},
+            "title": "NoArguments",
+            "type": "object"
+          }
+        },
+        {
+          "name": "get_forecast",
+          "description": "Return the forecast (max/min Celsius, condition) for a city and date.",
+          "kind": "read",
+          "inputSchema": {
+            "description": "The arguments of ``get_forecast`` and ``get_forecast_consensus``.",
+            "properties": {
+              "city": {
+                "description": "The city name, for example 'Paris'.",
+                "title": "City",
+                "type": "string"
+              },
+              "date": {
+                "description": "The forecast date, YYYY-MM-DD.",
+                "title": "Date",
+                "type": "string"
+              }
+            },
+            "required": [
+              "city",
+              "date"
+            ],
+            "title": "CityArguments",
+            "type": "object"
+          }
+        }
+      ]
+    },
+    "files": {
+      "transport": "stdio",
+      "scope": "project",
+      "client": "generic",
+      "command": [
+        "python",
+        "-m",
+        "skeptic_agent.sandboxes.sb_files"
+      ],
+      "sandbox": "sb_files",
+      "tools": [
+        {
+          "name": "list_dir",
+          "description": "List one directory's direct files and subdirectories.",
+          "kind": "read",
+          "inputSchema": {
+            "description": "The arguments of ``list_dir``, ``read_file`` and ``stat``.",
+            "properties": {
+              "path": {
+                "description": "A path under /home/user, absolute or relative to it.",
+                "title": "Path",
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "title": "PathArguments",
+            "type": "object"
+          }
+        },
+        {
+          "name": "read_file",
+          "description": "Return one file's full content and metadata.",
+          "kind": "read",
+          "inputSchema": {
+            "description": "The arguments of ``list_dir``, ``read_file`` and ``stat``.",
+            "properties": {
+              "path": {
+                "description": "A path under /home/user, absolute or relative to it.",
+                "title": "Path",
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "title": "PathArguments",
+            "type": "object"
+          }
+        },
+        {
+          "name": "stat",
+          "description": "Return one path's size and modification time (directories report no content).",
+          "kind": "read",
+          "inputSchema": {
+            "description": "The arguments of ``list_dir``, ``read_file`` and ``stat``.",
+            "properties": {
+              "path": {
+                "description": "A path under /home/user, absolute or relative to it.",
+                "title": "Path",
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "title": "PathArguments",
+            "type": "object"
+          }
+        },
+        {
+          "name": "write_file",
+          "description": "Create or replace a file (idempotent, destructive on overwrite).",
+          "kind": "write",
+          "inputSchema": {
+            "description": "The arguments of ``write_file``.",
+            "properties": {
+              "path": {
+                "description": "A file path under /home/user.",
+                "title": "Path",
+                "type": "string"
+              },
+              "content": {
+                "description": "The new content, at most 100000 characters.",
+                "title": "Content",
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ],
+            "title": "WriteArguments",
+            "type": "object"
+          }
+        }
+      ]
+    }
+  }
+}

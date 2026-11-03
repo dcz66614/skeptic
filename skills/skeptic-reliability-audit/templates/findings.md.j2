@@ -1,0 +1,79 @@
+# Skeptic Reliability Audit Summary
+
+## Executive Summary
+
+- **Project:** {{ project }}
+- **Audit Date:** {{ audit_date }}
+- **Total Tools Audited:** {{ total_tools }}
+- **Total Scenarios Evaluated:** {{ total_scenarios }}
+- **Total Findings Discovered:** {{ total_findings }}
+  - **Critical:** {{ counts.critical }}
+  - **High:** {{ counts.high }}
+  - **Medium:** {{ counts.medium }}
+  - **Low:** {{ counts.low }}
+- **Verified Fix Rate:** {{ verified_fix_rate }}%
+
+---
+
+## Findings Overview
+
+| ID | Severity | Fault | Tool | Outcome | Replicated | Verified Fix |
+|---|---|---|---|---|---|---|
+{% for f in findings %}
+| `{{ f.id }}` | **{{ f.severity | upper }}** | `{{ f.fault_id }}` | `{{ f.tool }}` | `{{ f.outcome }}` | {{ f.reproduced }} | {{ '✅ Yes' if f.fix_verified else '❌ No' }} |
+{% endfor %}
+
+---
+
+## Detailed Findings & Hardening Recommendations
+
+{% for f in findings %}
+### Finding `{{ f.id }}`: {{ f.tool }} under {{ f.fault_id }} ({{ f.severity | upper }})
+
+- **Tool:** `{{ f.tool }}`
+- **Fault Injected:** `{{ f.fault_id }}`
+- **Observed Outcome:** `{{ f.outcome }}`
+- **Replication Rate:** `{{ f.reproduced }}` (verified across multiple seeds)
+- **Fix Verified:** {{ 'Yes' if f.fix_verified else 'No' }}
+
+#### Reproduction Command
+```bash
+{{ f.repro_command }}
+```
+
+#### Evidence Cassettes
+{% for c in f.evidence %}
+- `{{ c }}`
+{% endfor %}
+
+#### Recommended Fix
+{{ f.recommended_fix }}
+
+---
+{% endfor %}
+
+## Hardening Verification
+
+{% if comparison %}
+### Comparison: Baseline vs Hardened Run
+
+| Metric | Baseline | Hardened | Delta |
+|---|---|---|---|
+| **SKS** | {{ comparison.baseline.sks }} | {{ comparison.hardened.sks }} | {{ comparison.delta.sks }} |
+| **Recovery Rate (RR)** | {{ comparison.baseline.rr }} | {{ comparison.hardened.rr }} | {{ comparison.delta.rr }} |
+| **Safe Rate** | {{ comparison.baseline.safe_rate }} | {{ comparison.hardened.safe_rate }} | {{ comparison.delta.safe_rate }} |
+| **False Success Rate (FSR)** | {{ comparison.baseline.fsr }} | {{ comparison.hardened.fsr }} | {{ comparison.delta.fsr }} |
+| **Silent Corruption Rate (SCR)** | {{ comparison.baseline.scr }} | {{ comparison.hardened.scr }} | {{ comparison.delta.scr }} |
+| **Injection Compromise Rate (ICR)** | {{ comparison.baseline.icr }} | {{ comparison.hardened.icr }} | {{ comparison.delta.icr }} |
+{% endif %}
+
+### Recommended Agent Configuration
+1. **Enable Recommended Guards:**
+   ```bash
+   skeptic wrap <config_file> --guards recommended
+   ```
+   Active guards include G01 (Evidence Contract), G02 (Schema Validation), G04 (Emptiness/Truncation), and G06 (Loop Detection).
+2. **Apply Evidence Contract System Prompt:**
+   Add evidence contract constraints before final answer generation (`--prompt-variant evidence_contract`).
+3. **Tool Error Handling Patches:**
+   Ensure every MCP client tool dispatch has an explicit failure branch and does not treat error responses as successful execution.
