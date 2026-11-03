@@ -3783,3 +3783,7 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 90.73%
 EXIT=0
 ```
+
+## K55 merge (2026-11-03)
+
+- codex  ff-merged to main. 
