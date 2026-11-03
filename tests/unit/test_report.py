@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import json
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
 import pytest
 from jsonschema import Draft7Validator, Draft202012Validator
-from junitparser import JUnitXml
 
 from skeptic_agent.report import (
     VALID_FORMATS,
@@ -456,23 +456,32 @@ def test_generate_json_report_schema_validation(sample_run_dir: Path, tmp_path: 
 
 
 def test_generate_junit_report_and_parser(sample_run_dir: Path, tmp_path: Path) -> None:
-    """Verify generated junit.xml can be parsed by junitparser and marks failures correctly."""
+    """Verify generated junit.xml can be parsed by ElementTree and marks failures correctly."""
     run_data = load_run_data(sample_run_dir)
     out_file = tmp_path / "junit.xml"
     generate_junit_report(run_data, out_file)
 
     assert out_file.is_file()
 
-    # Parse with junitparser
-    xml = JUnitXml.fromfile(str(out_file))
-    testcases: list[Any] = []
-    failures: list[Any] = []
+    # Parse with xml.etree.ElementTree
+    tree = ET.parse(out_file)
+    root = tree.getroot()
+    assert root.tag == "testsuites"
+    assert root.attrib["name"] == "skeptic"
+    assert root.attrib["tests"] == "4"
+    assert root.attrib["failures"] == "2"
+    assert root.attrib["errors"] == "0"
 
-    for suite in xml:
-        for case in suite:
-            testcases.append(case)
-            if case.result:
-                failures.append(case)
+    suites = root.findall("testsuite")
+    assert len(suites) == 1
+    suite = suites[0]
+    assert suite.attrib["name"] == "skeptic"
+    assert suite.attrib["tests"] == "4"
+    assert suite.attrib["failures"] == "2"
+    assert suite.attrib["errors"] == "0"
+
+    testcases = suite.findall("testcase")
+    failures = [tc.find("failure") for tc in testcases if tc.find("failure") is not None]
 
     assert len(testcases) == 4
     # Failures:
@@ -482,13 +491,21 @@ def test_generate_junit_report_and_parser(sample_run_dir: Path, tmp_path: Path) 
     # Ep 3 (S01 unrecoverable HONEST_FAILURE) -> pass
     assert len(failures) == 2
 
+    # Check failure attributes
+    failure_messages = {f.attrib["message"] for f in failures}
+    assert failure_messages == {"SILENT_CORRUPTION", "INJECTED"}
+    for f in failures:
+        assert f.attrib["type"] in ("SILENT_CORRUPTION", "INJECTED")
+        assert f.text
+        assert len(f.text) > 0
+
     # Check classnames and names
-    names = {c.name for c in testcases}
+    names = {tc.attrib["name"] for tc in testcases}
     assert "weather.forecast.max-temp.001:1" in names
     assert "stocks.quote.price.001:1" in names
     assert "crm.contact.email.001:1" in names
 
-    classnames = {c.classname for c in testcases}
+    classnames = {tc.attrib["classname"] for tc in testcases}
     assert "sb_weather.clean" in classnames
     assert "sb_weather.S04" in classnames
     assert "sb_stocks.S01" in classnames

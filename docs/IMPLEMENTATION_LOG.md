@@ -3306,3 +3306,53 @@ EXIT=0
 ## G50 merge (2026-11-03)
 
 - codex  ff-merged to main. 
+
+
+## E49fix2 移除 junitparser 并改用标准库 ElementTree 校验（2026-11-03）
+
+基线 `c869eee`，分支 `codex`。修复针对 E49 的 follow-up：移除开发依赖项 `junitparser`，在测试套件中使用 Python 标准库 `xml.etree.ElementTree` 严格校验 JUnit XML 结构（`<testsuites>` / `<testsuite>` / `<testcase>` / `<failure>` 节点及其 counts、attributes），保持零外部冗余依赖与测试输出环境隔离。
+
+### 交付内容
+
+1. **依赖移除与锁定文件同步**:
+   - `pyproject.toml`: 移除 `[dependency-groups]` 中的 `dev = ["junitparser>=5.0.3"]` 项，彻底去除多余的 `junitparser` 依赖。
+   - `uv.lock`: 执行 `uv lock` 重新锁定，清理 `junitparser` 对应包信息与元数据定义。
+
+2. **单元与集成测试重构**:
+   - `tests/unit/test_report.py`: 移除 `from junitparser import JUnitXml`，改用 `xml.etree.ElementTree as ET`。解析 `out_file` 生成的 XML 树，严格断言：
+     - 根元素 `<testsuites>` 及其 `name`、`tests="4"`、`failures="2"`、`errors="0"` 属性；
+     - 子元素 `<testsuite>` 及其属性与单测试套件契约；
+     - 4 个 `<testcase>` 元素，断言其 `classname` 与 `name`（涵盖 clean、S04、S01、A01 沙箱与故障映射）；
+     - 2 个 `<failure>` 节点，断言其 `message` 与 `type` 匹配 `SILENT_CORRUPTION` 与 `INJECTED`，且包含详细非空诊断文本。
+   - `tests/integration/test_report_integration.py`: 移除 `junitparser` 导入，改用 `xml.etree.ElementTree as ET` 断言生成的 `junit.xml` 根容器为 `<testsuites>`，提取所有 `<testsuite>` 内的 `<testcase>` 并断言用例数与根节点属性一致，核验 `<failure>` 数量符合预期。
+   - 所有测试写出路径均严格置于 pytest `tmp_path` 临时目录之下。
+
+### 规格歧义与实现决策
+
+1. **`[dependency-groups]` 配置段清理**:
+   - **歧义**：移除 `dev = ["junitparser>=5.0.3"]` 后，是否保留空的 `[dependency-groups]` 表？
+   - **决策**：在引入 `junitparser` 之前，`pyproject.toml` 中并无 `[dependency-groups]`。为保持配置简洁、避免遗留空配置表，彻底移除 `[dependency-groups]` 字段，与已有规范一致，`uv lock` 能够干净移除非必要的 dev-dependencies。
+2. **ElementTree 结构与属性断言完整性**:
+   - **歧义**：原先使用 `junitparser.JUnitXml.fromfile(...)` 仅验证了解析成功以及 `suite` / `case.result` 存在。
+   - **决策**：使用标准库 `xml.etree.ElementTree` 对 XML 结构做更精细的 fail-closed 结构与属性断言（`<testsuites>` -> `<testsuite>` -> `<testcase>` -> `<failure>`），逐层校验 `tests`、`failures`、`errors` 统计值与失败标签 `message`、`type` 及诊断内容，既完全消除外部第三方库依赖，又提供了比原本 `junitparser` 更完备严格的结构保真度验证。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+231 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 114 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+1183 passed, 6 skipped, 12 deselected, 41 warnings in 850.27s (0:14:10)
+Required test coverage of 85.0% reached. Total coverage: 91.62%
+EXIT=0
+```

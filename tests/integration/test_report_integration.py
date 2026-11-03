@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import json
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pytest
 from jsonschema import Draft7Validator, Draft202012Validator
-from junitparser import JUnitXml
 from typer.testing import CliRunner
 
 from skeptic_agent.cli import app
@@ -54,9 +54,21 @@ async def test_report_generation_from_real_run(tmp_path: Path) -> None:
     # 2. junit.xml
     junit_path = out_dir / "junit.xml"
     assert junit_path.is_file()
-    xml = JUnitXml.fromfile(str(junit_path))
-    testcase_count = sum(len(list(suite)) for suite in xml)
-    assert testcase_count > 0
+    tree = ET.parse(junit_path)
+    root = tree.getroot()
+    assert root.tag == "testsuites"
+    assert root.attrib["name"] == "skeptic"
+    suites = root.findall("testsuite")
+    assert len(suites) > 0
+    suite = suites[0]
+    assert suite.attrib["name"] == "skeptic"
+    testcases = [tc for s in suites for tc in s.findall("testcase")]
+    assert len(testcases) > 0
+    assert int(root.attrib.get("tests", "0")) == len(testcases)
+    assert int(suite.attrib.get("tests", "0")) == len(testcases)
+    failures = [tc.find("failure") for tc in testcases if tc.find("failure") is not None]
+    assert int(root.attrib.get("failures", "0")) == len(failures)
+    assert int(suite.attrib.get("failures", "0")) == len(failures)
 
     # 3. skeptic.sarif
     sarif_path = out_dir / "skeptic.sarif"

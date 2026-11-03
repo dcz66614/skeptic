@@ -96,7 +96,3 @@ source = ["skeptic_agent"]
 [tool.coverage.report]
 fail_under = 85
 
-[dependency-groups]
-dev = [
-    "junitparser>=5.0.3",
-]
