@@ -3218,3 +3218,7 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 91.61%
 EXIT=0
 ```
+
+## E49 merge (2026-11-03)
+
+- codex  ff-merged to main. 
