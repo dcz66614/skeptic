@@ -614,6 +614,10 @@ def run_command(
         bool,
         typer.Option("--resume", help="Resume run, skipping completed episodes."),
     ] = False,
+    ledger: Annotated[
+        Path | None,
+        typer.Option("--ledger", help="Path to ledger CSV file."),
+    ] = None,
 ) -> None:
     """Run an evaluation suite or scenario list and score results (S2, E48)."""
     if not suite and not scenario:
@@ -656,6 +660,7 @@ def run_command(
                 out_dir=out,
                 resume=resume,
                 command_str=f"skeptic {cmd_repr}",
+                ledger_path=ledger,
             )
         )
         ag = summary["agents"][0] if summary.get("agents") else {}
@@ -698,6 +703,10 @@ def bench_run(
         Path | None,
         typer.Option("--out", help="Base output directory for runs."),
     ] = None,
+    ledger: Annotated[
+        Path | None,
+        typer.Option("--ledger", help="Path to ledger CSV file."),
+    ] = None,
 ) -> None:
     """Run a batch matrix evaluation (S2, S16.2, E48)."""
     if not matrix.is_file():
@@ -719,6 +728,7 @@ def bench_run(
                 max_cost_usd=max_cost_usd,
                 concurrency=concurrency,
                 out_dir=out,
+                ledger_path=ledger,
             )
         )
         typer.echo(f"Matrix benchmark completed: {len(summaries)} run(s) executed.")

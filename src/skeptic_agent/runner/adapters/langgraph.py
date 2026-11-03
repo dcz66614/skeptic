@@ -92,24 +92,29 @@ def _ensure_mcp_compat() -> None:
         ClientSession.list_tools = _patched_list_tools  # type: ignore[method-assign]
 
 
-# Run compatibility shim before importing langchain_mcp_adapters
-_ensure_mcp_compat()
+try:
+    _ensure_mcp_compat()
+    import langgraph  # noqa: F401
+    from langchain_core.messages import (
+        AIMessage,
+        BaseMessage,
+        HumanMessage,
+        ToolMessage,
+    )
+    from langchain_mcp_adapters.client import MultiServerMCPClient
+    from langchain_mcp_adapters.sessions import Connection, StdioConnection
+    from langchain_openai import ChatOpenAI
+    from langgraph.errors import GraphRecursionError
+    from pydantic import SecretStr
 
-from langchain_core.messages import (  # noqa: E402
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    ToolMessage,
-)
-from langchain_mcp_adapters.client import MultiServerMCPClient  # noqa: E402
-from langchain_mcp_adapters.sessions import Connection, StdioConnection  # noqa: E402
-from langchain_openai import ChatOpenAI  # noqa: E402
-from langgraph.errors import GraphRecursionError  # noqa: E402
-from pydantic import SecretStr  # noqa: E402
-
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    from langgraph.prebuilt import create_react_agent
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        from langgraph.prebuilt import create_react_agent
+except ImportError as exc:
+    raise ImportError(
+        f"LangGraph adapter requires the 'langgraph' extra: {exc}. "
+        "Install with: uv pip install 'skeptic-agent[langgraph]'"
+    ) from exc
 
 from skeptic_agent.runner.adapters.base import AgentRunResult, EpisodeTask, Usage  # noqa: E402
 from skeptic_agent.runner.llm import (  # noqa: E402

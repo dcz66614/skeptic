@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -789,9 +790,13 @@ async def execute_run(
     total_cost = sum(float((ep.get("usage") or {}).get("cost_usd", 0.0)) for ep in ordered_records)
     _, model_name = parse_agent_spec(agent)
 
-    target_ledger = (
-        Path(ledger_path) if ledger_path is not None else (ROOT_DIR / "bench" / "ledger.csv")
-    )
+    env_ledger = os.environ.get("SKEPTIC_LEDGER_PATH")
+    if ledger_path is not None:
+        target_ledger = Path(ledger_path)
+    elif env_ledger:
+        target_ledger = Path(env_ledger)
+    else:
+        target_ledger = ROOT_DIR / "bench" / "ledger.csv"
     append_ledger_entry(
         target_ledger,
         task_id=task_id,

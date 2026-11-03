@@ -31,10 +31,12 @@ async def test_report_generation_from_real_run(tmp_path: Path) -> None:
         seeds=[1],
         concurrency=2,
         out_dir=out_dir,
+        ledger_path=tmp_path / "ledger.csv",
     )
 
     assert (out_dir / "results.jsonl").is_file()
     assert (out_dir / "summary.json").is_file()
+    assert (tmp_path / "ledger.csv").is_file()
     assert summary["schema"] == "skeptic.report/v1"
 
     # Now generate reports using CLI

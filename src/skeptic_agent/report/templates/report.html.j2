@@ -300,6 +300,31 @@
       font-size: 0.75rem;
     }
     .diff-pane.modified { background: var(--diff-bg); }
+
+    /* Conversation History (Transcript) */
+    .transcript-box {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-top: 8px;
+      background: var(--bg);
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .transcript-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+    .transcript-item:last-child {
+      border-bottom: none;
+    }
+    .transcript-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
     pre { margin: 0; white-space: pre-wrap; word-break: break-all; }
   </style>
 </head>
@@ -506,6 +531,47 @@
               <div style="margin: 8px 0; padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px;">
                 <div style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted);">FINAL ANSWER:</div>
                 <div style="font-size: 0.85rem; margin-top: 4px;">{{ ep.final_answer }}</div>
+              </div>
+              {% endif %}
+
+              <!-- Conversation History (raw_transcript) per S12 -->
+              {% if ep.raw_transcript %}
+              <div style="font-weight: 600; font-size: 0.9rem; margin-top: 14px;">
+                Conversation History (Cassette Transcript):
+              </div>
+              <div class="transcript-box">
+                {% for msg in ep.raw_transcript %}
+                <div class="transcript-item">
+                  <div class="transcript-meta">
+                    <div>
+                      <span class="badge" style="background: {% if msg.dir == 'c2s' %}var(--accent){% else %}var(--border){% endif %}; color: {% if msg.dir == 'c2s' %}#ffffff{% else %}var(--text){% endif %};">
+                        {{ msg.dir|upper }}
+                      </span>
+                      <strong style="margin-left: 6px;">#{{ msg.seq }}</strong>
+                      <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 6px;">(+{{ msg.t_ms }}ms)</span>
+                      {% if msg.raw and msg.raw.get("method") %}
+                      <span style="margin-left: 8px; color: var(--accent); font-weight: 600;">{{ msg.raw.method }}</span>
+                      {% endif %}
+                    </div>
+                    <div>
+                      {% if msg.fault %}
+                      <span class="badge badge-SILENT_CORRUPTION">Fault: {{ msg.fault.id }}</span>
+                      {% endif %}
+                      {% for g in msg.guards %}
+                      <span class="badge badge-HONEST_FAILURE">Guard: {{ g.id }}</span>
+                      {% endfor %}
+                      {% if msg.dropped %}
+                      <span class="badge badge-ERROR">DROPPED</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% if msg.final %}
+                  <pre style="margin-top: 4px; font-size: 0.8rem;">{{ msg.final|tojson(indent=2) }}</pre>
+                  {% elif msg.raw %}
+                  <pre style="margin-top: 4px; font-size: 0.8rem;">{{ msg.raw|tojson(indent=2) }}</pre>
+                  {% endif %}
+                </div>
+                {% endfor %}
               </div>
               {% endif %}
 

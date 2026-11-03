@@ -633,6 +633,27 @@ def test_generate_html_report_and_grep_check(sample_run_dir: Path, tmp_path: Pat
     assert "22.0" in html
     assert "140.0" in html
 
+    # 5. Conversation history (raw_transcript) per S12 (E49fix)
+    assert "Conversation History" in html
+    assert "transcript-box" in html
+    assert "C2S" in html
+    assert "S2C" in html
+
+
+def test_html_report_renders_raw_transcript(sample_run_dir: Path, tmp_path: Path) -> None:
+    """Verify report.html renders cassette conversation history per spec S12 (E49fix)."""
+    run_data = load_run_data(sample_run_dir)
+    out_file = tmp_path / "report_transcript.html"
+    generate_html_report(run_data, out_file)
+
+    html = out_file.read_text(encoding="utf-8")
+    assert "Conversation History (Cassette Transcript):" in html
+    assert "transcript-box" in html
+    assert "weather_forecast" in html
+    assert "Berlin" in html
+    assert "schema_guard" in html
+    assert "Fault: S04" in html
+
 
 def test_generate_all_reports_orchestrator(sample_run_dir: Path, tmp_path: Path) -> None:
     """Verify generate_reports produces all 6 files."""

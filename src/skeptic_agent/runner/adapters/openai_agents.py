@@ -11,17 +11,23 @@ import json
 import os
 from typing import Any
 
-import agents
-from agents import Agent, ModelSettings, Runner
-from agents.exceptions import MaxTurnsExceeded
-from agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStdioParams
-from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
+try:
+    import agents
+    from agents import Agent, ModelSettings, Runner
+    from agents.exceptions import MaxTurnsExceeded
+    from agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStdioParams
+    from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
+
+    # Disable tracing to avoid unauthenticated telemetry export attempts
+    agents.set_tracing_disabled(True)
+except ImportError as exc:
+    raise ImportError(
+        f"OpenAI Agents adapter requires the 'openai-agents' extra: {exc}. "
+        "Install with: uv pip install 'skeptic-agent[openai-agents]'"
+    ) from exc
 
 from skeptic_agent.runner.adapters.base import AgentRunResult, EpisodeTask, Usage
 from skeptic_agent.runner.llm import calculate_cost, create_llm_client, resolve_model
-
-# Disable tracing to avoid unauthenticated telemetry export attempts
-agents.set_tracing_disabled(True)
 
 CLIENT_SESSION_TIMEOUT_SECONDS: float = 20.0
 

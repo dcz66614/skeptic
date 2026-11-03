@@ -189,13 +189,27 @@ def test_cli_bench_run_and_gate_fail(tmp_path: Path) -> None:
 
     out_dir = tmp_path / "cli_run"
 
+    ledger_file = tmp_path / "cli_ledger.csv"
+
     # Run via CLI
     res = runner.invoke(
         app,
-        ["bench", "run", "--matrix", str(matrix_file), "--out", str(out_dir), "--concurrency", "4"],
+        [
+            "bench",
+            "run",
+            "--matrix",
+            str(matrix_file),
+            "--out",
+            str(out_dir),
+            "--concurrency",
+            "4",
+            "--ledger",
+            str(ledger_file),
+        ],
     )
     assert res.exit_code == 0
     assert "Matrix benchmark completed" in res.stdout
+    assert ledger_file.is_file()
 
     # Gate check passes with low threshold
     res_pass = runner.invoke(app, ["gate", str(out_dir), "--min-sks", "10.0", "--max-fsr", "1.0"])

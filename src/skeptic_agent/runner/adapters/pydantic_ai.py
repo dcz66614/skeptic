@@ -12,14 +12,27 @@ import json
 import os
 from typing import Any
 
-from fastmcp.client.transports.stdio import StdioTransport
-from pydantic_ai import Agent
-from pydantic_ai.exceptions import UsageLimitExceeded
-from pydantic_ai.mcp import MCPToolset
-from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, ToolCallPart, ToolReturnPart
-from pydantic_ai.models.openai import OpenAIChatModel
-from pydantic_ai.providers.openai import OpenAIProvider
-from pydantic_ai.usage import UsageLimits
+try:
+    import pydantic_ai  # noqa: F401
+    from fastmcp.client.transports.stdio import StdioTransport
+    from pydantic_ai import Agent
+    from pydantic_ai.exceptions import UsageLimitExceeded
+    from pydantic_ai.mcp import MCPToolset
+    from pydantic_ai.messages import (
+        ModelRequest,
+        ModelResponse,
+        TextPart,
+        ToolCallPart,
+        ToolReturnPart,
+    )
+    from pydantic_ai.models.openai import OpenAIChatModel
+    from pydantic_ai.providers.openai import OpenAIProvider
+    from pydantic_ai.usage import UsageLimits
+except ImportError as exc:
+    raise ImportError(
+        f"PydanticAI adapter requires the 'pydantic-ai' extra: {exc}. "
+        "Install with: uv pip install 'skeptic-agent[pydantic-ai]'"
+    ) from exc
 
 from skeptic_agent.runner.adapters.base import AgentRunResult, EpisodeTask, Usage
 from skeptic_agent.runner.llm import calculate_cost, create_llm_client, resolve_model

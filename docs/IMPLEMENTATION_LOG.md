@@ -3164,3 +3164,57 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 91.81%
 EXIT=0
 ```
+
+
+## E49fix 惰性适配器导入与 HTML 对话记录渲染（2026-11-03）
+
+基线 `7dab5b7`，分支 `codex`。修复针对 E49 的两项评审阻塞项：(1) 解决可选框架依赖（CrewAI/LangGraph/OpenAI-Agents/PydanticAI）在 `runner/adapters/__init__.py` 中被过早急切导入导致未安装对应 extras 时 `report/loader.py`（通过 `runner.matrix`）抛出 `ModuleNotFoundError` 的问题；(2) 按 S12 规格在 `report.html.j2` 中完整渲染对话历史记录（`raw_transcript`），更新黄金 HTML 快照并新增单测；同时确保测试套件的所有记账记录严格写入 `tmp_path`，绝不污染仓库 `bench/ledger.csv`。
+
+### 交付内容
+
+1. **框架适配器惰性加载与缺失 Extra 报错机制**:
+   - `src/skeptic_agent/runner/adapters/__init__.py`: 重构为惰性注册表 `_LazyAdapterRegistry`，模块初始化时不导入任何包含可选外部依赖的模块。只有当显式请求该适配器（如 `get_adapter("crewai")` 或 `ADAPTERS["crewai"]`）或通过 PEP 562 `__getattr__` 访问对应适配器类时才执行动态导入。
+   - `crewai.py`、`langgraph.py`、`openai_agents.py`、`pydantic_ai.py`: 在模块级导入对应第三方库时捕获 `ImportError`，向上抛出明确指出缺失额外依赖项（`crewai`、`langgraph`、`openai-agents`、`pydantic-ai`）及安装建议（如 `uv pip install 'skeptic-agent[crewai]'`）的 `ImportError`。
+   - `tests/unit/test_lazy_adapters.py`: 新增单元测试与跨子进程干净导入测试，验证在 `sys.modules` 中将 `crewai`、`langgraph`、`agents`、`pydantic_ai` 全部置为 `None`（阻断状态）时，导入 `skeptic_agent.report` 和 `skeptic_agent.runner.matrix` 均能正常导入且不抛出 `ModuleNotFoundError`；验证 `reference` 和 `command` 仍可正常获取，而请求被阻断的框架适配器时抛出明确包含对应 extra 名称的错误。
+
+2. **`report.html.j2` 对话历史渲染与快照测试 (S12)**:
+   - `src/skeptic_agent/report/templates/report.html.j2`: 在 Episode 抽屉详情中新增 `Conversation History (Cassette Transcript)` 渲染区，完整展示 `raw_transcript` 中的每条消息：方向（`C2S` / `S2C` 区分标签）、序号、时间偏移（`+ms`）、RPC 方法名（如 `tools/call`）、故障注入及 Guard 拦截/重写标签，以及格式化后的消息 JSON 载荷（`pre` 标签美化展示），并保持深浅色自适应与零外部网络引用。
+   - `tests/fixtures/snapshots/report.html.snapshot`: 同步更新 HTML 黄金快照，保持与 `test_golden_snapshots` 的严格确定性比对。
+   - `tests/unit/test_report.py`: 补充 HTML 报告包含对话历史组件、CSS 样式类、以及具体消息内容与标签的单测断言。
+
+3. **测试账本隔离 (bench/ledger.csv)**:
+   - `src/skeptic_agent/runner/matrix.py`: 支持通过环境变量 `SKEPTIC_LEDGER_PATH` 覆盖默认账本路径。
+   - `src/skeptic_agent/cli.py`: 为 `skeptic run` 与 `skeptic bench run` 添加可选 `--ledger` 参数。
+   - `tests/conftest.py`: 建立全局 `autouse=True` 的 `isolate_test_ledger` fixture，测试期间将 `SKEPTIC_LEDGER_PATH` 自动重定向至 pytest 临时目录 `tmp_path`，并在每个测试结束的 teardown 中 fail-closed 断言仓库 `bench/ledger.csv` 绝未被创建。
+   - `tests/integration/test_report_integration.py` 与 `tests/integration/test_matrix_runner.py`: 显式将 `ledger_path` 传入 `tmp_path`，确保端到端测试均在沙盒临时路径中记账。
+
+### 规格歧义与实现决策
+
+1. **子模块在 `sys.modules` 缓存时的父模块阻断逃逸**:
+   - **歧义**：在同一 pytest 进程中，若前序测试已导入过 `langgraph.errors` 等第三方子模块，简单对父模块 `sys.modules['langgraph'] = None` 时，`from langgraph.errors import ...` 可能会因子模块已在缓存而绕过父模块的阻断。
+   - **决策**：在每个框架适配器实现文件头部显式增加顶级模块导入语句（如 `import langgraph  # noqa: F401`），确保任何对该适配器模块的导入必先触发对顶级包状态的直接校验；同时在测试中清洗相关子模块缓存，确保严格 fail-closed。
+
+2. **HTML 对话历史（`raw_transcript`）与工具调用对比（`tool_calls`）的布局关系**:
+   - **歧义**：S12 散文表述为“点开后看对话记录，每次 tools/call 的原始结果和最终结果并排对比”。在单条 episode 内部，两者均源自 cassette 文件。
+   - **决策**：在 Episode Drawer 中先渲染最终回答（Final Answer），紧接着按时序流完整呈现原始对话消息历史（Conversation History），再展示针对每个具体 tools/call 的原始上游与交付给智能体结果的左右并排对比视图，兼顾全面时序审计与关键故障/Guard 改动对比。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+224 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 109 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+1161 passed, 6 skipped, 12 deselected, 41 warnings in 878.85s (0:14:38)
+Required test coverage of 85.0% reached. Total coverage: 91.61%
+EXIT=0
+```

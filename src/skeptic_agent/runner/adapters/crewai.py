@@ -67,13 +67,19 @@ def _ensure_mcpadapt_compat() -> None:
         )
 
 
-_ensure_mcpadapt_compat()
-
-from crewai import Agent, Crew, Task  # noqa: E402
-from crewai.llms.providers.openai.completion import OpenAICompletion  # noqa: E402
-from mcp import StdioServerParameters  # noqa: E402
-from mcpadapt.core import MCPAdapt  # noqa: E402
-from mcpadapt.crewai_adapter import CrewAIAdapter as CrewAIToolAdapter  # noqa: E402
+try:
+    _ensure_mcpadapt_compat()
+    import crewai  # noqa: F401
+    from crewai import Agent, Crew, Task
+    from crewai.llms.providers.openai.completion import OpenAICompletion
+    from mcp import StdioServerParameters
+    from mcpadapt.core import MCPAdapt
+    from mcpadapt.crewai_adapter import CrewAIAdapter as CrewAIToolAdapter
+except ImportError as exc:
+    raise ImportError(
+        f"CrewAI adapter requires the 'crewai' extra: {exc}. "
+        "Install with: uv pip install 'skeptic-agent[crewai]'"
+    ) from exc
 
 from skeptic_agent.runner.adapters.base import AgentRunResult, EpisodeTask, Usage  # noqa: E402
 from skeptic_agent.runner.fake_llm import FakeLLM  # noqa: E402
