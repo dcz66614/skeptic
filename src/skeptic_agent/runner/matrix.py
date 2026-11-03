@@ -32,6 +32,7 @@ from referencing import Registry, Resource
 from skeptic_agent import __version__
 from skeptic_agent.faults.engine import load_profile_source
 from skeptic_agent.faults.profiles import Episode, Profile, expand
+from skeptic_agent.guards.presets import ALL_GUARDS, resolve_guards
 from skeptic_agent.runner.budget import (
     DEFAULT_MAX_COST_USD,
     BudgetExceededError,
@@ -58,16 +59,7 @@ VALID_SANDBOX_REGEX = re.compile(
     r"^sb_(weather|fx|stocks|crm|orders|calendar|docs|sqlshop|mail|files)$"
 )
 
-KNOWN_GUARDS: tuple[str, ...] = (
-    "evidence_contract",
-    "schema_guard",
-    "staleness_guard",
-    "emptiness_guard",
-    "retry_guard",
-    "loop_breaker",
-    "injection_shield",
-    "drift_lock",
-)
+KNOWN_GUARDS: tuple[str, ...] = ALL_GUARDS
 
 
 @dataclass(frozen=True)
@@ -280,15 +272,7 @@ def expand_matrix_configs(
 
 def normalize_guards(guards: str | Sequence[str]) -> list[str]:
     """Normalize guards parameter into a list of valid guard names."""
-    if isinstance(guards, str):
-        if guards.lower() == "none":
-            return []
-        if guards.lower() == "all":
-            return list(KNOWN_GUARDS)
-        if guards.lower() == "recommended":
-            return ["evidence_contract", "schema_guard", "loop_breaker"]
-        return [g.strip() for g in guards.split(",") if g.strip()]
-    return list(guards)
+    return resolve_guards(guards)
 
 
 def build_config_doc(

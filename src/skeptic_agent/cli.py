@@ -188,7 +188,7 @@ def proxy_stdio(
     Raises:
         typer.Exit: With the upstream's exit code.
     """
-    del config, guards
+    del config
     command = list(ctx.args)
     if "--" in sys.argv:
         command = sys.argv[sys.argv.index("--") + 1 :]
@@ -248,6 +248,12 @@ def proxy_stdio(
     if state_file:
         os.environ["SKEPTIC_STATE_FILE"] = state_file
 
+    from skeptic_agent.guards.base import build_guard_engine
+    from skeptic_agent.guards.presets import resolve_guards
+    from skeptic_agent.proxy.pipeline import GuardStage
+
+    resolved_guards = resolve_guards(guards) if guards else []
+
     recorder_stage = None
     recorder = None
     if record:
@@ -262,11 +268,20 @@ def proxy_stdio(
             era=UNKNOWN,
             seed=seed,
             profile=profile or "none",
+            guards=resolved_guards,
             scenario_id=str(scenario_dict.get("id", "none")) if scenario_dict else "none",
         )
         recorder_stage = CassetteRecorder(recorder)
 
-    pipeline = new_pipeline(fault=fault_stage, recorder=recorder_stage)
+    guard_stage: GuardStage
+    if resolved_guards:
+        guard_stage = build_guard_engine(
+            resolved_guards, scenario=scenario_dict, recorder=recorder_stage
+        )
+    else:
+        guard_stage = GuardStage()
+
+    pipeline = new_pipeline(fault=fault_stage, guard=guard_stage, recorder=recorder_stage)
     proxy = StdioProxy(command, pipeline=pipeline, episode_id=episode_id or "stdio", seed=seed)
     try:
         raise typer.Exit(code=asyncio.run(proxy.run()))

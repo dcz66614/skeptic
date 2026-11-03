@@ -3222,3 +3222,83 @@ EXIT=0
 ## E49 merge (2026-11-03)
 
 - codex  ff-merged to main. 
+
+
+## G50 Guard 框架、G01 证据契约与 G06 死循环熔断（2026-11-03）
+
+基线 `f0b7ee0`，分支 `codex`。实现 Skeptic 客户端防护栏（Guard）核心框架与前两个防护栏：G01 `evidence_contract`（证据契约）与 G06 `loop_breaker`（死循环熔断），对接 S4.4 代理管道时序与 S11 防护栏规范。
+
+### 交付内容
+
+1. **Guard 核心框架与预设 (`src/skeptic_agent/guards/`)**:
+   - `base.py`:
+     - 抽象基类 `Guard`、配置模型 `GuardSpec`、干预结果 `GuardResult`、全局注册表 `REGISTRY` 与装饰器 `register`。
+     - S4.4 管道执行顺序常量：`C2S_GUARD_ORDER = ("loop_breaker", "injection_shield")`、`S2C_CALL_GUARD_ORDER = ("retry_guard", "schema_guard", "staleness_guard", "emptiness_guard", "evidence_contract", "injection_shield")`、`S2C_LIST_GUARD_ORDER = ("drift_lock",)`。
+     - 显式报错统一格式函数 `loudify()`：格式化为 `isError: True`、内容文本 `[skeptic:<guard_id>] <message>`。
+     - 代理管道阶段 `GuardEngine(GuardStage)`：严格在 c2s `tools/call` 请求、s2c `tools/call` 响应和 s2c `tools/list` 响应时按 S4.4 顺序触发，返回 `Forward` 或 `ReplyToClient`。
+     - 记录器通知管道：实现 `set_recorder` 与 `_note_guard`，将 Guard 审计事件记录入 Cassette。
+     - 工厂函数 `build_guard_engine()`：支持预设名称、逗号分隔名、`GuardSpec` 序列或 `Guard` 实例。
+   - `presets.py`:
+     - 定义全量 8 种 Guard 常量 `ALL_GUARDS`。
+     - 定义预设字典 `PRESETS`：`none: ()`、`all: ALL_GUARDS`、`recommended: ("staleness_guard", "loop_breaker")`（符合 S11 与 ADR-0001）。
+     - 提供 `resolve_guards()` 解析函数。
+   - `__init__.py`: 导出公共接口并自动注册内置 Guard。
+
+2. **G01 证据契约 (`src/skeptic_agent/guards/evidence_contract.py`)**:
+   - 挂载点：S4.4 s2c `tools/call` 阶段 ④。
+   - 行为：在工具调用正常返回时，向返回 content 数组追加 S11 逐字匹配的 `EVIDENCE_CONTRACT_TEXT` 说明块。
+   - 遵循 S4.5：仅对 `resultType == "complete"` 的成功响应追加契约说明，其余状态及错误响应保持原样。
+
+3. **G06 死循环熔断 (`src/skeptic_agent/guards/loop_breaker.py`)**:
+   - 挂载点：S4.4 c2s `tools/call` 阶段 ②。
+   - 行为：同一 episode 中对 `(tool_name, canonical_json(arguments))` 连续相同调用计数。当达到 `threshold=3`（默认）时，直接拦截并不转发给服务器，返回符合统一 `loudify` 格式的显式错误消息，逐字匹配 S11 模板：`[skeptic:loop_breaker] This exact call was already made 3 times with the same result. Change your approach or report that the task cannot be completed.`。
+   - 重置机制：遇到不同的工具调用或切换到新的 `episode_id` 时自动重置计数器。
+
+4. **代理管道与 CLI / Runner 对接**:
+   - `src/skeptic_agent/proxy/pipeline.py`: 在 `Pipeline.__init__` 中若 `guard` 拥有 `set_recorder` 则自动绑定 `recorder`。
+   - `src/skeptic_agent/cli.py`: 将 `--guards` 选项通过 `resolve_guards` 与 `build_guard_engine` 接入 `proxy_stdio`，并向 Cassette Recorder 记录启用的 Guard 列表。
+   - `src/skeptic_agent/runner/episode.py`: 在启动代理子进程命令（`primary_cmd` 与 `extra_cmd`）中透传 `--guards` 参数。
+   - `src/skeptic_agent/runner/matrix.py`: 统一使用 `guards.ALL_GUARDS` 与 `guards.resolve_guards` 替代原本局部的临时硬编码。
+
+5. **单元测试与端到端验收测试 (`tests/`)**:
+   - `tests/unit/test_guards.py`: 20 个全面单元测试，覆盖预设解析、loudify 结构、G01 契约追加与边界状态、G06 连续计数与参数 canonical 规范化、上下文重置、管道顺序校验、Recorder 记账审计，以及 ADR-0007 计数不增不变性验证。
+   - `tests/e2e/test_guards_e2e.py`:
+     - `test_acceptance_looper_intercepted_on_third_call`: 使用 FakeLLM `looper` 脚本，开启 G06 并在第 3 次重复调用时成功拦截并验证 Cassette / Result Schema。
+     - `test_acceptance_evidence_contract_e2e`: 使用 FakeLLM `oracle_follower` 脚本，开启 G01 验证返回载荷中的证据契约追加及 Cassette / Result Schema。
+     - 所有测试生成文件与输出均严格限制在 `tmp_path` 内，不污染仓库工作区。
+
+### 规格歧义与实现决策
+
+1. **G06 模板中的 `<N>` 占位符解析**:
+   - **歧义**：S11 文本为 `This exact call was already made <N> times with the same result.`，存在 `<N>` 是阈值（3）还是前序已完成次数（2）的歧义。
+   - **决策**：根据 S11 全文规范中 G03 对 `<N>` 指代配置参数（`max_age_days=30`）的惯例，`<N>` 指代配置的熔断阈值参数（默认 3）。当第 3 次发起完全相同调用时，提示智能体该精确调用已重复了 3 次，需改变策略或报告不可完成。
+
+2. **G06 拦截与 ADR-0007 尝试计数不变性**:
+   - **歧义**：G06 熔断时提前向客户端回复 `ReplyToClient`，是否计入 `ctx.current_call_index` 或递增 `call_counts`？
+   - **决策**：严格遵守 S4.4 与 ADR-0007 契约。S4.4 中 c2s G06 位于步骤 ②，而故障前置钩子及尝试计数位于步骤 ④。G06 熔断后直接回复短路，未进入故障阶段，因此不递增尝试计数，保证了故障引擎与评估指标的因果隔离。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+231 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 114 source files
+EXIT=0
+
+===== uv run pytest tests/unit/test_guards.py tests/e2e/test_guards_e2e.py -q --cov=skeptic_agent.guards =====
+22 passed in 9.95s
+Required test coverage of 85.0% reached. Total coverage: 95.72%
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+1179 passed, 6 skipped, 12 deselected, 41 warnings in 857.09s (0:14:17)
+Required test coverage of 85.0% reached. Total coverage: 91.26%
+EXIT=0
+```

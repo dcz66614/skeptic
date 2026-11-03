@@ -355,6 +355,8 @@ class Pipeline:
         self.recorder = recorder
         if hasattr(fault, "set_recorder"):
             fault.set_recorder(recorder)
+        if hasattr(guard, "set_recorder"):
+            guard.set_recorder(recorder)
 
     async def on_c2s(self, msg: Message, ctx: EpisodeContext) -> list[Action]:
         """Process one client-to-server message.

@@ -155,6 +155,9 @@ async def run_episode(
     ]
     if not fault_clean and fault_id:
         primary_cmd += ["--profile", fault_id]
+    if guards:
+        guards_arg = ",".join(guards) if isinstance(guards, (list, tuple)) else str(guards)
+        primary_cmd += ["--guards", guards_arg]
     primary_cmd += [
         "--record",
         str(cassette_dir),
@@ -191,6 +194,11 @@ async def run_episode(
             f"{episode_id}:{extra_name}",
             "--seed",
             str(seed),
+        ]
+        if guards:
+            guards_arg = ",".join(guards) if isinstance(guards, (list, tuple)) else str(guards)
+            extra_cmd += ["--guards", guards_arg]
+        extra_cmd += [
             "--record",
             str(cassette_dir),
             "--state-file",
