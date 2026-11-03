@@ -3586,4 +3586,75 @@ EXIT=0
 
 ## G53a merge (2026-11-03)
 
-- codex  ff-merged to main. 
+- codex  ff-merged to main.
+
+## K54 `skeptic init` 与 `skeptic wrap`（2026-11-03）
+
+基线 `d738ceb`，分支 `codex`。交付 `setup/discover.py`、`setup/wrap.py`、CLI 子命令 `skeptic init` 与 `skeptic wrap`、各客户端测试配置及集成测试 `tests/integration/test_setup.py`。零新增外部依赖，无真实网络与模型调用，测试仅在 `tmp_path` 下写出。
+
+### 交付内容
+
+1. **配置发现模块 (`src/skeptic_agent/setup/discover.py`, `src/skeptic_agent/setup/__init__.py`)**:
+   - 严格按 S15 与 ADR-0005 规范，按顺序扫描 6 种主流 MCP 客户端配置文件：
+     1. 项目通用：`./.mcp.json`（顶层 `mcpServers`）
+     2. Claude Desktop：macOS `~/Library/Application Support/Claude/claude_desktop_config.json` 与 Windows `%APPDATA%\Claude\claude_desktop_config.json`（顶层 `mcpServers`，条目含 `url` 视作 HTTP）
+     3. Cursor：`./.cursor/mcp.json` 与 `~/.cursor/mcp.json`（顶层 `mcpServers`）
+     4. VS Code：`./.vscode/mcp.json`（顶层 `servers`，stdio 需 `type: "stdio"`，HTTP 允许 `type: "http" | "sse"`，`sse` 映射为 `transport: http`）
+     5. Codex CLI：`~/.codex/config.toml` 与 `./.codex/config.toml`（表 `[mcp_servers.<name>]`，stdio 用 `command` 和 `args`，HTTP 用 `url`，请求头支持 `http_headers`）
+     6. Gemini CLI：`./.gemini/settings.json` 与 `~/.gemini/settings.json`（顶层 `mcpServers`，HTTP URL 支持 `url` 或 `httpUrl`）
+   - 实现覆盖与优先级机制：读取不到的路径静默跳过；同一个服务器名后出现的项目级文件覆盖用户级文件；同层级按扫描顺序更新；
+   - 实现 `generate_config`，生成符合 `schemas/config.schema.json` 架构规范的 `skeptic.yaml` 配置结构，包含标准门禁与脱敏键预设。
+
+2. **代理改写与还原模块 (`src/skeptic_agent/setup/wrap.py`)**:
+   - 改写前自动对原文件建立备份：`FILE.skeptic.bak`；
+   - stdio 服务器改写为 `{command: "skeptic", args: ["proxy", "stdio", "--profile", P] + (guards ? ["--guards", G] : []) + ["--record", record_dir, "--", C] + A}`；
+   - HTTP 服务器改写为本地代理地址 `http://127.0.0.1:8765/mcp`，并在关联的 `skeptic.yaml` 中登记原始上游地址及 headers；
+   - 支持 `--all` 全量改写或 `--server NAME`（可重复）定向改写；
+   - 支持 `--undo`：直接读取 `FILE.skeptic.bak` 原始字节覆写回原文件并清理备份，保障文件逐字节精确恢复（byte-for-byte exact restoration）；
+   - 同时支持 JSON 格式（通用、Claude、Cursor、VS Code、Gemini）与 TOML 格式（Codex CLI 表块精确局部替换，完整保留其他字段与注释）。
+
+3. **CLI 子命令接入 (`src/skeptic_agent/cli.py`)**:
+   - `skeptic init`：提供 `--path DIR`、`--yes`、`--dry-run`、`--json` 参数。`--dry-run --json` 仅输出发现结果 JSON；普通模式生成校验合法的 `skeptic.yaml`；已存在文件时需 `--yes` 确认覆盖（未加 `--yes` 时退出码 2）；
+   - `skeptic wrap FILE`：提供 `--server NAME`（可重复）、`--all`、`--profile ID`、`--guards LIST`、`--undo` 参数。缺少目标时报错退出码 2；文件不存在或未找到指定服务器时退出码 2。
+
+4. **客户端配置样本与集成测试 (`tests/integration/fixtures/client_configs/`, `tests/integration/test_setup.py`)**:
+   - 在 fixtures 下放置 6 种客户端的标准配置示例（覆盖 stdio 与 HTTP 双协议及环境/标头设置）；
+   - 集成测试完整验证验收标准：
+     1. 6 种客户端配置格式均能独立及组合发现；
+     2. 项目级覆盖用户级的优先级规则；
+     3. wrap 后执行 undo，各格式文件均逐字节恢复；
+     4. wrap 后的配置经 `mcp.client.stdio` 与 `ClientSession` 经 stdio 代理成功调用 `echo_server` 并获取有效回显。
+
+### 规格歧义与实现决策
+
+1. **Codex CLI TOML 改写方式**:
+   - **歧义**：Python 3.12 标准库仅内置 `tomllib`（只读解析器），无标准 TOML 序列化库，若全量转为 dict 后 dump 会丢失原有注释与格式。
+   - **决策**：严格遵守无非必要新增依赖原则，实现轻量级 `_rewrite_toml_section` 函数，针对 `[mcp_servers.<name>]` 表块进行行级局部替换；在写入磁盘前通过 `tomllib.loads` 严格二次校验语法完整性；`--undo` 则直接以 raw bytes 还原备份，确保零语法污染与逐字节还原。
+
+2. **Windows 平台写文本与字节还原测试的换行符差异**:
+   - **歧义**：在 Windows 平台上使用 `Path.write_text` 若未显式指定 `newline=""`，会将 `
+` 转为 `
+`，导致内存中的 Python 字符串直接 encode 与磁盘字节比较产生换行符差异。
+   - **决策**：测试与备份逻辑以磁盘实际写入并读取的 `read_bytes()` 为基准，验证 undo 还原操作对磁盘原文件的绝对逐字节一致性。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+251 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 128 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+1287 passed, 6 skipped, 12 deselected, 41 warnings in 1084.84s (0:18:04)
+Required test coverage of 85.0% reached. Total coverage: 90.59%
+EXIT=0
+```
+

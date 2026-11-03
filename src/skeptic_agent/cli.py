@@ -341,6 +341,144 @@ def proxy_http(
     )
 
 
+@app.command("init")
+def init_cmd(
+    path: Annotated[
+        Path,
+        typer.Option("--path", help="Project directory to discover MCP client configs."),
+    ] = Path("."),
+    yes: Annotated[
+        bool,
+        typer.Option("--yes", "-y", help="Overwrite skeptic.yaml without confirmation."),
+    ] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Do not write skeptic.yaml, only report findings."),
+    ] = False,
+    as_json: Annotated[
+        bool,
+        typer.Option("--json", help="Print discovery result as JSON."),
+    ] = False,
+) -> None:
+    """Discover MCP configurations and generate skeptic.yaml (S2, S15, K54)."""
+    import yaml
+
+    from skeptic_agent.setup.discover import discover, generate_config
+
+    try:
+        servers = discover(base_dir=path)
+    except Exception as exc:
+        typer.echo(f"error discovering MCP servers: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    project_name = path.resolve().name or "my-agent"
+
+    if as_json:
+        result = {
+            "schema": "skeptic.config/v1",
+            "project": project_name,
+            "servers": {name: s.to_config_dict() for name, s in servers.items()},
+        }
+        typer.echo(json.dumps(result, indent=2, ensure_ascii=False))
+        if dry_run:
+            return
+
+    if not servers:
+        typer.echo(f"No MCP servers discovered in {path}", err=True)
+        if dry_run:
+            return
+        raise typer.Exit(code=1)
+
+    if dry_run:
+        typer.echo(f"Discovered {len(servers)} server(s) in {path}:")
+        for name, s in servers.items():
+            typer.echo(f"  - {name} ({s.transport}) from {s.source_path}")
+        typer.echo("Dry-run mode: skeptic.yaml was not created.")
+        return
+
+    out_file = path / "skeptic.yaml"
+    if out_file.exists() and not yes:
+        typer.echo(f"error: {out_file} already exists; use --yes to overwrite", err=True)
+        raise typer.Exit(code=2)
+
+    try:
+        config_data = generate_config(servers, project=project_name)
+        out_file.write_text(yaml.safe_dump(config_data, sort_keys=False), encoding="utf-8")
+    except Exception as exc:
+        typer.echo(f"error writing {out_file}: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    if not as_json:
+        typer.echo(f"Initialized Skeptic config at {out_file} with {len(servers)} server(s).")
+
+
+@app.command("wrap")
+def wrap_cmd(
+    file: Annotated[
+        Path,
+        typer.Argument(help="MCP client configuration file to wrap."),
+    ],
+    server: Annotated[
+        list[str] | None,
+        typer.Option("--server", help="Server name to wrap (can be repeated)."),
+    ] = None,
+    all_servers: Annotated[
+        bool,
+        typer.Option("--all", help="Wrap all servers in configuration."),
+    ] = False,
+    profile: Annotated[
+        str,
+        typer.Option("--profile", help="Fault profile id or path."),
+    ] = "silent-core",
+    guards: Annotated[
+        str | None,
+        typer.Option("--guards", help="Guard preset or comma-separated guard names."),
+    ] = None,
+    undo: Annotated[
+        bool,
+        typer.Option("--undo", help="Restore configuration file from backup."),
+    ] = False,
+) -> None:
+    """Rewrite MCP client configurations to route via skeptic proxy (S2, S15, K54)."""
+    from skeptic_agent.setup.wrap import undo_wrap, wrap_file
+
+    if undo:
+        try:
+            undo_wrap(file)
+            typer.echo(f"Restored {file} from backup.")
+            return
+        except FileNotFoundError as exc:
+            typer.echo(f"error: {exc}", err=True)
+            raise typer.Exit(code=2) from exc
+        except Exception as exc:
+            typer.echo(f"error: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+
+    if not all_servers and not server:
+        typer.echo("error: must specify --all or at least one --server", err=True)
+        raise typer.Exit(code=2)
+
+    try:
+        wrapped = wrap_file(
+            file,
+            servers=server,
+            all_servers=all_servers,
+            profile=profile,
+            guards=guards,
+            undo=False,
+        )
+        typer.echo(f"Wrapped {len(wrapped)} server(s) in {file}: {', '.join(wrapped)}")
+    except FileNotFoundError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    except ValueError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    except Exception as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+
 @app.command("replay", context_settings={"allow_extra_args": True})
 def replay(
     ctx: typer.Context,

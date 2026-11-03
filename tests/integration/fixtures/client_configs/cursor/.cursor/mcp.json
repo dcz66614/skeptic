@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "cursor_stdio": {
+      "command": "node",
+      "args": ["server.js"]
+    },
+    "cursor_http": {
+      "url": "https://cursor.example.com/mcp",
+      "headers": {
+        "X-Cursor": "true"
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "servers": {
+    "vscode_stdio": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "vscode_server"],
+      "env": {
+        "VSCODE_MCP": "1"
+      }
+    },
+    "vscode_http": {
+      "type": "sse",
+      "url": "https://vscode.example.com/mcp/sse",
+      "headers": {
+        "Authorization": "Bearer vs"
+      }
+    }
+  }
+}

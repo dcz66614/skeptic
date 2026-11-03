@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "generic_stdio": {
+      "command": "python",
+      "args": ["-m", "echo_server"],
+      "env": {
+        "GENERIC_ENV": "1"
+      }
+    },
+    "generic_http": {
+      "type": "http",
+      "url": "https://generic.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer generic-token"
+      }
+    }
+  }
+}

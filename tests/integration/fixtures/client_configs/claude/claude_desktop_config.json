@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "claude_stdio": {
+      "command": "python",
+      "args": ["-m", "echo_server"],
+      "env": {
+        "CLAUDE_ENV": "1"
+      }
+    },
+    "claude_http": {
+      "url": "https://claude.example.com/mcp"
+    }
+  }
+}

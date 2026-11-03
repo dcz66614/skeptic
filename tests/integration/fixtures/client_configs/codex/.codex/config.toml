@@ -1,0 +1,12 @@
+[mcp_servers.codex_stdio]
+command = "python"
+args = ["-m", "codex_server"]
+
+[mcp_servers.codex_stdio.env]
+CODEX_MODE = "auto"
+
+[mcp_servers.codex_http]
+url = "https://codex.example.com/mcp"
+
+[mcp_servers.codex_http.http_headers]
+Authorization = "Bearer codex_key"

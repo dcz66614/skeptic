@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "gemini_stdio": {
+      "command": "python",
+      "args": ["-m", "gemini_server"],
+      "env": {
+        "GEMINI_ENV": "active"
+      }
+    },
+    "gemini_http": {
+      "httpUrl": "https://gemini.example.com/mcp"
+    }
+  }
+}
