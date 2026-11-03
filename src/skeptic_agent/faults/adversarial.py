@@ -84,6 +84,10 @@ def _payload(spec: FaultSpec, template: str) -> str:
         The text to append.
     """
     value = _params(spec).get("payload")
+    if value == "P1":
+        return render(P1_TEMPLATE)
+    if value == "P2":
+        return render(P2_TEMPLATE)
     return value if isinstance(value, str) else render(template)
 
 

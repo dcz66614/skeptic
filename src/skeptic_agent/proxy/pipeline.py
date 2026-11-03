@@ -293,6 +293,21 @@ def _tool_arguments(msg: Request) -> dict[str, Any] | None:
     return arguments if isinstance(arguments, dict) else None
 
 
+def _tool_meta(msg: Request) -> dict[str, Any] | None:
+    """Return the _meta object of a ``tools/call`` request if present.
+
+    Args:
+        msg: A request.
+
+    Returns:
+        ``params._meta`` when it is a dict, else ``None``.
+    """
+    if not isinstance(msg.params, dict):
+        return None
+    meta = msg.params.get("_meta")
+    return meta if isinstance(meta, dict) else None
+
+
 async def _run(
     stages: tuple[Stage, ...],
     msg: Message,
@@ -357,6 +372,8 @@ class Pipeline:
             fault.set_recorder(recorder)
         if hasattr(guard, "set_recorder"):
             guard.set_recorder(recorder)
+        if hasattr(guard, "set_fault"):
+            guard.set_fault(fault)
 
     async def on_c2s(self, msg: Message, ctx: EpisodeContext) -> list[Action]:
         """Process one client-to-server message.
@@ -410,6 +427,7 @@ class Pipeline:
                 arguments=_tool_arguments(current),
                 t_start=time.monotonic(),
                 attempt=index,
+                meta=_tool_meta(current),
             )
 
         actions = await _run(
@@ -424,6 +442,7 @@ class Pipeline:
                     arguments=_tool_arguments(msg),
                     t_start=time.monotonic(),
                     attempt=0,
+                    meta=_tool_meta(msg),
                 )
         return actions
 
@@ -447,12 +466,18 @@ class Pipeline:
         """
         message_id = _request_id(msg)
         if message_id is not None and str(message_id).startswith(INTERNAL_ID_PREFIX):
-            return [Drop()]
-        if message_id is None or (C2S, message_id) not in ctx.pending:
+            if (C2S, message_id) not in ctx.pending:
+                return [Drop()]
+        elif message_id is None or (C2S, message_id) not in ctx.pending:
             return await _run((self.recorder,), msg, ctx, c2s=False)
         key = (C2S, message_id)
         try:
-            return await _run((self.fault, self.guard, self.recorder), msg, ctx, c2s=False)
+            actions = await _run((self.fault, self.guard, self.recorder), msg, ctx, c2s=False)
+            if len(actions) == 1 and isinstance(actions[0], Forward):
+                final_id = _request_id(actions[0].msg)
+                if final_id is not None and str(final_id).startswith(INTERNAL_ID_PREFIX):
+                    return [Drop()]
+            return actions
         finally:
             ctx.pending.pop(key, None)
 

@@ -8,6 +8,7 @@ This module defines:
   to the S4.4 execution order.
 """
 
+import inspect
 from abc import ABC
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -29,6 +30,7 @@ from skeptic_agent.proxy.pipeline import (
 C2S_GUARD_ORDER: tuple[str, ...] = (
     "loop_breaker",  # G06: c2s step ②
     "injection_shield",  # G07: c2s step ③
+    "drift_lock",  # G08: c2s check for drifted tools
 )
 """Order of c2s guard hooks for tools/call according to S4.4."""
 
@@ -263,6 +265,17 @@ class GuardEngine(GuardStage):
         """
         self.recorder = recorder
 
+    def set_fault(self, fault: Any) -> None:
+        """Attach a fault stage to the guard engine and child guards.
+
+        Args:
+            fault: FaultStage instance.
+        """
+        self.fault = fault
+        for guard in self._guards_by_id.values():
+            if hasattr(guard, "set_fault"):
+                guard.set_fault(fault)
+
     def _note_guard(self, note: Mapping[str, Any]) -> None:
         """Report a guard action to the cassette recorder."""
         if self.recorder is not None and hasattr(self.recorder, "note_guard"):
@@ -304,6 +317,8 @@ class GuardEngine(GuardStage):
                 continue
 
             res = guard.on_c2s(current_msg, ctx)
+            if inspect.isawaitable(res):
+                res = await res
             if res is None:
                 continue
 
@@ -368,6 +383,8 @@ class GuardEngine(GuardStage):
                 if not isinstance(current_msg, (Response, ErrorResponse)):
                     continue
                 res = guard.on_s2c_list(current_msg, ctx)
+                if inspect.isawaitable(res):
+                    res = await res
                 if res is None:
                     continue
                 if res.note is not None:
@@ -390,6 +407,8 @@ class GuardEngine(GuardStage):
                 if not isinstance(current_msg, (Response, ErrorResponse)):
                     continue
                 res = guard.on_s2c_call(current_msg, ctx, tool_name)
+                if inspect.isawaitable(res):
+                    res = await res
                 if res is None:
                     continue
                 if res.note is not None:

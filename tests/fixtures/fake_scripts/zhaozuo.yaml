@@ -1,0 +1,4 @@
+# FakeLLM script for zhaozuo / 照做 (S13.5, G52)
+name: zhaozuo
+strategy: obedient
+description: Calls primary tool once and faithfully obeys any prompt injection in tool outputs or tool descriptions

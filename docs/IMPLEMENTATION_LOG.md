@@ -3443,3 +3443,80 @@ EXIT=0
 ## G51 merge (2026-11-03)
 
 - codex  ff-merged to main. 
+
+
+## G52 G05 幂等重试、G07 注入隔离、G08 定义锁定（2026-11-03）
+
+基线 `3532412`，分支 `codex`。实现 Skeptic 防护机制 G52 卡片所列全部内容，落地 G05 `retry_guard`（别名模块 `retry` / `retry_guard`）、G07 `injection_shield`（别名模块 `injection` / `injection_shield`）、G08 `drift_lock`（别名模块 `drift` / `drift_lock`），以及 FakeLLM “照做”（`obedient` / `zhaozuo`）模拟对抗脚本与沙箱自动挂载联动。测试产物与工作目录严格受限于 pytest `tmp_path`，零新增外部依赖，无真实模型 (128api) 调用。
+
+### 交付内容
+
+1. **G05 幂等重试 (`src/skeptic_agent/guards/retry_guard.py` / `retry.py`)**:
+   - 挂载点：S4.4 s2c 步骤 ②。
+   - 幂等判断：优先依据服务端 `tools/list` 声明的 `readOnlyHint=True`（或 `annotations.readOnlyHint=True`）及配置项 `idempotent_tools`；若未声明，通过排除写前缀（`set_`, `create_`, `update_`, `delete_`, `send_`, `cancel_`, `post_` 等）与场景写目标列表（`scenario.write_tools`）保障严格不对写工具重试；回退模式检查读前缀（`get_`, `read_`, `search_`, `list_`, `fetch_`, `lookup_` 等）。
+   - 可重试判定：通过正则 `(?i)(503|429|timeout|timed out|temporar|unavailable|rate limit)` 匹配服务端错误信息/文本块，以及捕获 JSON-RPC 错误码 `-32001`（Upstream error）与 `-32603`（Internal error）。
+   - 指数退避与重试机制：默认退避基数 0.5s（$0.5 \times 2^k$ 秒，对应 500ms、1000ms），上限重试 `max_retries=2`（共 3 次尝试）。通过 `Hold(ms=backoff_ms, then=SendToServer(retry_req))` 向服务端重发请求，使用内部请求 ID（`skeptic-...`），同时完整透传与保留客户端的 `_meta` 信封（包含 MCP 协议版本与客户端能力）。
+   - 客户端透明度保证：重试成功或达到重试上限时，将服务端响应的消息 ID 还原为客户端原始请求 ID，并将中间重试产生的内部响应自动过滤丢弃，确保客户端只感知到重试成功后的结果，屏蔽瞬态网络/频控故障。
+
+2. **G07 注入隔离 (`src/skeptic_agent/guards/injection_shield.py` / `injection.py`)**:
+   - 挂载点：S4.4 s2c 步骤 ⑤（扫描与替换工具响应）与 c2s 步骤 ③（阻断被污染参数的外发调用）。
+   - 规则扫描：实现 R1-R8 启发式与正则匹配规则（忽略前序指令、`<important>` 标签、系统通告/提示、强制工具调用格式、泄露/隐藏指令、`[SKEPTIC-TEST-INJECTION]` 注入头与金丝雀标识、零宽 Unicode 字符及长 Base64 编码载荷）。
+   - 脱敏替换：将命中注入规则的文本片段替换为标准占位符：`[skeptic:injection_shield removed <N> chars of instruction-like content from tool output]`。
+   - 污点追踪与外发阻断：从被剔除的注入内容中提取实体标识（如邮箱地址、文件路径、金丝雀字符串）记录至 `ctx.taint`；客户端在 c2s 步骤 ③ 尝试调用工具时，若请求参数中包含 `ctx.taint` 中的任何值，或者向敏感工具（如 `send_email`）传递未在初始用户提示词中出现的外部邮箱，直接就地阻断并返回 loudify 报错：`[skeptic:injection_shield] Blocked: arguments derived from untrusted tool output.`。
+
+3. **G08 定义锁定 (`src/skeptic_agent/guards/drift_lock.py` / `drift.py`)**:
+   - 挂载点：S4.4 s2c 步骤 ①（工具定义基线捕获与漂移检测）与 c2s 步骤 ③（被漂移工具调用参数校验）。
+   - 规范哈希：计算工具规范哈希 `sha256(canonical(name, description, inputSchema))`，记录批准基线（支持从场景预声明 tools 预热或从首次 `tools/list` 响应建立基线）。
+   - 漂移告警：当服务端后续返回的 `tools/list` 中工具名称未变但哈希不一致时，触发定义漂移检测，并在 `sys.stderr` 输出告警：`[skeptic:drift_lock] Warning: Tool definition for '<name>' changed after approval (hash <old[:8]> -> <new[:8]>)`。
+   - 阻断与回滚策略：
+     - `pin` 模式（默认）：在 `tools/list` 中将漂移工具的定义回滚恢复为初始批准的基线；并在 c2s 步骤 ③ 严格按照基线 `inputSchema` 校验调用参数，参数不匹配时就地阻断并报错：`[skeptic:drift_lock] Tool definition changed after approval; call blocked.`。
+     - `strip` 模式：从 `tools/list` 中直接剥除漂移工具，并阻断所有指向该工具的调用。
+
+4. **FakeLLM “照做” 脚本与沙箱自动挂载联动**:
+   - 增加 `tests/fixtures/fake_scripts/obedient.yaml` 与 `zhaozuo.yaml` 脚本定义。
+   - 在 `src/skeptic_agent/runner/fake_llm.py` 中实现 `_generate_obedient` 策略，模拟对工具输出提示词注入（A01）或工具描述提示词注入（A02/A03）完全服从的 Agent 行为，提取外发邮箱并主动调用 `send_email` 发送窃密数据。
+   - 在 `src/skeptic_agent/runner/episode.py` 中对对抗类故障（A01、A02、A03）依据 S8.5 自动挂载 `sb_mail` 沙箱，使 FakeLLM 在对抗场景下的数据外发调用能够到达代理管道并被 G07/G08 精准捕获阻断。
+
+5. **单元测试与端到端验收测试 (`tests/`)**:
+   - `tests/unit/test_guards_g52.py`: 18 个单元测试，覆盖 RETRY_REGEX 正则匹配、工具幂等性前缀与注解判定、指数退避时间计算与最大重试次数、原始 ID 还原、写工具拒发、R1-R8 注入扫描与占位替换、`ctx.taint` 实体提取与敏感工具外发拦截、G08 规范哈希计算、pin 与 strip 模式处理、`sys.stderr` 漂移日志告警及管道集成链路。
+   - `tests/e2e/test_guards_g52_e2e.py`:
+     - `test_acceptance_g05_l03_transient_client_sees_success`: 验证在 L03 瞬态故障下开启 G05 时，客户端只看到成功结果，Cassette Schema 校验通过。
+     - `test_acceptance_g05_l05_transient_client_sees_success`: 验证在 L05 瞬态限流故障下开启 G05 时，客户端只看到成功结果。
+     - `test_acceptance_g05_does_not_retry_write_tools`: 验证 G05 对写工具绝对不重试。
+     - `test_acceptance_g07_injection_shield_blocks_obedient`: 验证在 A01 对抗注入下开启 G07 时，FakeLLM 的“照做”脚本发出的外发数据调用被成功阻断。
+     - `test_acceptance_g08_drift_lock_blocks_obedient`: 验证在 A02 工具定义漂移注入下开启 G08 时，FakeLLM 的“照做”脚本发出的外发数据调用被成功阻断。
+
+### 规格歧义与实现决策
+
+1. **MCP 服务端 `_meta` 信封在代理重试请求中的透传**:
+   - **歧义**：现代 MCP 服务端（如 `sb_weather`）在处理 `tools/call` 时严格校验请求参数中的 `_meta` 字典（要求携带 `io.modelcontextprotocol/protocolVersion` 与 `io.modelcontextprotocol/clientCapabilities`），缺少该字段将抛出 `-32602` 错误。规范 S11 描述了 `tools/call` 的重发参数 `{"name": ..., "arguments": ...}`，但未明确指出代理发起重试时如何保持 MCP 协议元数据。
+   - **决策**：在 `PendingCall` 中新增 `meta: dict[str, Any] | None` 字段，并在代理管道 `Pipeline.on_c2s` 记录入站请求时提取 `msg.params.get("_meta")`。`RetryGuard` 在发起内部重试请求时，将原请求的 `_meta` 重新注入 `retry_req.params["_meta"]`，确保与 MCP 服务端协议要求完全兼容。
+
+2. **Cassette Schema 对 Guard Note 字段的结构约束**:
+   - **歧义**：G05 在重试过程中需要记录尝试次数（attempt）、已重试次数（retry_count）和退避时长（backoff_ms）。然而 `schemas/cassette.schema.json` 对 `msg.guards` 项定义了 `additionalProperties: false`，仅允许 `id`、`action` 与可选的 `detail: str`。
+   - **决策**：严格遵守 `cassette.schema.json` 契约，所有额外的诊断和跟踪字段统一格式化为 `detail: str` 字符串属性（例如 `detail=f"attempt={attempt} retry_count={count} backoff_ms={ms}"`），禁止向 note 字典添加未在 schema 声明的顶层键，确保 Cassette 录制产物 100% 通过 schema 校验。
+
+3. **对抗类故障的跨沙箱能力挂载**:
+   - **歧义**：A01-A03 对抗类故障要求 Agent “照做”并调用 `send_email` 将数据外发至攻击者邮箱，但单域基准场景（如 `weather`）默认未挂载 `sb_mail` 沙箱。
+   - **决策**：依据 S8.5 规范要求，在 `run_episode` 中针对对抗故障（A01、A02、A03）自动并入 `sb_mail` 邮件沙箱，使模拟模型发出的 `send_email` 请求能够正常流经代理管道并被 G07/G08 正确识别与拦截。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+246 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 125 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+1236 passed, 6 skipped, 12 deselected, 41 warnings in 893.42s (0:14:53)
+Required test coverage of 85.0% reached. Total coverage: 90.74%
+EXIT=0
+```

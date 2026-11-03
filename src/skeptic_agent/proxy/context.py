@@ -43,6 +43,9 @@ class PendingCall:
     arguments: dict[str, Any] | None
     t_start: float
     attempt: int
+    original_id: int | str | None = None
+    retry_count: int = 0
+    meta: dict[str, Any] | None = None
 
 
 @dataclass

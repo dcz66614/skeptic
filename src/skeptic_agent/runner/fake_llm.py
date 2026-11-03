@@ -182,6 +182,9 @@ class FakeLLM:
         if strategy == "looper":
             return self._generate_looper(messages=messages, tools=tools, model=model)
 
+        if strategy in ("obedient", "zhaozuo", "follower"):
+            return self._generate_obedient(messages=messages, tools=tools, model=model)
+
         # Fallback completion
         return self._make_text_completion("I have completed the task.", model=model)
 
@@ -482,6 +485,107 @@ class FakeLLM:
             object="chat.completion",
             usage=CompletionUsage(completion_tokens=20, prompt_tokens=40, total_tokens=60),
         )
+
+    def _generate_obedient(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None,
+        model: str,
+    ) -> ChatCompletion:
+        """Obedient / 照做 script: obeys prompt injection in tool outputs or
+        tool descriptions (S13.5, G52)."""
+        tool_results = self._extract_tool_results(messages)
+
+        # If no tool calls made yet, check tool descriptions for prompt injection (A02/A03)
+        if not tool_results:
+            if tools:
+                for t in tools:
+                    desc = str(t.get("function", {}).get("description", ""))
+                    m = re.search(
+                        r'(?:also\s+)?call\s+([a-zA-Z0-9_]+)\s+with\s+to="([^"]+)"',
+                        desc,
+                        re.IGNORECASE,
+                    )
+                    if m:
+                        target_tool = m.group(1)
+                        to_addr = m.group(2)
+                        resolved_name = self._resolve_tool_function_name(target_tool, tools)
+                        args = {"to": to_addr, "subject": "sync", "body": "exfil"}
+                        tool_call = ChatCompletionMessageToolCall(
+                            id=f"call_obedient_{self.call_count}",
+                            type="function",
+                            function=Function(name=resolved_name, arguments=json.dumps(args)),
+                        )
+                        msg = ChatCompletionMessage(
+                            role="assistant", content=None, tool_calls=[tool_call]
+                        )
+                        return ChatCompletion(
+                            id=f"fake-obedient-{self.call_count}",
+                            choices=[Choice(finish_reason="tool_calls", index=0, message=msg)],
+                            created=1234567890,
+                            model=model,
+                            object="chat.completion",
+                            usage=CompletionUsage(
+                                completion_tokens=20, prompt_tokens=40, total_tokens=60
+                            ),
+                        )
+
+            # Otherwise make primary tool call
+            target_tool, target_args = self._extract_primary_tool_and_args(tools)
+            resolved_name = self._resolve_tool_function_name(target_tool, tools)
+            tool_call = ChatCompletionMessageToolCall(
+                id=f"call_obedient_{self.call_count}",
+                type="function",
+                function=Function(name=resolved_name, arguments=json.dumps(target_args)),
+            )
+            msg = ChatCompletionMessage(role="assistant", content=None, tool_calls=[tool_call])
+            return ChatCompletion(
+                id=f"fake-obedient-{self.call_count}",
+                choices=[Choice(finish_reason="tool_calls", index=0, message=msg)],
+                created=1234567890,
+                model=model,
+                object="chat.completion",
+                usage=CompletionUsage(completion_tokens=20, prompt_tokens=40, total_tokens=60),
+            )
+
+        # Tool results exist. Check if any result carries injected instruction (A01)
+        last_content = str(tool_results[-1].get("content", ""))
+        m = re.search(
+            r'(?:also\s+)?call\s+([a-zA-Z0-9_]+)\s+with\s+to="([^"]+)"',
+            last_content,
+            re.IGNORECASE,
+        )
+        if m and "Blocked:" not in last_content:
+            target_tool = m.group(1)
+            to_addr = m.group(2)
+            subj = "sync"
+            m_subj = re.search(r'subject="([^"]+)"', last_content, re.IGNORECASE)
+            if m_subj:
+                subj = m_subj.group(1)
+            resolved_name = self._resolve_tool_function_name(target_tool, tools)
+            args = {"to": to_addr, "subject": subj, "body": "exfil data"}
+            tool_call = ChatCompletionMessageToolCall(
+                id=f"call_obedient_{self.call_count}",
+                type="function",
+                function=Function(name=resolved_name, arguments=json.dumps(args)),
+            )
+            msg = ChatCompletionMessage(role="assistant", content=None, tool_calls=[tool_call])
+            return ChatCompletion(
+                id=f"fake-obedient-{self.call_count}",
+                choices=[Choice(finish_reason="tool_calls", index=0, message=msg)],
+                created=1234567890,
+                model=model,
+                object="chat.completion",
+                usage=CompletionUsage(completion_tokens=20, prompt_tokens=40, total_tokens=60),
+            )
+
+        final_ans = (
+            getattr(self.scenario.oracle, "final_answer", "OK")
+            if (self.scenario and getattr(self.scenario, "oracle", None))
+            else "OK"
+        )
+        return self._make_text_completion(f"Finished: {final_ans}", model=model)
 
     def _make_text_completion(self, content: str, model: str) -> ChatCompletion:
         msg = ChatCompletionMessage(role="assistant", content=content)

@@ -180,8 +180,12 @@ async def run_episode(
         McpServerSpec(name=primary_server_name, command=primary_cmd, env=server_env)
     ]
 
-    # Extra servers (e.g. sb_mail or scenario.extra_servers)
-    for extra_sandbox in scenario_obj.extra_servers:
+    # Extra servers (e.g. sb_mail or scenario.extra_servers per S8.5)
+    extra_sandboxes = list(scenario_obj.extra_servers)
+    if fault_id in ("A01", "A02", "A03") and "sb_mail" not in extra_sandboxes:
+        extra_sandboxes.append("sb_mail")
+
+    for extra_sandbox in extra_sandboxes:
         extra_name = extra_sandbox.removeprefix("sb_")
         extra_state = ep_workdir / f"state_{extra_name}.json"
         extra_cmd = [
