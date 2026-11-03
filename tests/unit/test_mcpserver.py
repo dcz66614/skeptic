@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from mcp import Client
 from mcp.server.mcpserver.exceptions import ToolError
 
 from skeptic_agent.mcpserver.server import (
+    MAX_ALLOWED_TIMEOUT_SECONDS,
     create_server,
     resolve_run_dir,
 )
@@ -121,6 +123,121 @@ async def test_run_suite_max_cost_usd_limit() -> None:
             },
         )
         assert res_neg.is_error
+
+
+async def test_run_suite_timeout_seconds_boundary() -> None:
+    """run_suite advertises maximum in inputSchema and enforces 1800s cap per S14.3.
+
+    Boundary: 1800 ok, 1801 rejected.
+    """
+    server = create_server()
+    async with Client(server) as client:
+        # 1. Advertise maximum in tool inputSchema
+        tools_res = await client.list_tools()
+        run_suite_tool = next(t for t in tools_res.tools if t.name == "run_suite")
+        timeout_prop = run_suite_tool.input_schema["properties"]["timeout_seconds"]
+        assert timeout_prop.get("maximum") == MAX_ALLOWED_TIMEOUT_SECONDS
+
+        # 2. Boundary: 1801 rejected via client MCP validation (exceeds 1800 s cap)
+        res_1801 = await client.call_tool(
+            "run_suite",
+            {
+                "suite": "smoke",
+                "agent": "reference:fake/oracle_follower",
+                "profile": "none",
+                "max_cost_usd": 0.1,
+                "timeout_seconds": 1801,
+            },
+        )
+        assert res_1801.is_error
+        err_1801 = res_1801.content[0].text if res_1801.content else ""
+        assert (
+            "less than or equal to 1800" in err_1801
+            or "timeout_seconds" in err_1801
+            or "1800" in err_1801
+        )
+
+        res_1801_float = await client.call_tool(
+            "run_suite",
+            {
+                "suite": "smoke",
+                "agent": "reference:fake/oracle_follower",
+                "profile": "none",
+                "max_cost_usd": 0.1,
+                "timeout_seconds": 1801.0,
+            },
+        )
+        assert res_1801_float.is_error
+
+        # Boundary: <= 0 rejected via client MCP validation
+        res_neg = await client.call_tool(
+            "run_suite",
+            {
+                "suite": "smoke",
+                "agent": "reference:fake/oracle_follower",
+                "profile": "none",
+                "max_cost_usd": 0.1,
+                "timeout_seconds": -1.0,
+            },
+        )
+        assert res_neg.is_error
+
+        # 3. Direct invocation runtime guard check (server.py ToolError)
+        tool_spec = server._tool_manager.get_tool("run_suite")
+        assert tool_spec is not None
+        with pytest.raises(ToolError, match="timeout_seconds"):
+            await tool_spec.fn(
+                suite="smoke",
+                agent="reference:fake/oracle_follower",
+                profile="none",
+                max_cost_usd=0.1,
+                timeout_seconds=1801.0,
+            )
+        with pytest.raises(ToolError, match="timeout_seconds"):
+            await tool_spec.fn(
+                suite="smoke",
+                agent="reference:fake/oracle_follower",
+                profile="none",
+                max_cost_usd=0.1,
+                timeout_seconds=0.0,
+            )
+
+        # 4. Boundary: 1800 ok (both int 1800 and float 1800.0)
+        with patch(
+            "skeptic_agent.mcpserver.server.execute_run",
+            new_callable=AsyncMock,
+        ) as mock_exec:
+            mock_exec.return_value = {
+                "run_id": "boundary_test_run_1800",
+                "agents": [{"metrics": {"SKS": {"point": 100.0}}}],
+            }
+            res_1800 = await client.call_tool(
+                "run_suite",
+                {
+                    "suite": "smoke",
+                    "agent": "reference:fake/oracle_follower",
+                    "profile": "none",
+                    "max_cost_usd": 0.1,
+                    "timeout_seconds": 1800,
+                },
+            )
+            assert not res_1800.is_error
+            assert mock_exec.call_count == 1
+            assert mock_exec.call_args.kwargs["timeout_seconds"] == 1800
+
+            res_1800_float = await client.call_tool(
+                "run_suite",
+                {
+                    "suite": "smoke",
+                    "agent": "reference:fake/oracle_follower",
+                    "profile": "none",
+                    "max_cost_usd": 0.1,
+                    "timeout_seconds": 1800.0,
+                },
+            )
+            assert not res_1800_float.is_error
+            assert mock_exec.call_count == 2
+            assert mock_exec.call_args.kwargs["timeout_seconds"] == 1800.0
 
 
 async def test_run_suite_invalid_suite() -> None:

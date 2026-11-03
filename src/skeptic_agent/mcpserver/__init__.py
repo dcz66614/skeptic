@@ -2,12 +2,14 @@
 
 from skeptic_agent.mcpserver.server import (
     MAX_ALLOWED_COST_USD,
+    MAX_ALLOWED_TIMEOUT_SECONDS,
     create_server,
     resolve_run_dir,
 )
 
 __all__ = [
     "MAX_ALLOWED_COST_USD",
+    "MAX_ALLOWED_TIMEOUT_SECONDS",
     "create_server",
     "resolve_run_dir",
 ]

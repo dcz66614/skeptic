@@ -3739,3 +3739,47 @@ EXIT=0
 Required test coverage of 85.0% reached. Total coverage: 90.72%
 EXIT=0
 ```
+
+## K55fix run_suite 超时时间上限 1800 秒（2026-11-03）
+
+基线 `75ba766`，分支 `codex`。修复针对 K55 的一项阻塞性评审意见：根据 S14.3 规范（`run_suite` 同步执行，单次最长 30 分钟），在 MCP 服务端对 `run_suite` 工具的 `timeout_seconds` 参数实施 1800 秒（30 分钟）上限约束。
+
+### 交付内容
+
+1. **MCP 工具 inputSchema 与运行时上限约束 (`src/skeptic_agent/mcpserver/server.py`, `src/skeptic_agent/mcpserver/__init__.py`)**:
+   - 定义常量 `MAX_ALLOWED_TIMEOUT_SECONDS: float = 1800.0`，并在 `mcpserver/__init__.py` 中导出；
+   - 在 `run_suite` 工具函数形参注解中为 `timeout_seconds` 声明 `Field(default=1800.0, gt=0.0, le=MAX_ALLOWED_TIMEOUT_SECONDS, description=...)`，使 MCP 客户端通过 `list_tools` 查询时在 `inputSchema` 的 `timeout_seconds` 属性中公开展示 `maximum: 1800.0`；
+   - 在 `run_suite` 函数体内部补充运行时边界校验，当 `timeout_seconds > MAX_ALLOWED_TIMEOUT_SECONDS` 或 `<= 0.0` 时抛出带有明确参数说明的 `ToolError`（遵循 S14.3 单次最长 30 分钟规格描述）。
+
+2. **边界单元测试核验 (`tests/unit/test_mcpserver.py`)**:
+   - 新增 `test_run_suite_timeout_seconds_boundary` 测试用例；
+   - 验证 `list_tools` 返回的 `input_schema` 中 `timeout_seconds` 正确声明了 `maximum: 1800.0`；
+   - 边界测试：`timeout_seconds=1800`（int 与 float 格式）均能正常通过校验并派发执行；
+   - 边界测试：`timeout_seconds=1801`（int 与 float 格式）以及负数均被拒绝并返回参数校验错误。
+
+### 规格歧义与实现决策
+
+1. **超限处理方式：拒绝（Reject）与截断（Clamp）的选择**:
+   - **歧义**：评审意见中提及“reject or clamp larger values with a clear error”。
+   - **决策**：MCP Python SDK 根据 Pydantic `Field(le=1800.0)` 自动生成 `inputSchema` 并先行对客户端传入的 `arguments` 执行参数校验。当传入 `1801` 时，Pydantic 会自动捕获并报告验证错误（返回 `isError=true`），这与同函数中 `max_cost_usd` 超限（`> 10.0`）的处理机制完全保持一致。同时在工具函数体内亦保留 fail-closed 运行时防御性检查，以清晰的 `ToolError` 拒绝超出 1800 秒的请求。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+255 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 130 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+1303 passed, 6 skipped, 12 deselected, 41 warnings in 1162.45s (0:19:22)
+Required test coverage of 85.0% reached. Total coverage: 90.73%
+EXIT=0
+```

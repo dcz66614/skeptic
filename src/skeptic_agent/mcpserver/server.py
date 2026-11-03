@@ -32,6 +32,9 @@ from skeptic_agent.scenario.suites import list_suites, resolve_suite_scenarios
 MAX_ALLOWED_COST_USD: float = 10.0
 """The maximum budget permitted for run_suite over MCP (S14.3, K55)."""
 
+MAX_ALLOWED_TIMEOUT_SECONDS: float = 1800.0
+"""The maximum run timeout permitted over MCP (30 minutes per S14.3, K55)."""
+
 
 def resolve_run_dir(
     run_id: str,
@@ -196,7 +199,12 @@ def create_server(name: str = "skeptic") -> MCPServer[Any]:
             float,
             Field(
                 default=1800.0,
-                description="Max execution timeout in seconds (default 1800.0, i.e. 30 min)",
+                gt=0.0,
+                le=MAX_ALLOWED_TIMEOUT_SECONDS,
+                description=(
+                    f"Max execution timeout in seconds (must be <= {MAX_ALLOWED_TIMEOUT_SECONDS}, "
+                    f"i.e. 30 min per S14.3; default {MAX_ALLOWED_TIMEOUT_SECONDS})"
+                ),
             ),
         ] = 1800.0,
         out_dir: Annotated[
@@ -208,6 +216,13 @@ def create_server(name: str = "skeptic") -> MCPServer[Any]:
             msg = (
                 f"Parameter error: max_cost_usd must be <= {MAX_ALLOWED_COST_USD} "
                 f"and >= 0.0, got {max_cost_usd}"
+            )
+            raise ToolError(msg)
+
+        if timeout_seconds > MAX_ALLOWED_TIMEOUT_SECONDS or timeout_seconds <= 0.0:
+            msg = (
+                f"Parameter error: timeout_seconds must be <= {MAX_ALLOWED_TIMEOUT_SECONDS} "
+                f"(maximum 30 minutes per S14.3) and > 0.0, got {timeout_seconds}"
             )
             raise ToolError(msg)
 
