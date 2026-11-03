@@ -3658,3 +3658,7 @@ Required test coverage of 85.0% reached. Total coverage: 90.59%
 EXIT=0
 ```
 
+
+## K54 merge (2026-11-03)
+
+- codex  ff-merged to main. 
