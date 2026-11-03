@@ -1,0 +1,2 @@
+# Keep Markdown stored with LF line endings in the repo (K54 rewrote IMPLEMENTATION_LOG.md as CRLF)
+*.md text eol=lf
