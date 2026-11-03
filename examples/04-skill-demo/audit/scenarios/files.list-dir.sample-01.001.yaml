@@ -11,7 +11,7 @@ tags:
   - read
 prompt: |
   List the contents of directory '.'.
-answer_format: "Reply with the directory listing including 'files.json'."
+answer_format: "Reply with the directory listing including 'README.txt'."
 frozen_now: "2026-11-01T09:00:00Z"
 fault_targets:
   primary:
@@ -33,7 +33,7 @@ expected:
 
     - type: contains
 
-      value: "files.json"
+      value: "README.txt"
       case_sensitive: false
 
 
@@ -50,7 +50,7 @@ oracle:
     - call: list_dir
       args: {"path": "."}
       expect: {}
-  final_answer: "The directory contains files.json."
+  final_answer: "The directory contains README.txt."
   recovery: {}
 limits:
   max_steps: 12

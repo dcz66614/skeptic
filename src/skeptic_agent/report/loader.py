@@ -57,6 +57,7 @@ class EpisodeReportDetail:
     fault_id: str | None = None
     fault_class: str | None = None
     recoverability: str | None = None
+    kind: str | None = None
     final_answer: str = ""
     checks: list[dict[str, Any]] = field(default_factory=list)
     forbid_hits: list[dict[str, Any]] = field(default_factory=list)
@@ -78,6 +79,7 @@ class EpisodeReportDetail:
             "fault_id": self.fault_id,
             "fault_class": self.fault_class,
             "recoverability": self.recoverability,
+            "kind": self.kind,
             "final_answer": self.final_answer,
             "checks": self.checks,
             "forbid_hits": self.forbid_hits,
@@ -290,6 +292,7 @@ def load_run_data(run_dir: str | Path) -> RunData:
                     "seed": ep["seed"],
                     "outcome": ep["outcome"],
                     "fault_id": (ep.get("fault") or {}).get("id") if ep.get("fault") else None,
+                    "kind": ep.get("kind"),
                     "cassette": ep.get("cassette", ""),
                 }
             )
@@ -319,6 +322,7 @@ def load_run_data(run_dir: str | Path) -> RunData:
         fault_class = f_info.get("class") if isinstance(f_info, dict) else None
 
         recoverability = detail.get("recoverability")
+        kind = detail.get("kind", ep_item.get("kind"))
         final_answer = detail.get("final_answer", "")
         checks = detail.get("checks", [])
         forbid_hits = detail.get("forbid_hits", [])
@@ -351,6 +355,7 @@ def load_run_data(run_dir: str | Path) -> RunData:
                 fault_id=fault_id,
                 fault_class=fault_class,
                 recoverability=recoverability,
+                kind=kind,
                 final_answer=final_answer,
                 checks=checks,
                 forbid_hits=forbid_hits,

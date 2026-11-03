@@ -10,7 +10,7 @@ tags:
   - audit
   - read
 prompt: |
-  List available forecast cities and check if Tokyo is included.
+  List forecast cities and check if Tokyo is included.
 answer_format: "State whether Tokyo is in the city list."
 frozen_now: "2026-11-01T09:00:00Z"
 fault_targets:

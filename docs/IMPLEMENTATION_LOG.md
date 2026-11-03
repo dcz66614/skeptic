@@ -3791,3 +3791,32 @@ EXIT=0
 ## K56
 
 Built by agy gemini-3.8-flash-high across two sessions (both exited while waiting on the full test suite, before committing); audit module (src/skeptic_agent/audit/), skills/, examples/, tests/unit/test_audit.py, tests/integration/test_skill.py. Orchestrator ran the Done-when checks (ruff, format, mypy clean; 1312 passed, 6 skipped, 90.14% coverage) and committed.
+
+
+## K56fix 真实基准真值、基于注解的写操作判定与可恢复故障发现（2026-11-03）
+
+分支 `codex`，基线 `15022fb`。针对 K56 的三项审查缺陷实施修复：
+
+1. **真实基准真值（Ground Truth）导出机制**：
+   - 重构 `src/skeptic_agent/audit/scenarios.py` 中的场景生成逻辑，废除原先硬编码/编造的预期输出（如 Berlin 预报的硬编码 11.8、files 的不存在路径 `data/files.json` 等）。
+   - 实现 `_execute_clean_calls_for_server`，通过既有客户端/代理通道（`skeptic proxy stdio -- <server>`）无注入（clean）实际调用工具，从返回的响应结构（`CallToolResult.structured_content` 或文本）中提取实际执行结果。
+   - 实现 `_build_clean_call_spec`，动态构建场景 prompt、answer_format、checks、oracle.steps[].expect 和 final_answer。例如 Berlin 预报预期数值严格按真实沙箱输出（10.6°C）绑定；读文件场景以真实存在的 `README.txt` / `notes.md` 为基准。
+   - 更新 `examples/04-skill-demo/audit/scenarios/` 下所有 11 个场景 YAML，确保全部通过 S8.4 语义规则与 Schema 校验。
+
+2. **基于注解与场景类型的写操作检测**：
+   - 修复 `src/skeptic_agent/audit/findings.py` 中基于工具名包含 `'write'` 子串的脆弱判断。
+   - 新增 `is_write_tool` 判定函数，优先依据工具注解（`readOnlyHint` / `destructiveHint`）、沙箱工具规范（`SandboxToolSpec.annotations()`）与场景类型（`kind == "write"`），并在缺失注解时回退到动词前缀分类（`classify_tool_kind`）。
+   - 使诸如 `create_event` 等不含 `'write'` 的写操作工具在 `FALSE_SUCCESS` 时正确获得 `high` 严重度。
+   - 在 `src/skeptic_agent/report/loader.py` 中的 `EpisodeReportDetail` 与 `load_run_data` 中透传 `kind` 字段。
+
+3. **仅将可恢复故障下的 HONEST_FAILURE 列为发现候选**：
+   - 修改 `src/skeptic_agent/audit/findings.py` 候选问题收集逻辑（行 119–128）与复现统计逻辑，严格遵循 S14.2 与 ADR-0003：不可恢复故障下智能体如实报告失败（`HONEST_FAILURE`）是符合预期的安全行为，不作为可靠性缺陷。
+   - 实现 `is_fault_recoverable`，检查 Episode 本身记录的 `recoverability` 状态或查询 `bench/recoverability.json` 缓存，仅在故障被判定为 `recoverable` 时才将 `HONEST_FAILURE` 作为 `low` 严重度发现列出。
+
+4. **测试**：
+   - 在 `tests/unit/test_audit.py` 中新增单元测试，分别覆盖真实真值调用与动态叶子抽取、不含 write 名称工具（`create_event`）的高严重度判定、以及不可恢复与可恢复 `HONEST_FAILURE` 的差异化过滤。
+   - 补充 `is_write_tool` 的各种分支（discovery / sandbox / annotation / fallback）及 `summarize_findings` 的复跑过滤分支单元测试。
+
+规格歧义与处理：
+- S14.2 规定场景的预期答案由实际调用一次工具（无故障）得到。在多工具同一服务器环境下，为了保持效率与确定性，通过单一代理进程会话批量执行无故障调用，并设定 `SKEPTIC_FROZEN_NOW = "2026-11-01T09:00:00Z"` 与独立状态文件，避免测试间状态交叉污染。
+- 对于非标准沙箱的第三方未知工具，当调用输出包含数值字段时自动绑定 `number_close` 校验与 `numeric_path`，对于纯文本或列表结构自动绑定 `contains` 校验与非空 Canary 防御，保证生成的场景天然通过 S8.4 Rule 4 校验。

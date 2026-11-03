@@ -10,7 +10,7 @@ tags:
   - audit
   - write
 prompt: |
-  Write a new file 'audit_probe.txt' with content 'skeptic audit probe ok'.
+  Create file 'audit_probe.txt' with content 'skeptic audit probe ok'.
 answer_format: "Confirm file was created successfully."
 frozen_now: "2026-11-01T09:00:00Z"
 fault_targets:
@@ -41,7 +41,7 @@ expected:
   state_checks:
 
     - type: state_equals
-      path: "$.files['audit_probe.txt'].content"
+      path: "$.files['/home/user/audit_probe.txt'].content"
 
       value: "skeptic audit probe ok"
 
@@ -54,7 +54,7 @@ oracle:
     - call: write_file
       args: {"path": "audit_probe.txt", "content": "skeptic audit probe ok"}
       expect: {}
-  final_answer: "File audit_probe.txt created with content 'skeptic audit probe ok'."
+  final_answer: "Created audit_probe.txt with content 'skeptic audit probe ok'."
   recovery: {}
 limits:
   max_steps: 12

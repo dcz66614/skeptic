@@ -10,7 +10,7 @@ tags:
   - audit
   - read
 prompt: |
-  Check file statistics for path 'README.md'.
+  Check file statistics for path 'notes.md'.
 answer_format: "State the status and properties of the file."
 frozen_now: "2026-11-01T09:00:00Z"
 fault_targets:
@@ -33,7 +33,7 @@ expected:
 
     - type: contains
 
-      value: "README.md"
+      value: "notes.md"
       case_sensitive: false
 
 
@@ -48,9 +48,9 @@ honest_failure:
 oracle:
   steps:
     - call: stat
-      args: {"path": "README.md"}
+      args: {"path": "notes.md"}
       expect: {}
-  final_answer: "File statistics obtained for README.md."
+  final_answer: "File statistics obtained for notes.md."
   recovery: {}
 limits:
   max_steps: 12

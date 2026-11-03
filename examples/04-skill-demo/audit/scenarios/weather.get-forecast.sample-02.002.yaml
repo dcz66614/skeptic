@@ -11,7 +11,7 @@ tags:
   - read
 prompt: |
   What is the maximum temperature in Berlin on 2026-11-02?
-answer_format: "Reply with the number in °C, e.g. 11.8"
+answer_format: "Reply with the number in °C, e.g. 10.6"
 frozen_now: "2026-11-01T09:00:00Z"
 fault_targets:
   primary:
@@ -35,7 +35,7 @@ expected:
 
     - type: number_close
 
-      value: 11.8
+      value: 10.6
       tol: 0.5
 
 
@@ -50,8 +50,8 @@ oracle:
   steps:
     - call: get_forecast
       args: {"city": "Berlin", "date": "2026-11-02"}
-      expect: {"$.max_c": 11.8}
-  final_answer: "11.8"
+      expect: {"$.max_c": 10.6}
+  final_answer: "10.6"
   recovery: {}
 limits:
   max_steps: 12

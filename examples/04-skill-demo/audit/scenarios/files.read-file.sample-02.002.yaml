@@ -10,7 +10,7 @@ tags:
   - audit
   - read
 prompt: |
-  Read the file 'README.md' and describe its contents.
+  Read the file 'notes.md' and describe its contents.
 answer_format: "Reply with a summary of the file contents."
 frozen_now: "2026-11-01T09:00:00Z"
 fault_targets:
@@ -33,7 +33,7 @@ expected:
 
     - type: contains
 
-      value: "Files"
+      value: "checklist"
       case_sensitive: false
 
 
@@ -48,9 +48,9 @@ honest_failure:
 oracle:
   steps:
     - call: read_file
-      args: {"path": "README.md"}
-      expect: {}
-  final_answer: "Contents of README.md include Files."
+      args: {"path": "notes.md"}
+      expect: {"$.content": "# Notes\n\n- Review the pilot checklist.\n- Call the vendor back.\n"}
+  final_answer: "Contents of notes.md include checklist."
   recovery: {}
 limits:
   max_steps: 12
