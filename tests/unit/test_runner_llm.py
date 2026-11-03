@@ -261,3 +261,91 @@ async def test_reference_agent_openrouter_cost_reporting(
     res = await agent.run(task)
     assert res.final_answer == "42"
     assert res.usage.cost_usd == 0.000456
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("raw_spec", "expected_model_sent"),
+    [
+        ("compat/deepseek-v4-pro", "deepseek-v4-pro"),
+        ("compat/gpt-5.6-terra", "gpt-5.6-terra"),
+        ("openai/gpt-4o", "gpt-4o"),
+        ("openrouter/anthropic/claude-3.5-sonnet", "anthropic/claude-3.5-sonnet"),
+        ("fake/honest", "honest"),
+        ("custom-local-model", "custom-local-model"),
+    ],
+)
+async def test_reference_agent_strips_provider_prefix_for_all_providers(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    raw_spec: str,
+    expected_model_sent: str,
+) -> None:
+    """ReferenceAgent strips provider prefix before sending model name (G53a)."""
+    from openai.types import CompletionUsage
+    from openai.types.chat import ChatCompletion, ChatCompletionMessage
+    from openai.types.chat.chat_completion import Choice
+
+    from skeptic_agent.runner.adapters.reference import ReferenceAdapter
+
+    sent_models: list[str] = []
+
+    async def mock_create(**kwargs: Any) -> ChatCompletion:
+        sent_models.append(kwargs["model"])
+        msg = ChatCompletionMessage(role="assistant", content="Answer completed")
+        return ChatCompletion(
+            id="chat-strip",
+            choices=[Choice(finish_reason="stop", index=0, message=msg)],
+            created=1234567890,
+            model=kwargs["model"],
+            object="chat.completion",
+            usage=CompletionUsage(completion_tokens=5, prompt_tokens=10, total_tokens=15),
+        )
+
+    mock_client = MagicMock()
+    mock_client.chat.completions.create = AsyncMock(side_effect=mock_create)
+    monkeypatch.setattr(
+        "skeptic_agent.runner.reference_agent.create_llm_client",
+        lambda *args, **kwargs: mock_client,
+    )
+
+    task = EpisodeTask(
+        episode_id=f"test-strip-{expected_model_sent.replace('/', '-')}",
+        prompt="hello",
+        servers=[],
+        model=raw_spec,
+        max_steps=3,
+        timeout_s=30,
+        prompt_variant="plain",
+        workdir=tmp_path,
+        env={},
+    )
+
+    adapter = ReferenceAdapter()
+    res = await adapter.run(task)
+    assert res.final_answer == "Answer completed"
+    assert sent_models == [expected_model_sent]
+
+
+def test_models_yaml_compat_models_present() -> None:
+    """bench/leaderboard/models.yaml contains deepseek-v4-pro and gpt-5.6-terra (G53a)."""
+    repo_root = Path(__file__).resolve().parents[2]
+    models_file = repo_root / "bench" / "leaderboard" / "models.yaml"
+    data = yaml.safe_load(models_file.read_text(encoding="utf-8"))
+    models_by_id = {m["id"]: m for m in data["models"]}
+
+    assert "compat/deepseek-v4-pro" in models_by_id
+    ds = models_by_id["compat/deepseek-v4-pro"]
+    assert ds["tier"] == "dev"
+    assert ds["supports_tools"] is True
+    assert ds["price_in_per_mtok"] == 0.6
+    assert ds["price_out_per_mtok"] == 2.4
+    assert "conservative estimate, verify against 128api billing" in ds["notes"]
+
+    assert "compat/gpt-5.6-terra" in models_by_id
+    terra = models_by_id["compat/gpt-5.6-terra"]
+    assert terra["tier"] == "mid"
+    assert terra["supports_tools"] is True
+    assert terra["price_in_per_mtok"] == 2.5
+    assert terra["price_out_per_mtok"] == 10.0
+    assert "conservative estimate, verify against 128api billing" in terra["notes"]

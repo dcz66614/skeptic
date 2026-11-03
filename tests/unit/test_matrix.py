@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import random
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,7 @@ from skeptic_agent.runner.matrix import (
     build_summary_doc,
     compare_runs,
     compute_worst_scenarios,
+    count_matrix_episodes,
     expand_matrix_configs,
     gate_check,
     load_matrix,
@@ -366,3 +368,58 @@ def test_cli_compare_command(tmp_path: Path) -> None:
     assert res.exit_code == 0
     parsed = json.loads(res.stdout)
     assert parsed["metrics"]["SKS"]["diff"] == 5.0
+
+
+def test_guards_ab_matrix_file_and_episode_count() -> None:
+    """guards-ab.yaml conforms to schema, expands configs, and counts episodes (G53a)."""
+    repo_root = Path(__file__).resolve().parents[2]
+    matrix_path = repo_root / "bench" / "matrix" / "guards-ab.yaml"
+    assert matrix_path.is_file(), f"Missing matrix file at {matrix_path}"
+
+    matrix = load_matrix(matrix_path)
+    assert matrix.id == "guards-ab"
+    assert matrix.suite == "guards-ab"
+    assert matrix.profiles == ["silent-core", "loud-core", "adversarial-core"]
+    assert matrix.seeds == [1]
+    assert matrix.max_cost_usd <= 60.0
+    assert len(matrix.configs) == 10
+
+    # Expand matrix
+    expanded = expand_matrix_configs(matrix)
+    assert len(expanded) == 20
+    models_used = {c.model for c in expanded}
+    assert models_used == {"compat/deepseek-v4-pro", "compat/gpt-5.6-terra"}
+
+    # Total episode count
+    total_eps = count_matrix_episodes(matrix)
+    print(f"Total episode count for guards-ab matrix: {total_eps}")
+    assert total_eps == 19220
+
+
+def test_guards_ab_suite_sampling() -> None:
+    """bench/suites/guards-ab.yaml contains 60 scenarios sampled with seed 0 (G53a)."""
+    from skeptic_agent.scenario.suites import load_suite
+
+    suite_ab = load_suite("guards-ab")
+    assert len(suite_ab.scenarios) == 60
+
+    core_v1 = load_suite("core-v1")
+    rng = random.Random(0)
+    expected_sample = rng.sample(core_v1.scenarios, 60)
+    assert suite_ab.scenarios == expected_sample
+
+
+def test_cli_bench_run_dry_run_and_count() -> None:
+    """skeptic bench run supports --dry-run and --count for matrix files (G53a)."""
+    repo_root = Path(__file__).resolve().parents[2]
+    matrix_path = repo_root / "bench" / "matrix" / "guards-ab.yaml"
+
+    res_dry = runner.invoke(app, ["bench", "run", "--matrix", str(matrix_path), "--dry-run"])
+    assert res_dry.exit_code == 0
+    assert "guards-ab" in res_dry.stdout
+    assert "20 expanded configs" in res_dry.stdout
+    assert "19220" in res_dry.stdout
+
+    res_count = runner.invoke(app, ["bench", "run", "--matrix", str(matrix_path), "--count"])
+    assert res_count.exit_code == 0
+    assert "Total episodes: 19220" in res_count.stdout

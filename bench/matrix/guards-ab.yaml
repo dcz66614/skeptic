@@ -1,0 +1,146 @@
+schema: skeptic.matrix/v1
+id: guards-ab
+suite: guards-ab
+profiles:
+  - silent-core
+  - loud-core
+  - adversarial-core
+seeds:
+  - 1
+max_cost_usd: 60.0
+configs:
+  # Baseline: no guards
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards: none
+    models:
+      - compat/deepseek-v4-pro
+      - compat/gpt-5.6-terra
+
+  # Full protection: all 8 guards
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards: all
+    models:
+      - compat/deepseek-v4-pro
+      - compat/gpt-5.6-terra
+
+  # Ablation 1: all minus G01 evidence_contract
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards:
+      - schema_guard
+      - staleness_guard
+      - emptiness_guard
+      - retry_guard
+      - loop_breaker
+      - injection_shield
+      - drift_lock
+    models:
+      - compat/deepseek-v4-pro
+      - compat/gpt-5.6-terra
+
+  # Ablation 2: all minus G02 schema_guard
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards:
+      - evidence_contract
+      - staleness_guard
+      - emptiness_guard
+      - retry_guard
+      - loop_breaker
+      - injection_shield
+      - drift_lock
+    models:
+      - compat/deepseek-v4-pro
+      - compat/gpt-5.6-terra
+
+  # Ablation 3: all minus G03 staleness_guard
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards:
+      - evidence_contract
+      - schema_guard
+      - emptiness_guard
+      - retry_guard
+      - loop_breaker
+      - injection_shield
+      - drift_lock
+    models:
+      - compat/deepseek-v4-pro
+      - compat/gpt-5.6-terra
+
+  # Ablation 4: all minus G04 emptiness_guard
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards:
+      - evidence_contract
+      - schema_guard
+      - staleness_guard
+      - retry_guard
+      - loop_breaker
+      - injection_shield
+      - drift_lock
+    models:
+      - compat/deepseek-v4-pro
+      - compat/gpt-5.6-terra
+
+  # Ablation 5: all minus G05 retry_guard
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards:
+      - evidence_contract
+      - schema_guard
+      - staleness_guard
+      - emptiness_guard
+      - loop_breaker
+      - injection_shield
+      - drift_lock
+    models:
+      - compat/deepseek-v4-pro
+      - compat/gpt-5.6-terra
+
+  # Ablation 6: all minus G06 loop_breaker
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards:
+      - evidence_contract
+      - schema_guard
+      - staleness_guard
+      - emptiness_guard
+      - retry_guard
+      - injection_shield
+      - drift_lock
+    models:
+      - compat/deepseek-v4-pro
+      - compat/gpt-5.6-terra
+
+  # Ablation 7: all minus G07 injection_shield
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards:
+      - evidence_contract
+      - schema_guard
+      - staleness_guard
+      - emptiness_guard
+      - retry_guard
+      - loop_breaker
+      - drift_lock
+    models:
+      - compat/deepseek-v4-pro
+      - compat/gpt-5.6-terra
+
+  # Ablation 8: all minus G08 drift_lock
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards:
+      - evidence_contract
+      - schema_guard
+      - staleness_guard
+      - emptiness_guard
+      - retry_guard
+      - loop_breaker
+      - injection_shield
+    models:
+      - compat/deepseek-v4-pro
+      - compat/gpt-5.6-terra

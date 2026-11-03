@@ -3524,3 +3524,62 @@ EXIT=0
 ## G52 merge (2026-11-03)
 
 - codex  ff-merged to main. 
+
+## G53a G53 对照实验准备与 compat 模型前缀修复（2026-11-03）
+
+基线 `b51b431`，分支 `codex`。完成 Skeptic G53 对照实验准备任务（G53a），修复 ReferenceAgent/ReferenceAdapter 调用远端接口未剥除 provider 前缀的缺陷，扩展 leaderboard 模型与 schema 支持，建立 60 场景抽取套件与 A/B 消融评估矩阵 `bench/matrix/guards-ab.yaml`，实现 dry-run/count 回合计数统计，并编写实验方法论骨架 `docs/en/methodology/guards-ab.md`。零新增外部依赖，测试无真实网络调用与模型推理，保留暂定 `recommended` 预设。
+
+### 交付内容
+
+1. **ReferenceAgent 模型前缀剥除缺陷修复 (`src/skeptic_agent/runner/reference_agent.py`)**:
+   - 缺陷定位：`skeptic run --agent reference:compat/deepseek-v4-pro` 在 `episode.py` 中解析为 `task.model = "compat/deepseek-v4-pro"`。`create_llm_client` 虽然通过 `resolve_model` 解析了 `base_url` 与 `api_key`，但 `ReferenceAgent.run` 的循环调用参数直接使用了未剥除前缀的 `task.model` 作为 `model` 入参（`call_kwargs["model"] = task.model`），导致远端服务端收到包含 provider 前缀的字面量模型名（如报 503 model not found）。
+   - 修复落地：在 `ReferenceAgent.run` 中显式引入 `model_config = resolve_model(task.model)`，将入参修正为 `call_kwargs["model"] = model_config.model_name`，针对所有 provider（`compat/`, `openai/`, `openrouter/`, `fake/` 以及裸模型名）统一剥除 provider 前缀；同时适配 `model_config.provider == "openrouter"` 携带 usage extra_body。
+   - 单元测试：在 `tests/unit/test_runner_llm.py` 中增加 `test_reference_agent_strips_provider_prefix_for_all_providers` 参数化测试，通过 fake client 拦截并断言发往远端接口的实际模型名已严格剔除前缀。
+
+2. **新增模型与 Schema 支持 (`bench/leaderboard/models.yaml`, `schemas/models.schema.json`, `matrix.py`)**:
+   - 扩展 `bench/leaderboard/models.yaml`：
+     - `compat/deepseek-v4-pro`：`display: "DeepSeek V4 Pro"`，`group: open-weight`，`origin: cn`，`tier: dev`，定价保守估计为 `$0.6 / $2.4` USD/Mtok，`supports_tools: true`，备注附注 `"conservative estimate, verify against 128api billing"`。
+     - `compat/gpt-5.6-terra`：`display: "GPT-5.6 Terra"`，`group: closed-frontier`，`origin: us`，`tier: mid`，定价保守估计为 `$2.5 / $10.0` USD/Mtok，`supports_tools: true`，备注附注 `"conservative estimate, verify against 128api billing"`。
+   - 更新 `schemas/models.schema.json`：将 `tier` 的枚举范围由 `["leaderboard", "dev"]` 扩展为 `["leaderboard", "dev", "mid"]`。
+   - 更新 `src/skeptic_agent/runner/matrix.py`：在 `expand_matrix_configs` 中支持 `tier == "mid"` 的模型展开逻辑，保留 `openrouter/openai/gpt-4o-mini` 为首位 dev 默认模型，保障已有 dev 单价与辅助方法契约。
+
+3. **Guards A/B 矩阵与抽样套件 (`bench/matrix/guards-ab.yaml`, `bench/suites/guards-ab.yaml`)**:
+   - 场景抽取：使用种子 0（`random.Random(0).sample(..., 60)`）从 `core-v1` 200 个场景中确定性抽取 60 个场景，覆盖全部 10 个 MCP 沙箱，生成 `bench/suites/guards-ab.yaml`（与别名 `bench/suites/core-v1-guards-ab.yaml`）。
+   - 矩阵配置：符合 `skeptic.matrix/v1` 架构契约，定义 10 种 Guard 配置（baseline `none`、全开 `all`、以及消融 G01–G08 单项 Guard 的 8 种组合），针对 `reference:compat/deepseek-v4-pro` 与 `reference:compat/gpt-5.6-terra` 展开为 20 组配置；覆盖 `silent-core`、`loud-core`、`adversarial-core` 三类故障画像，预算上限设为 `$60.0`。
+   - 回合计数与 CLI：在 `src/skeptic_agent/runner/matrix.py` 中实现 `count_matrix_episodes` 静态计算函数；在 CLI `bench run` 增加 `--dry-run` 与 `--count` 选项。20 组配置 $\times$ 961 回合/配置 = **19,220 总回合数**。
+   - 单元测试：在 `tests/unit/test_matrix.py` 增加矩阵加载、配置展开、回合计数、套件抽样和 CLI dry-run/count 测试。
+
+4. **方法论骨架文档 (`docs/en/methodology/guards-ab.md`)**:
+   - 编写 G53 对照实验方法论说明，详述 60 场景抽取背景、3 种故障画像、10 组防护与消融配置、入选 `recommended` 的判别标准（消融导致 SKS 下降 $\ge 1.0$ 分或 FSR 上升 $\ge 2.0\%$，且置信区间不重叠）、运行与断点恢复指南，并预留评测指标与消融分析结果占位表。
+   - 严格遵循规定，未变更 `src/skeptic_agent/guards/presets.py` 中的 `recommended` 暂定预设。
+
+### 规格歧义与实现决策
+
+1. **`models.schema.json` 中 `tier` 枚举约束**:
+   - **歧义**：任务要求将 `compat/gpt-5.6-terra` 标为 `tier: mid`，但 `schemas/models.schema.json` 的 `tier` 枚举原为 `["leaderboard", "dev"]`。
+   - **决策**：将 `models.schema.json` 中的 `tier` 规范扩展为 `["leaderboard", "dev", "mid"]`，并在 `matrix.py` 模型展开中增加对 `mid` tier 目标的支持；同时保持 `models.yaml` 中第一个模型为 `openrouter/openai/gpt-4o-mini`，确保既有 `test_models_yaml_schema_and_dev_tier` 对 dev 模型成本 $\le \$1.0$ 的断言依然 100% 成立。
+
+2. **矩阵文件与 60 场景抽样的表示方式**:
+   - **歧义**：`matrix.schema.json` 要求 `additionalProperties: false` 且 `suite` 仅能为单个字符串，无法在矩阵内部内联场景列表或采样参数。
+   - **决策**：按规范抽样生成独立的套件文件 `bench/suites/guards-ab.yaml`（`id: guards-ab`）以及别名 `core-v1-guards-ab.yaml`，由矩阵文件指定 `suite: guards-ab`。使得通过 `skeptic run` 或 `bench run` 均可精确加载这 60 个场景。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+247 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 125 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+1246 passed, 6 skipped, 12 deselected, 41 warnings in 893.80s (0:14:53)
+Required test coverage of 85.0% reached. Total coverage: 90.72%
+EXIT=0
+```

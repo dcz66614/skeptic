@@ -17,7 +17,7 @@ from mcp import Client, StdioServerParameters
 from openai import APIStatusError
 
 from skeptic_agent.runner.adapters.base import AgentRunResult, EpisodeTask, Usage
-from skeptic_agent.runner.llm import calculate_cost, create_llm_client
+from skeptic_agent.runner.llm import calculate_cost, create_llm_client, resolve_model
 
 PLAIN_SYSTEM_PROMPT: str = (
     "You are a helpful assistant. Complete the user's task using the available tools. "
@@ -67,6 +67,7 @@ class ReferenceAgent:
 
     async def run(self, task: EpisodeTask) -> AgentRunResult:
         """Run the reference agent loop on the provided episode task."""
+        model_config = resolve_model(task.model)
         llm = create_llm_client(task.model, scenario=task.scenario)
 
         # Build system prompt (S13.3)
@@ -156,14 +157,14 @@ class ReferenceAgent:
 
                 # Call LLM with retry on 429/5xx (S13.3)
                 call_kwargs: dict[str, Any] = {
-                    "model": task.model,
+                    "model": model_config.model_name,
                     "messages": messages,
                     "temperature": 0,
                     "max_tokens": 1024,
                 }
                 if openai_tools:
                     call_kwargs["tools"] = openai_tools
-                if task.model.startswith("openrouter/"):
+                if model_config.provider == "openrouter" or task.model.startswith("openrouter/"):
                     call_kwargs["extra_body"] = {"usage": {"include": True}}
 
                 response: Any = None

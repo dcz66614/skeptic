@@ -234,6 +234,11 @@ def expand_matrix_configs(
         for m in all_models
         if m.get("tier") == "dev" and m.get("supports_tools", True) is not False
     ]
+    mid_models = [
+        m["id"]
+        for m in all_models
+        if m.get("tier") == "mid" and m.get("supports_tools", True) is not False
+    ]
 
     expanded: list[ExpandedConfig] = []
     config_idx = 0
@@ -249,6 +254,8 @@ def expand_matrix_configs(
                 ]
             elif models_target == "dev":
                 target_list = dev_models or ["openrouter/openai/gpt-4o-mini"]
+            elif models_target == "mid":
+                target_list = mid_models or ["compat/gpt-5.6-terra"]
             else:
                 target_list = [models_target]
         elif isinstance(models_target, (list, tuple)):
@@ -268,6 +275,40 @@ def expand_matrix_configs(
             config_idx += 1
 
     return expanded
+
+
+def count_matrix_episodes(
+    matrix: Matrix | Path | str,
+    *,
+    models_path: str | Path | None = None,
+    suites_dir: Path | str | None = None,
+    scenarios_dir: Path | str | None = None,
+) -> int:
+    """Calculate the total number of episodes in a matrix across all configs, profiles, and seeds.
+
+    Args:
+        matrix: Validated Matrix instance or file path.
+        models_path: Optional path to models.yaml.
+        suites_dir: Optional directory containing suite YAML files.
+        scenarios_dir: Optional directory containing scenario files.
+
+    Returns:
+        Total number of episodes that would be executed.
+    """
+    matrix_obj = load_matrix(matrix) if not isinstance(matrix, Matrix) else matrix
+    expanded = expand_matrix_configs(matrix_obj, models_path=models_path)
+    scenarios = resolve_suite_scenarios(
+        matrix_obj.suite,
+        suites_dir=suites_dir,
+        scenarios_dir=scenarios_dir,
+    )
+    loaded_profiles = [load_profile_source(p) for p in matrix_obj.profiles]
+
+    episodes_per_config = 0
+    for profile in loaded_profiles:
+        episodes_per_config += len(expand(scenarios, profile, matrix_obj.seeds, "count"))
+
+    return episodes_per_config * len(expanded)
 
 
 def normalize_guards(guards: str | Sequence[str]) -> list[str]:

@@ -9,3 +9,21 @@ models:
     price_out_per_mtok: 0.60
     supports_tools: true
     notes: "Default dev tier model for local development and test runs"
+  - id: compat/deepseek-v4-pro
+    display: "DeepSeek V4 Pro"
+    group: open-weight
+    origin: cn
+    tier: dev
+    price_in_per_mtok: 0.6
+    price_out_per_mtok: 2.4
+    supports_tools: true
+    notes: "conservative estimate, verify against 128api billing"
+  - id: compat/gpt-5.6-terra
+    display: "GPT-5.6 Terra"
+    group: closed-frontier
+    origin: us
+    tier: mid
+    price_in_per_mtok: 2.5
+    price_out_per_mtok: 10.0
+    supports_tools: true
+    notes: "conservative estimate, verify against 128api billing"

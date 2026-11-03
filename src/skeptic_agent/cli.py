@@ -722,11 +722,45 @@ def bench_run(
         Path | None,
         typer.Option("--ledger", help="Path to ledger CSV file."),
     ] = None,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Print matrix config and episode count without executing."),
+    ] = False,
+    count: Annotated[
+        bool,
+        typer.Option("--count", help="Print total episode count and exit."),
+    ] = False,
 ) -> None:
     """Run a batch matrix evaluation (S2, S16.2, E48)."""
     if not matrix.is_file():
         typer.echo(f"error: matrix file not found: {matrix}", err=True)
         raise typer.Exit(code=2)
+
+    if dry_run or count:
+        from skeptic_agent.runner.matrix import (
+            count_matrix_episodes,
+            expand_matrix_configs,
+            load_matrix,
+        )
+
+        try:
+            matrix_obj = load_matrix(matrix)
+            total_eps = count_matrix_episodes(matrix_obj)
+            if count:
+                typer.echo(f"Total episodes: {total_eps}")
+            else:
+                expanded = expand_matrix_configs(matrix_obj)
+                typer.echo(
+                    f"Matrix {matrix_obj.id}: {len(expanded)} expanded configs, "
+                    f"{len(matrix_obj.profiles)} profiles, {len(matrix_obj.seeds)} seeds. "
+                    f"Total episodes: {total_eps}"
+                )
+            raise typer.Exit(code=0)
+        except typer.Exit:
+            raise
+        except Exception as exc:
+            typer.echo(f"error: failed to inspect matrix: {exc}", err=True)
+            raise typer.Exit(code=3) from exc
 
     import jsonschema
 
