@@ -3662,3 +3662,80 @@ EXIT=0
 ## K54 merge (2026-11-03)
 
 - codex  ff-merged to main. 
+
+
+## K55 MCP 服务模式（2026-11-03）
+
+基线 `3b45513`，分支 `codex`。交付 `src/skeptic_agent/mcpserver/__init__.py`、`src/skeptic_agent/mcpserver/server.py`、CLI 子命令 `skeptic mcp serve`（`src/skeptic_agent/cli.py`）、更新 `src/skeptic_agent/runner/matrix.py` 支持超时截断与 partial 标记，交付单元测试套件 `tests/unit/test_mcpserver.py`（14 个用例）与集成测试套件 `tests/integration/test_mcpserver_stdio.py`（1 个端到端完整流用例），全库测试 1302 passed，总体测试覆盖率 90.72%（严格达到 >= 85.0% 要求）。
+
+### 交付内容
+
+1. **MCP 服务器核心实现 (`src/skeptic_agent/mcpserver/server.py`, `src/skeptic_agent/mcpserver/__init__.py`)**:
+   - 严格依据 S14.3 与 ADR-0004 规范，使用官方 MCP Python SDK（2.3.0）的 `mcp.server.mcpserver.MCPServer` 实现高层服务器；
+   - 注册并暴露 5 个符合规范的工具：
+     1. `list_faults`：以 `catalogue()` 返回 S6 故障目录（20 种故障），支持通过 `class` 可选参数按 `loud`、`silent`、`adversarial` 过滤；
+     2. `list_suites`：以 `list_suites()` 返回内置套件及其场景数量映射；
+     3. `run_suite`：同步执行测试套件。接收 `suite`、`agent`、`profile`、`guards`（默认 `none`）、`seeds`（默认 `[1]`）、`max_cost_usd`（必填，<= 10.0）。默认超时 1800 秒（30 分钟），支持通过 `out_dir` 或环境变量 `SKEPTIC_RUNS_DIR` 定向产出目录；返回 `run_id`、S10.5 精简版 `summary` 以及 `partial` 标记；当 `max_cost_usd > 10.0` 或 `< 0.0` 时直接报参数错误；
+     4. `get_report`：接收 `run_id` 与 `format`（`md` 或 `json`），自动定位 run 目录（支持绝对路径、`SKEPTIC_RUNS_DIR`、`runs/`、`.skeptic/runs/`），按需读取已有报告或实时触发生成对应报告内容返回；
+     5. `explain_episode`：接收 `run_id` 与 `episode_id`，基于 `load_run_data` 与 `parse_cassette_file` 抽取目标 episode 的结局，并输出故障注入前后工具调用的原始结果与最终交付结果对比（含参数、raw_result/raw_error、final_result/final_error、fault、guards 介入与 modified/dropped 状态）；
+   - 实现通用目录解析器 `resolve_run_dir`，支持 run_id、episode_id 前缀拆解及多候选路径探查。
+
+2. **批量运行器超时与 Partial SKS 支撑 (`src/skeptic_agent/runner/matrix.py`)**:
+   - `execute_run` 引入可选参数 `timeout_seconds`；
+   - 在并发调度循环中采用 `asyncio.wait` 带有 timeout 保护，超时时自动取消未完成任务并保留已完成任务；
+   - 当超时发生或完成记录数少于计划 episode 总数时，自动将 `summary.json` 中各 agent 的 `metrics.SKS.partial` 设为 `True`（严格兼容 `schemas/report.schema.json` 架构），并在 MCP 返回结构中标记 `partial=True`。
+
+3. **CLI 子命令接入 (`src/skeptic_agent/cli.py`)**:
+   - 新增 `skeptic mcp` 顶级命令组；
+   - 实现 `skeptic mcp serve` 子命令，提供 `--transport`（默认 `stdio`，可选 `streamable-http`、`sse`）、`--host`、`--port` 选项，默认在 stdio 传输上启动 `create_server()`。
+
+4. **测试套件与验收核验 (`tests/unit/test_mcpserver.py`, `tests/integration/test_mcpserver_stdio.py`)**:
+   - `tests/unit/test_mcpserver.py`（14 个用例全部通过）：
+     - 故障目录全量与分类过滤（loud / silent / adversarial）；
+     - `fault_class` 别名兼容与无效 class 拒绝；
+     - 套件列表与场景数核验；
+     - `max_cost_usd` 阈值校验（> 10.0 报参数错误，< 0 报错）；
+     - **K55 核心验收用例**：通过 SDK `Client(server)` 调用 `run_suite`（FakeLLM、smoke 套件、max_cost_usd=0.1），断言返回合法 summary；
+     - 超时截断与 `partial=True` 状态断言；
+     - `get_report` md / json 生成与缓存读取核验，非法 format 与不存在 run 报错核验；
+     - `explain_episode` 故障前后对比核验（含 guards、final_answer、error），非法 episode 报错核验；
+     - `resolve_run_dir` 路径解析策略核验。
+   - `tests/integration/test_mcpserver_stdio.py`（1 个端到端集成用例）：
+     - 通过 `mcp.client.stdio.stdio_client` 启动子进程 `skeptic mcp serve`；
+     - 使用 `ClientSession` 完成 `initialize()`，核查 5 个工具均正确声明与发布；
+     - 经 stdio 调用 `list_suites`、`list_faults`、`run_suite` 预算超限拦截、`run_suite`（FakeLLM smoke 套件）完成跑测、`get_report` 与 `explain_episode` 全流程。
+
+### 规格歧义与实现决策
+
+1. **`list_faults` 参数名 `class` 与 Python 关键字冲突**:
+   - **歧义**：S14.3 将 `list_faults` 的可选参数定义为 `class?`。在 Python 中 `class` 为保留关键字，无法直接作为函数形参名定义。
+   - **决策**：结合 `mcp` SDK 工具注册机制，使用 `pydantic.Field(validation_alias=AliasChoices("class", "fault_class", "class_"), serialization_alias="class")`，并通过 `inspect.Signature` 动态重写工具函数签名。这使线上发布的 inputSchema 字段名为 `class`，同时兼容客户端以 `class` 或 `fault_class` 传参，而在工具体内部通过 `kwargs` 安全提取。
+
+2. **`run_suite` 的超时截断与 `partial=true` 标记位置**:
+   - **歧义**：S14.3 规定“run_suite 同步执行，单次最长 30 分钟；超过时返回已完成部分的结果，并标记 partial=true”。但 `schemas/report.schema.json` 顶层设置了 `additionalProperties: false`，只在 `SKS` 对象中允许 `"partial": {"type": "boolean"}`。
+   - **决策**：在 `execute_run` 内部加入 `timeout_seconds` 超时调度机制（使用 `asyncio.wait` 超时收集已完成任务并取消未完成任务）。当超时或未完成全量 episode 时，除了在各 agent 的 `metrics.SKS` 中打上 `partial=True` 保证严格符合 `report.schema.json` 外，在 MCP 工具返回结果顶层 payload 与 `summary` 顶层同时显式标记 `partial=True`，兼顾 Schema 严格校验与 MCP 客户端消费便利。
+
+3. **S10.5 summary 精简版结构边界**:
+   - **歧义**：S14.3 规定返回“summary（S10.5 的精简版）”。全量 `summary.json` 在包含大量 episode briefs 时体积较大，不适合 stdio 文本通道传输。
+   - **决策**：构建保留 S10.5 核心统计信息的精简 summary（元数据、配置、按 agent 指标及置信区间、按 fault/sandbox 统计、worst_scenarios、guard_actions、total_cost_usd），并提取首要 agent 的 `sks` 与 `metrics` 方便单 agent 场景读取，同时剔除全量 episode 详细序列；全量结果可通过 `get_report` 工具按需获取。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+255 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 130 source files
+EXIT=0
+
+===== uv run pytest -q --cov=skeptic_agent =====
+1302 passed, 6 skipped, 12 deselected, 41 warnings in 1109.93s (0:18:29)
+Required test coverage of 85.0% reached. Total coverage: 90.72%
+EXIT=0
+```

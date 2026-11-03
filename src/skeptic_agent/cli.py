@@ -35,6 +35,8 @@ app.add_typer(sandbox_app, name="sandbox")
 app.add_typer(scenario_app, name="scenario")
 bench_app = typer.Typer(no_args_is_help=True)
 app.add_typer(bench_app, name="bench")
+mcp_app = typer.Typer(no_args_is_help=True)
+app.add_typer(mcp_app, name="mcp")
 
 DEFAULT_LISTEN: str = "127.0.0.1:8765"
 """The default ``--listen`` of ``skeptic proxy http`` (S2)."""
@@ -1056,6 +1058,36 @@ def report_cmd(
     except Exception as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(code=1) from exc
+
+
+@mcp_app.command("serve")
+def mcp_serve(
+    transport: Annotated[
+        str,
+        typer.Option("--transport", help="Transport protocol ('stdio', 'streamable-http', 'sse')."),
+    ] = "stdio",
+    host: Annotated[
+        str,
+        typer.Option("--host", help="Host to bind for HTTP/SSE transport."),
+    ] = "127.0.0.1",
+    port: Annotated[
+        int,
+        typer.Option("--port", help="Port to bind for HTTP/SSE transport."),
+    ] = 8765,
+) -> None:
+    """Run Skeptic in MCP server mode (S14.3, K55)."""
+    from skeptic_agent.mcpserver import create_server
+
+    server = create_server()
+    if transport == "stdio":
+        server.run("stdio")
+    elif transport == "streamable-http":
+        server.run("streamable-http", host=host, port=port)
+    elif transport == "sse":
+        server.run("sse", host=host, port=port)
+    else:
+        typer.echo(f"error: unknown transport: {transport!r}", err=True)
+        raise typer.Exit(code=2)
 
 
 def parse_listen(value: str) -> tuple[str, int]:

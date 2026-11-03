@@ -589,8 +589,9 @@ async def execute_run(
     command_str: str | None = None,
     project_name: str = "skeptic",
     ledger_path: str | Path | None = None,
+    timeout_seconds: float | None = None,
 ) -> dict[str, Any]:
-    """Execute a complete run of episodes, write results, and generate summary (E48, S2).
+    """Execute a complete run of episodes, write results, and generate summary (E48, S2, K55).
 
     Args:
         suite: Benchmark suite identifier or path.
@@ -609,6 +610,7 @@ async def execute_run(
         command_str: CLI command representation for report.
         project_name: Project name for report config.
         ledger_path: Path to ledger CSV.
+        timeout_seconds: Optional timeout in seconds to abort remaining dispatches.
 
     Returns:
         The validated summary report dictionary.
@@ -744,11 +746,27 @@ async def execute_run(
                 budget_exceeded = True
                 return None
 
+    timed_out = False
     if pending_episodes:
-        new_results = await asyncio.gather(*[_run_one(ep) for ep in pending_episodes])
-        for r in new_results:
-            if r is not None and isinstance(r, dict) and "episode_id" in r:
-                completed_records[r["episode_id"]] = r
+        if timeout_seconds is not None:
+            tasks = [asyncio.create_task(_run_one(ep)) for ep in pending_episodes]
+            done, pending_tasks = await asyncio.wait(tasks, timeout=timeout_seconds)
+            for t in pending_tasks:
+                t.cancel()
+            if pending_tasks:
+                timed_out = True
+            for t in done:
+                try:
+                    r = t.result()
+                    if r is not None and isinstance(r, dict) and "episode_id" in r:
+                        completed_records[r["episode_id"]] = r
+                except Exception:
+                    pass
+        else:
+            new_results = await asyncio.gather(*[_run_one(ep) for ep in pending_episodes])
+            for r in new_results:
+                if r is not None and isinstance(r, dict) and "episode_id" in r:
+                    completed_records[r["episode_id"]] = r
 
     # 7. Rewrite results.jsonl in canonical order
     # Canonical order follows all_episodes sequence
@@ -802,6 +820,11 @@ async def execute_run(
         default_prompt_variant=prompt_variant,
         default_guards=guards if isinstance(guards, str) else list(guards),
     )
+    if timed_out or (all_episodes and len(ordered_records) < len(all_episodes)):
+        for ag_entry in summary_doc.get("agents", []):
+            if "metrics" in ag_entry and "SKS" in ag_entry["metrics"]:
+                ag_entry["metrics"]["SKS"]["partial"] = True
+
     validate_summary_doc(summary_doc)
 
     summary_file.write_text(
