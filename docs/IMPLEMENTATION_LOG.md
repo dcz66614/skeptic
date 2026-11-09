@@ -3820,3 +3820,7 @@ Built by agy gemini-3.8-flash-high across two sessions (both exited while waitin
 规格歧义与处理：
 - S14.2 规定场景的预期答案由实际调用一次工具（无故障）得到。在多工具同一服务器环境下，为了保持效率与确定性，通过单一代理进程会话批量执行无故障调用，并设定 `SKEPTIC_FROZEN_NOW = "2026-11-01T09:00:00Z"` 与独立状态文件，避免测试间状态交叉污染。
 - 对于非标准沙箱的第三方未知工具，当调用输出包含数值字段时自动绑定 `number_close` 校验与 `numeric_path`，对于纯文本或列表结构自动绑定 `contains` 校验与非空 Canary 防御，保证生成的场景天然通过 S8.4 Rule 4 校验。
+
+## K56 merge (2026-11-09)
+
+- codex  ff-merged to main. 
