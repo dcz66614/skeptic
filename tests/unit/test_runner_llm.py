@@ -349,3 +349,10 @@ def test_models_yaml_compat_models_present() -> None:
     assert terra["price_in_per_mtok"] == 2.5
     assert terra["price_out_per_mtok"] == 10.0
     assert "conservative estimate, verify against 128api billing" in terra["notes"]
+
+    assert "compat/hy3" in models_by_id
+    hy3 = models_by_id["compat/hy3"]
+    assert hy3["tier"] == "dev"
+    assert hy3["supports_tools"] is True
+    assert hy3["price_in_per_mtok"] == 0.0
+    assert hy3["price_out_per_mtok"] == 0.0

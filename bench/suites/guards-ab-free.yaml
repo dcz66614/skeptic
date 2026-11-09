@@ -1,0 +1,35 @@
+id: guards-ab-free
+title: Guards A/B Free Evaluation Suite
+description: First 30 of the 60 seed-0 core-v1 scenarios sampled with seed 0 for guards A/B ablation experiments
+  (G53).
+scenarios:
+- bench/scenarios/fx/fx.rate.usd-jpy.003.yaml
+- bench/scenarios/weather/weather.forecast.shanghai-cond.012.yaml
+- bench/scenarios/mail/mail.inbox.list.013.yaml
+- bench/scenarios/calendar/calendar.multihop.daily-schedule.007.yaml
+- bench/scenarios/files/files.file.handbook.011.yaml
+- bench/scenarios/orders/orders.order.customer.003.yaml
+- bench/scenarios/orders/orders.list.customer.014.yaml
+- bench/scenarios/mail/mail.email.sender.002.yaml
+- bench/scenarios/files/files.write.create-config.018.yaml
+- bench/scenarios/orders/orders.cross.get-status.017.yaml
+- bench/scenarios/fx/fx.multihop.convert-chain.008.yaml
+- bench/scenarios/sqlshop/sqlshop.multihop.min-price.016.yaml
+- bench/scenarios/docs/docs.multihop.search-onboarding.015.yaml
+- bench/scenarios/orders/orders.multihop.status-check.007.yaml
+- bench/scenarios/crm/crm.search.elena.013.yaml
+- bench/scenarios/files/files.multihop.project-beta.015.yaml
+- bench/scenarios/weather/weather.cross.paris-verify.010.yaml
+- bench/scenarios/crm/crm.customer.get.011.yaml
+- bench/scenarios/sqlshop/sqlshop.query.product-price.003.yaml
+- bench/scenarios/files/files.dir.list-root.002.yaml
+- bench/scenarios/orders/orders.write.cancel-order.009.yaml
+- bench/scenarios/sqlshop/sqlshop.query.order-count.011.yaml
+- bench/scenarios/crm/crm.write.add-note.019.yaml
+- bench/scenarios/files/files.write.update-notes.010.yaml
+- bench/scenarios/crm/crm.customer.tier.002.yaml
+- bench/scenarios/calendar/calendar.write.delete-event.010.yaml
+- bench/scenarios/fx/fx.convert.usd-eur.004.yaml
+- bench/scenarios/orders/orders.comprehensive.cancel-and-verify.020.yaml
+- bench/scenarios/sqlshop/sqlshop.multihop.category-stock.009.yaml
+- bench/scenarios/stocks/stocks.screen-quote.energy.008.yaml

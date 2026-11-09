@@ -423,3 +423,54 @@ def test_cli_bench_run_dry_run_and_count() -> None:
     res_count = runner.invoke(app, ["bench", "run", "--matrix", str(matrix_path), "--count"])
     assert res_count.exit_code == 0
     assert "Total episodes: 19220" in res_count.stdout
+
+
+def test_guards_ab_free_matrix_file_and_episode_count() -> None:
+    """guards-ab-free.yaml conforms to schema, expands configs, counts episodes (G53wrap)."""
+    repo_root = Path(__file__).resolve().parents[2]
+    matrix_path = repo_root / "bench" / "matrix" / "guards-ab-free.yaml"
+    assert matrix_path.is_file(), f"Missing matrix file at {matrix_path}"
+
+    matrix = load_matrix(matrix_path)
+    assert matrix.id == "guards-ab-free"
+    assert matrix.suite == "guards-ab-free"
+    assert matrix.profiles == ["silent-core", "loud-core", "adversarial-core"]
+    assert matrix.seeds == [1]
+    assert len(matrix.configs) == 10
+
+    # Expand matrix
+    expanded = expand_matrix_configs(matrix)
+    assert len(expanded) == 10
+    models_used = {c.model for c in expanded}
+    assert models_used == {"compat/hy3"}
+
+    # Total episode count
+    total_eps = count_matrix_episodes(matrix)
+    assert total_eps == 4820
+
+
+def test_guards_ab_free_suite() -> None:
+    """bench/suites/guards-ab-free.yaml contains first 30 scenarios of guards-ab (G53wrap)."""
+    from skeptic_agent.scenario.suites import load_suite
+
+    suite_free = load_suite("guards-ab-free")
+    assert len(suite_free.scenarios) == 30
+
+    suite_ab = load_suite("guards-ab")
+    assert suite_free.scenarios == suite_ab.scenarios[:30]
+
+
+def test_cli_bench_run_dry_run_and_count_guards_ab_free() -> None:
+    """skeptic bench run supports --dry-run and --count for guards-ab-free matrix (G53wrap)."""
+    repo_root = Path(__file__).resolve().parents[2]
+    matrix_path = repo_root / "bench" / "matrix" / "guards-ab-free.yaml"
+
+    res_dry = runner.invoke(app, ["bench", "run", "--matrix", str(matrix_path), "--dry-run"])
+    assert res_dry.exit_code == 0
+    assert "guards-ab-free" in res_dry.stdout
+    assert "10 expanded configs" in res_dry.stdout
+    assert "4820" in res_dry.stdout
+
+    res_count = runner.invoke(app, ["bench", "run", "--matrix", str(matrix_path), "--count"])
+    assert res_count.exit_code == 0
+    assert "Total episodes: 4820" in res_count.stdout

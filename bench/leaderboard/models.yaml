@@ -27,3 +27,12 @@ models:
     price_out_per_mtok: 10.0
     supports_tools: true
     notes: "conservative estimate, verify against 128api billing"
+  - id: compat/hy3
+    display: "Hunyuan 3"
+    group: open-weight
+    origin: cn
+    tier: dev
+    price_in_per_mtok: 0.0
+    price_out_per_mtok: 0.0
+    supports_tools: true
+    notes: "Free dev-tier model via compat proxy (Tencent Hunyuan 3)"

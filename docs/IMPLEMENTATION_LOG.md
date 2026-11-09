@@ -3824,3 +3824,67 @@ Built by agy gemini-3.8-flash-high across two sessions (both exited while waitin
 ## K56 merge (2026-11-09)
 
 - codex  ff-merged to main. 
+
+## G53wrap G53 免费模型缩减矩阵收敛与 hy3 真实消融实验归档（2026-11-09）
+
+基线 `9ef5a3b`，分支 `codex`。完成 Skeptic G53 实验收尾任务（G53wrap）。将基于零成本免费模型 `compat/hy3` 的缩减评测矩阵及套件提交进代码仓库；向模型注册表添加 `$0` 定价的 `compat/hy3` 支持；在方法论文档中如实载入已完成的 10 组 hy3 真实消融实验数据与 run_id，详尽记录样本集缩减（19,220 回合 $\to$ 4,820 回合）及单模型覆盖差距；依据判定准则保留 `recommended` 暂定预设不变。零新增外部依赖，测试无真实网络调用与真实模型推理。
+
+### 交付内容
+
+1. **免费模型缩减矩阵与抽样套件 (`bench/matrix/guards-ab-free.yaml`, `bench/suites/guards-ab-free.yaml`)**:
+   - 提取 G53 实际执行的 30 场景套件（`bench/suites/guards-ab-free.yaml`），严格对应种子 0 从 `core-v1` 抽取的 60 场景的前 30 个。
+   - 构建 `bench/matrix/guards-ab-free.yaml`，指定 `suite: guards-ab-free`，包含 10 组防御配置（`none` 基线、`all` 全开以及消融 G01–G08 的 8 组组合），针对 `compat/hy3` 展开为 10 组配置；在 `silent-core`（241）、`loud-core`（151）、`adversarial-core`（90）三类故障画像下合计单配置 482 回合，10 组配置总计 **4,820 回合**。
+
+2. **新增免费模型注册与 Schema 适配 (`bench/leaderboard/models.yaml`, `schemas/models.schema.json`, `src/skeptic_agent/runner/matrix.py`)**:
+   - 在 `bench/leaderboard/models.yaml` 中追加 `compat/hy3`：`display: "Hunyuan 3"`，`group: open-weight`，`origin: cn`，`tier: dev`，定价 `$0.0 / $0.0` USD/Mtok，`supports_tools: true`，备注标明 `"Free dev-tier model via compat proxy (Tencent Hunyuan 3)"`。
+   - 更新 `schemas/models.schema.json`：将 `tier` 枚举扩展为 `["leaderboard", "dev", "mid", "free"]`。
+   - 更新 `src/skeptic_agent/runner/matrix.py`：在 `expand_matrix_configs` 中支持 `free_models` 检索与 `models: "free"` 展开。
+
+3. **方法论与实验结果归档 (`docs/en/methodology/guards-ab.md`)**:
+   - 如实记录计划规模（19,220 回合，2 模型 $\times$ 60 场景）到实际执行规模（4,820 回合，1 模型 $\times$ 30 场景）的缩减背景，以及单模型覆盖差距（仅在 `compat/hy3` 评测，未覆盖 `deepseek-v4-pro` 与 `gpt-5.6-terra`）。
+   - 填入 10 组完整运行的真实指标（附 run_id 与 95% Bootstrap 置信区间）：
+     - `none` 基线（run_id `20261103-155316-3e96a4`）：SKS = 93.19 [89.71, 96.00]，FSR = 8.54% [3.14%, 15.58%]。
+     - `all` 全开（run_id `20261103-162358-6c18bb`）：SKS = 92.68 [88.87, 95.88]，FSR = 7.29% [1.88%, 14.53%]。
+     - 8 组消融：SKS 介于 92.19–93.78，FSR 介于 6.67%–8.56%。
+   - 消融影响分析：
+     - 所有配置的 95% 置信区间均严重重叠（SKS 在 88–96 宽幅重合，FSR 在 1%–16% 宽幅重合）。
+     - 无任何 Guard 满足任务卡入选标准（消融导致 SKS 下降 $\ge 1.0$ 或 FSR 上升 $\ge 2.0\text{pp}$）。
+     - 最接近阈值的是 G01 (`evidence_contract`)：FSR 上升 $+1.27\text{pp}$（8.56% vs 7.29%），SKS 下降 $-0.49$ 分，但仍低于 $+2.0\text{pp}$ 门槛且置信区间重叠。
+   - 依据决策准则，严格维持 `src/skeptic_agent/guards/presets.py` 中 `recommended` 为暂定预设不变（`[G02, G03, G04, G05, G06, G07, G08]`）。
+
+4. **单元测试与 CLI 支持 (`tests/unit/test_matrix.py`, `tests/unit/test_runner_llm.py`)**:
+   - `test_guards_ab_free_matrix_file_and_episode_count`：断言 `guards-ab-free.yaml` 矩阵合规、展开 10 组配置并精确计数 4,820 回合。
+   - `test_guards_ab_free_suite`：断言 `guards-ab-free.yaml` 套件包含 30 场景且完全等于 `guards-ab` 前 30 场景。
+   - `test_cli_bench_run_dry_run_and_count_guards_ab_free`：测试 CLI `--dry-run` 与 `--count` 对缩减矩阵的解析。
+   - `test_models_yaml_compat_models_present`：测试 `compat/hy3` 的属性与 $0 定价。
+
+### 规格歧义与实现决策
+
+1. **`models.yaml` 中 `compat/hy3` 的 tier 分类**:
+   - **歧义**：任务描述写明 `"tier free/dev"`，但在既有 schema 中 `tier` 枚举为 `["leaderboard", "dev", "mid"]`，且现有测试断言首位 dev 模型单价。
+   - **决策**：将 `compat/hy3` 在 `models.yaml` 中标记为 `tier: dev`，定价 `$0.0`，在 notes 中注明为 Free dev-tier model；同时在 `schemas/models.schema.json` 中将 `tier` 枚举扩展为 `["leaderboard", "dev", "mid", "free"]`，并在 `matrix.py` 中增加对 `models: "free"` 的展开兼容，既保持对既有单价测试与 dev tier 契约的向下兼容，又完整兼顾 free/dev 语义。
+
+2. **缩减矩阵 `bench/matrix/guards-ab-free.yaml` 中的 suite 引用**:
+   - **歧义**：运行工作区中的原文件 `matrix.yaml` 硬编码了本地绝对路径 `C:\Users\Du200\Projects\skeptic_runs\g53_free\suite30.yaml`。
+   - **决策**：遵循 Skeptic 矩阵引用规范，将 suite 名称适配为 `suite: guards-ab-free`，配合提交到 `bench/suites/guards-ab-free.yaml`（`id: guards-ab-free`），使 `load_matrix` 与 `count_matrix_episodes` 能够无缝自动解析。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+267 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 134 source files
+EXIT=0
+
+===== uv run pytest tests/unit/test_matrix.py tests/unit/test_runner_llm.py -q =====
+32 passed in 4.61s
+EXIT=0
+```
+
