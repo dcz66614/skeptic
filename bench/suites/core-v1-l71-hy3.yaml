@@ -1,0 +1,14 @@
+id: core-v1-l71-hy3
+title: Core Benchmark Suite v1 - L71 Hy3 Contrast
+description: "Contrast evaluation suite for L71 ($0 free run): groups core-v1 scenarios by sandbox directory in the order they first appear in core-v1.yaml (calendar, crm, docs, files, fx, mail, orders, sqlshop, stocks, weather) taking the first scenario from every sandbox for exactly 10 scenarios (strictly a subset of core-v1-l71-reduced)."
+scenarios:
+- bench/scenarios/calendar/calendar.comprehensive.schedule-ops.020.yaml
+- bench/scenarios/crm/crm.comprehensive.update-and-note.020.yaml
+- bench/scenarios/docs/docs.comprehensive.policy-audit.020.yaml
+- bench/scenarios/files/files.comprehensive.project-init.020.yaml
+- bench/scenarios/fx/fx.analysis.multi-currency.020.yaml
+- bench/scenarios/mail/mail.comprehensive.inbox-reply.020.yaml
+- bench/scenarios/orders/orders.comprehensive.cancel-and-verify.020.yaml
+- bench/scenarios/sqlshop/sqlshop.comprehensive.shop-analysis.020.yaml
+- bench/scenarios/stocks/stocks.analysis.portfolio.020.yaml
+- bench/scenarios/weather/weather.analysis.multi-city.020.yaml

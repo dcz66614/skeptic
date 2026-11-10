@@ -275,3 +275,11 @@ bench/matrix/leaderboard-v1.yaml retains max_cost_usd: 1300 until H3 formally ap
 Upon receipt of approval, Role R4 will proceed with Task L71:
   skeptic bench run --matrix bench/matrix/leaderboard-v1.yaml --max-cost-usd <批准额度>
 ```
+
+---
+
+## 9. Interim Update: Reduced-Scope Free Run (L71)
+
+On 2026-11-10 21:16 Europe/London, Human Sponsor (H3) approved a reduced-scope, $0 contrast experiment (L71) rather than the official S16.2 leaderboard execution. This interim experiment evaluates free-tier endpoints (`compat/our-free-model/deepseek-ai/deepseek-v4.1-flash` and `compat/hy3`) on a subset of scenarios (`core-v1-l71-reduced` with 56 scenarios and `core-v1-l71-hy3` with 10 scenarios) under `silent-core` and seed 1 with safety cap `max_cost_usd: 5.0`.
+
+This interim run does **not** fulfill or replace the official S16.2 leaderboard execution (Tier 1/2/3). See [leaderboard-l71-reduced.md](leaderboard-l71-reduced.md) for full methodology, suite selection rules, and episode counts.

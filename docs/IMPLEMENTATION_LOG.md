@@ -4415,3 +4415,58 @@ EXIT=0
 ## L70fix2 merge (2026-11-10)
 
 - 5e9237b ff-merged to main (L70+L70fix+L70fix2). Claude PASS. Budget reconciled to G53 tokens; S16.2 $1300 ceiling insufficient for Tier 1/2 (bases $2135.10 / $1423.40 / $717.67; recommended caps $2250 / $1520 / $780). matrix max_cost_usd left at 1300 pending H3.
+## L71 缩减范围零花费对照运行矩阵与方法论说明（2026-11-10）
+
+基线 1b3c3db，分支 codex。实现 Skeptic 任务 L71（H3 于 2026-11-10 21:16 Europe/London 批准的缩减范围  对照运行）。
+
+### 交付内容
+
+1. **保留 S16.2 官方榜单矩阵**：
+   - 未改动 ench/matrix/leaderboard-v1.yaml，保留 max_cost_usd: 1300、8 榜单模型、4 画像、3 种子共 231,768 回合官方矩阵，等待未来正式 H3 预算批准。
+2. **注册实验档位零费率模型 (ench/leaderboard/models.yaml)**：
+   - 登记 compat/our-free-model/deepseek-ai/deepseek-v4.1-flash（显示名 DeepSeek V4.1 Flash (DSH free)），所属 open-weight、origin: cn、	ier: experiment，price_in_per_mtok: 0.0，price_out_per_mtok: 0.0，supports_tools: true。
+   - 
+otes 明确标明为 WorkBuddy OpenAI 兼容中继 (http://127.0.0.1:5390/v1) 的 DSH our-free-model 免费路由，定价 ，非 OpenRouter slug，且严禁 WorkBuddy 付费模型或 opencode/* 模型。
+   - 保留既有 8 个 leaderboard 模型、1 个 dev 模型以及既有 experiment 模型（含 compat/hy3 @ ）。
+3. **新增两个确定性评测套件 (ench/suites/)**：
+   - 按 core-v1.yaml 中沙箱目录首次出现的顺序（calendar, crm, docs, iles, x, mail, orders, sqlshop, stocks, weather）及沙箱内既有次序分组。
+   - ench/suites/core-v1-l71-reduced.yaml (core-v1-l71-reduced)：每个沙箱取前 5 个场景（50），前 6 个沙箱各追加第 6 个场景（6），严格等于 56 个场景。
+   - ench/suites/core-v1-l71-hy3.yaml (core-v1-l71-hy3)：每个沙箱取第 1 个场景，严格等于 10 个场景，且严格为 56 个场景的子集。
+4. **新增两个缩减运行矩阵 (ench/matrix/)**：
+   - ench/matrix/leaderboard-v1-reduced-free.yaml (leaderboard-v1-reduced-free)：套件 core-v1-l71-reduced，画像 [silent-core]，种子 [1]，安全熔断上限 max_cost_usd: 5.0，配置 2 组（
+eference:，plain，guards: none 与 guards: recommended，模型 compat/our-free-model/deepseek-ai/deepseek-v4.1-flash），静态展开 892 回合。
+   - ench/matrix/leaderboard-v1-reduced-free-hy3.yaml (leaderboard-v1-reduced-free-hy3)：套件 core-v1-l71-hy3，画像 [silent-core]，种子 [1]，安全熔断上限 max_cost_usd: 5.0，配置 2 组，模型 compat/hy3，静态展开 168 回合。
+5. **方法论说明与预算指引更新 (docs/reports/)**：
+   - 创建 docs/reports/leaderboard-l71-reduced.md，明确陈述本次运行为 H3 于 2026-11-10 21:16 Europe/London 批准的缩减范围  实验，非 S16.2 官方榜单且不得作为官方榜单发布；记录 56/10 场景确定性规则、静默核心单种子单画像限制、892/168 精确回合数、预期现金支出  与一旦发现余额变动立即终止的 Fail-closed 计费防线。
+   - 在 docs/reports/leaderboard-budget.md 追加第 9 节短指针，不修改前述 L70 三档测算数字或 H3  讨论。
+6. **单元测试与严格断言 (	ests/unit/test_leaderboard_l71_reduced.py)**：
+   - 覆盖官方 leaderboard-v1.yaml 规格不可变性；新套件场景数（56/10）、core-v1 来源与子集规则；新矩阵 Schema 校验、展开后具体模型与防护配置；模型定价为 0.0；count_matrix_episodes 确定性并与 CLI --count 一致。
+   - 同步更新 	est_leaderboard_l70.py 实验档位总数为 4 并包含新 free 模型，保持对官方 8 个模型与  矩阵的全部严格断言。
+
+### 关键决策与边界隔离
+
+1. **S16.2 官方效力隔离**：L71 运行仅用于在  成本下验证防护对比与端到端运行管道，统计效力受限于单种子与 ~28% 场景，结果严禁混入 S16.2 官方正式排行。
+2. **计费安全闭环 (Fail-Closed)**：虽然安全上限设为 max_cost_usd: 5.0，但两款模型在 models.yaml 中单价均为 .00，实际现金支出必须为 .00。任何中继扣费均视为故障并触发终止。
+
+### 验证命令与结果
+
+未跑全量测试（约 19 分钟）。受影响测试全部通过：
+
+`	ext
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+340 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 134 source files
+EXIT=0
+
+===== uv run pytest -q tests/unit/test_leaderboard_l71_reduced.py tests/unit/test_leaderboard_l70.py tests/unit/test_matrix.py tests/unit/test_suites.py =====
+......................................                                   [100%]
+38 passed in 8.89s
+EXIT=0
+`

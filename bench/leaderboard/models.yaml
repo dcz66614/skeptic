@@ -108,3 +108,12 @@ models:
     price_out_per_mtok: 0.0
     supports_tools: true
     notes: "Experimental non-leaderboard endpoint via 128api / WorkBuddy compat proxy (Tencent Hunyuan 3); not an OpenRouter slug"
+  - id: compat/our-free-model/deepseek-ai/deepseek-v4.1-flash
+    display: "DeepSeek V4.1 Flash (DSH free)"
+    group: open-weight
+    origin: cn
+    tier: experiment
+    price_in_per_mtok: 0.0
+    price_out_per_mtok: 0.0
+    supports_tools: true
+    notes: "Experimental non-leaderboard DSH our-free-model route via WorkBuddy OpenAI-compat relay (http://127.0.0.1:5390/v1), priced $0; not an OpenRouter slug, not WorkBuddy paid deepseek-v4.1-flash / deepseek-v4.1-flash-sg, and not opencode/*"

@@ -1,0 +1,17 @@
+schema: skeptic.matrix/v1
+id: leaderboard-v1-reduced-free-hy3
+suite: core-v1-l71-hy3
+profiles: [silent-core]
+seeds: [1]
+max_cost_usd: 5.0
+configs:
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards: none
+    models:
+      - compat/hy3
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards: recommended
+    models:
+      - compat/hy3

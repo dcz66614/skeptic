@@ -97,11 +97,16 @@ def test_models_yaml_s16_1_model_selection_rules() -> None:
 
     # 5. Non-leaderboard experiment-tier models isolated from S16.1 tiers
     experiment_models = [m for m in models if m.get("tier") == "experiment"]
-    assert len(experiment_models) == 3, (
-        f"Expected 3 experiment tier models, got {len(experiment_models)}"
+    assert len(experiment_models) == 4, (
+        f"Expected 4 experiment tier models, got {len(experiment_models)}"
     )
     exp_ids = {m["id"] for m in experiment_models}
-    assert exp_ids == {"compat/deepseek-v4-pro", "compat/gpt-5.6-terra", "compat/hy3"}
+    assert exp_ids == {
+        "compat/deepseek-v4-pro",
+        "compat/gpt-5.6-terra",
+        "compat/hy3",
+        "compat/our-free-model/deepseek-ai/deepseek-v4.1-flash",
+    }
     for m in experiment_models:
         assert m["id"].startswith("compat/"), f"Experiment model must start with compat/: {m['id']}"
         assert "128api" in m["notes"] or "WorkBuddy" in m["notes"], (
