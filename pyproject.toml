@@ -56,7 +56,7 @@ build-backend = "hatchling.build"
 line-length = 100
 target-version = "py312"
 # The plan stores specification snippets, not source. Do not reformat them.
-extend-exclude = ["docs/plan"]
+extend-exclude = ["docs/plan", "Skeptic*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF", "ASYNC", "PT"]

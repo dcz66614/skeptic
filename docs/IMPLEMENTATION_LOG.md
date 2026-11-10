@@ -4205,3 +4205,68 @@ EXIT=0
 11 passed in 65.68s
 EXIT=0
 ```
+
+
+## L70 榜单模型选定与试跑估价（2026-11-10）
+
+基线 `b88bcc0`，分支 `codex`。未推送，未触碰 `main`，未终止任何外部进程。`REVIEW_F20_ref.md` 与 `.tmp` 未暂存。本任务零外部网络付费调用，未调用 128api 或真实付费模型，预算额度 40 美元完全保留（实耗 0 美元）。
+
+### 交付内容
+
+1. `bench/leaderboard/models.yaml`：
+   - 严格按 S16.1 规则选定并登记 8 个 `tier: leaderboard` 榜单模型，全部支持 OpenRouter tools 调用并附注选型理由：
+     - 3 个 closed-frontier 旗舰：`openrouter/anthropic/claude-3.5-sonnet`（$3.00 / $15.00）、`openrouter/openai/gpt-4o`（$2.50 / $10.00）、`openrouter/google/gemini-pro-1.5`（$1.25 / $5.00）。
+     - 2 个 closed-small 紧凑/快速模型：`openrouter/anthropic/claude-3.5-haiku`（$0.80 / $4.00）、`openrouter/google/gemini-flash-1.5`（$0.075 / $0.30）。
+     - 3 个 open-weight 开源权重模型（2 个国产，满足至少 2 个国产规则）：`openrouter/deepseek/deepseek-chat`（DeepSeek V3，国产，$0.14 / $0.28）、`openrouter/qwen/qwen-2.5-72b-instruct`（通义千问 2.5 72B，国产，$0.35 / $0.40）、`openrouter/meta-llama/llama-3.3-70b-instruct`（Llama 3.3 70B，$0.12 / $0.30）。
+   - 保持 1 个 `tier: dev` 开发模型 `openrouter/openai/gpt-4o-mini`（$0.15 + $0.60 = $0.75 ≤ $1.00/Mtok 约束），并完整保留已有本地垫片模型 `compat/deepseek-v4-pro`、`compat/gpt-5.6-terra`、`compat/hy3`。
+2. `bench/matrix/leaderboard-v1.yaml`：
+   - 落地 S16.2 榜单评测矩阵契约，套件指定 `core-v1`（200 个场景），画像覆盖 `[loud-core, silent-core, adversarial-core, cross-source]`，种子设为 `[1, 2, 3]`，预算上限 `max_cost_usd: 1300`。
+   - 展开配置：8 组 reference none + 8 组 reference recommended + 4 框架（openai-agents, langgraph, crewai, pydantic-ai）× 2 模型（GPT-4o, Claude 3.5 Sonnet）= 24 组配置。
+3. `docs/reports/leaderboard-budget.md`：
+   - 给出 3 档预算外推估价及完整依据（基于 G53 真实消融实验的 token 经验分布与真实场景展开回合数计算）：
+     - **完整方案 (Full)**：3 个种子、200 场景、24 配置，总计 231,768 回合，基础估算 $1,247.66，建议批准额度 **$1,300.00**（含 4.2% 安全边际，与 S16.2 顶层额度严格吻合）。
+     - **节省方案 (Save)**：2 个种子、200 场景、24 配置，总计 154,512 回合，基础估算 $831.77，建议批准额度 **$880.00**（节省 33.3% 预算，保留全量场景覆盖与双种子重测能力）。
+     - **最低方案 (Min)**：2 个种子、100 场景、24 配置，总计 77,904 回合，基础估算 $419.38，建议批准额度 **$450.00**（节省 66.4% 预算，适用于严格资金受限门限）。
+   - 详尽陈述成本驱动因素、G53 经验 token 依据（单回合加权平均输入 2,250 tokens、输出 250 tokens，recommended 相比 none 增加约 18% token 开销）、烟测外推基线（318 回合/种子）、零付费网络调用声明以及 R0 提交给人类做 H3 审批的操作说明。
+4. `tests/unit/test_leaderboard_l70.py`：
+   - 5 个单元测试：验证 `models.yaml` 与 JSON Schema 合规性、S16.1 规则合规（3 frontier, 2 small, 3 open-weight 含 2 CN, tools 支持, notes）、`leaderboard-v1` 矩阵校验与 24 组展开、精确回合计数断言（231,768）、以及预算报告 3 档内容完整性。
+
+### 规格歧义与实现决策
+
+1. **真实模型调用与预算边界约束**：
+   - **歧义**：L70 计划书写有“每个模型用 smoke 套件 × 4 个画像 × 种子 1 试跑，记录真实花费；按 S16.2 矩阵外推总费用”，但当前无 API 额度授权且指令明确要求“Prefer FREE/public pricing estimates from models.yaml + smoke/G53 extrapolation; do NOT call paid APIs or 128api. Be honest about estimates”。
+   - **决策**：严格遵守零付费调用限制，未调用 OpenRouter 线上付费接口或 128api。复用已在 G53 归档的 4,820 回合真实模型实测 token 数据（`compat/hy3` 实测数据显示 `none` 单回合平均 2,100 输入/230 输出，`recommended` 因重试与框架增加至 2,450 输入/270 输出），结合 smoke 套件各沙箱调用结构与公开定价，进行严谨的外推计算并在报告中如实披露。
+2. **`cross-source` 画像在 200 场景下的回合数**：
+   - **歧义**：S7.2 与 S16.2 规定 `cross-source` 画像运行 S09 故障，仅适用于含 `conflict_pair` 的场景。
+   - **决策**：经 `resolve_suite_scenarios("core-v1")` 真实加载解析，200 个场景中有 20 个具备 `conflict_pair`，展开出 20 个回合（加上 loud-core 1,000、silent-core 1,599、adversarial-core 600，单种子单配置合计 3,219 回合，3 种子 24 配置合计 231,768 回合）。计算以此真实解析数为准，杜绝虚假臆测。
+3. **框架评测所选 2 个模型的具体指定**：
+   - **歧义**：S16.2 模板中写为 `models: [<2个模型id>]`，未硬编码具体模型。
+   - **决策**：选用业界最主流且适配器测试充分覆盖的两位代表性闭源旗舰——`openrouter/openai/gpt-4o` 与 `openrouter/anthropic/claude-3.5-sonnet`，两模型各自承担 2 组 reference 与 4 组 framework 配置，完美对齐 24 组配置总数与费用主导分析。
+
+### 验证命令与结果
+
+未跑全量测试（约 19 分钟）。全量由编排者执行。
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+338 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 134 source files
+EXIT=0
+
+===== uv run pytest tests/unit/test_leaderboard_l70.py -q =====
+.....                                                                    [100%]
+5 passed in 2.96s
+EXIT=0
+
+===== uv run pytest tests/unit/test_leaderboard_l70.py tests/unit/test_matrix.py tests/unit/test_runner_llm.py tests/unit/test_site_build.py -q =====
+............................................                             [100%]
+44 passed in 5.53s
+EXIT=0
+```

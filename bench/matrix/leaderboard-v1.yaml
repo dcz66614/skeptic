@@ -1,0 +1,39 @@
+schema: skeptic.matrix/v1
+id: leaderboard-v1
+suite: core-v1
+profiles: [loud-core, silent-core, adversarial-core, cross-source]
+seeds: [1, 2, 3]
+max_cost_usd: 1300
+configs:
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards: none
+    models: leaderboard
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards: recommended
+    models: leaderboard
+  - agent: "openai-agents:${model}"
+    prompt_variant: plain
+    guards: none
+    models:
+      - openrouter/openai/gpt-4o
+      - openrouter/anthropic/claude-3.5-sonnet
+  - agent: "langgraph:${model}"
+    prompt_variant: plain
+    guards: none
+    models:
+      - openrouter/openai/gpt-4o
+      - openrouter/anthropic/claude-3.5-sonnet
+  - agent: "crewai:${model}"
+    prompt_variant: plain
+    guards: none
+    models:
+      - openrouter/openai/gpt-4o
+      - openrouter/anthropic/claude-3.5-sonnet
+  - agent: "pydantic-ai:${model}"
+    prompt_variant: plain
+    guards: none
+    models:
+      - openrouter/openai/gpt-4o
+      - openrouter/anthropic/claude-3.5-sonnet

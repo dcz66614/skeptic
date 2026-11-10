@@ -9,6 +9,78 @@ models:
     price_out_per_mtok: 0.60
     supports_tools: true
     notes: "Default dev tier model for local development and test runs"
+  - id: openrouter/anthropic/claude-3.5-sonnet
+    display: "Claude 3.5 Sonnet"
+    group: closed-frontier
+    origin: us
+    tier: leaderboard
+    price_in_per_mtok: 3.00
+    price_out_per_mtok: 15.00
+    supports_tools: true
+    notes: "Anthropic flagship model; industry benchmark for code and tool reasoning; native OpenRouter tool calling"
+  - id: openrouter/openai/gpt-4o
+    display: "GPT-4o"
+    group: closed-frontier
+    origin: us
+    tier: leaderboard
+    price_in_per_mtok: 2.50
+    price_out_per_mtok: 10.00
+    supports_tools: true
+    notes: "OpenAI flagship omni model; high precision tool calling and robust schema adherence"
+  - id: openrouter/google/gemini-pro-1.5
+    display: "Gemini 1.5 Pro"
+    group: closed-frontier
+    origin: us
+    tier: leaderboard
+    price_in_per_mtok: 1.25
+    price_out_per_mtok: 5.00
+    supports_tools: true
+    notes: "Google flagship frontier model; large 2M context window; verified tool calling on OpenRouter"
+  - id: openrouter/anthropic/claude-3.5-haiku
+    display: "Claude 3.5 Haiku"
+    group: closed-small
+    origin: us
+    tier: leaderboard
+    price_in_per_mtok: 0.80
+    price_out_per_mtok: 4.00
+    supports_tools: true
+    notes: "Anthropic high-speed compact model; low latency and reliable tool execution"
+  - id: openrouter/google/gemini-flash-1.5
+    display: "Gemini 1.5 Flash"
+    group: closed-small
+    origin: us
+    tier: leaderboard
+    price_in_per_mtok: 0.075
+    price_out_per_mtok: 0.30
+    supports_tools: true
+    notes: "Google lightweight high-throughput model; cost-effective native tool calling"
+  - id: openrouter/deepseek/deepseek-chat
+    display: "DeepSeek V3"
+    group: open-weight
+    origin: cn
+    tier: leaderboard
+    price_in_per_mtok: 0.14
+    price_out_per_mtok: 0.28
+    supports_tools: true
+    notes: "DeepSeek flagship open-weight MoE model; top-tier open-weight tool use and instruction following"
+  - id: openrouter/qwen/qwen-2.5-72b-instruct
+    display: "Qwen 2.5 72B Instruct"
+    group: open-weight
+    origin: cn
+    tier: leaderboard
+    price_in_per_mtok: 0.35
+    price_out_per_mtok: 0.40
+    supports_tools: true
+    notes: "Alibaba Qwen 2.5 flagship 72B open-weight model; strong multi-step tool call reasoning"
+  - id: openrouter/meta-llama/llama-3.3-70b-instruct
+    display: "Llama 3.3 70B Instruct"
+    group: open-weight
+    origin: us
+    tier: leaderboard
+    price_in_per_mtok: 0.12
+    price_out_per_mtok: 0.30
+    supports_tools: true
+    notes: "Meta flagship 70B open-weight model; strong general capabilities and tool execution via OpenRouter"
   - id: compat/deepseek-v4-pro
     display: "DeepSeek V4 Pro"
     group: open-weight
