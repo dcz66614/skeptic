@@ -1,0 +1,81 @@
+# K57 FakeLLM workflow. This file is copied in two places and the unit test
+# requires the bytes to match:
+#   examples/03-github-action/workflow.yml
+#   .github/workflows/example-github-action.yml
+name: Example GitHub Action
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  pass:
+    name: FakeLLM gate passes
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: skeptic
+        uses: ./
+        with:
+          agent: reference:fake/oracle_follower
+          suite: smoke
+          profile: none
+          min-sks: "70"
+          max-cost-usd: "1"
+
+      - name: Outputs are set
+        run: |
+          set -euo pipefail
+          test -n "${{ steps.skeptic.outputs.sks }}"
+          test -n "${{ steps.skeptic.outputs.fsr }}"
+          test -d "${{ steps.skeptic.outputs.report-path }}"
+          echo "SKS=${{ steps.skeptic.outputs.sks }} FSR=${{ steps.skeptic.outputs.fsr }}"
+
+  gate-fail:
+    name: FakeLLM gate fails red
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    outputs:
+      outcome: ${{ steps.skeptic.outcome }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: skeptic
+        continue-on-error: true
+        uses: ./
+        with:
+          agent: reference:fake/oracle_follower
+          suite: smoke
+          profile: none
+          min-sks: "101"
+          max-cost-usd: "1"
+          upload-report: "false"
+
+      - name: Fail the job so the check is red
+        if: steps.skeptic.outcome == 'failure'
+        run: |
+          echo "skeptic gate failed (exit 10). This job is the red check."
+          exit 1
+
+  gate-fail-was-red:
+    name: Confirm the gate failure
+    needs: gate-fail
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: The action failed the gate
+        run: |
+          set -euo pipefail
+          outcome="${{ needs.gate-fail.outputs.outcome }}"
+          echo "gate-fail action outcome=${outcome} job result=${{ needs.gate-fail.result }}"
+          if [ "$outcome" != "failure" ]; then
+            echo "expected the Skeptic action to fail when min-sks is 101"
+            exit 1
+          fi

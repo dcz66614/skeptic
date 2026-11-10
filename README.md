@@ -10,3 +10,5 @@ skeptic --version
 ```
 
 The project plan is in `docs/plan/`.
+
+The composite GitHub Action is `action.yml`. The FakeLLM workflow is `examples/03-github-action/`.

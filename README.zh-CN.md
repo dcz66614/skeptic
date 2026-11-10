@@ -10,3 +10,5 @@ skeptic --version
 ```
 
 项目计划见 `docs/plan/`。
+
+Composite GitHub Action 在仓库根目录的 `action.yml`。FakeLLM 示例工作流在 `examples/03-github-action/`。

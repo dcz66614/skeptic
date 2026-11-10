@@ -1,0 +1,182 @@
+name: Skeptic
+description: Run a Skeptic suite, publish the report, and gate on SKS.
+branding:
+  icon: shield
+  color: blue
+
+inputs:
+  config:
+    description: >
+      Optional path to a skeptic.yaml (relative to the workspace, or absolute).
+      When set, that file is what `skeptic run` records as the run config.
+      `skeptic run` has no --config flag (S2); the action copies the file into
+      the action tree for the run and removes the copy afterwards.
+    required: false
+    default: ""
+  suite:
+    description: Suite name or path passed to `skeptic run --suite`.
+    required: false
+    default: smoke
+  agent:
+    description: >
+      Agent spec passed to `skeptic run --agent` (adapter:model).
+      Example for a local run with no API key: reference:fake/oracle_follower.
+    required: true
+  profile:
+    description: Fault profile id or path passed to `skeptic run --profile`.
+    required: false
+    default: silent-core
+  guards:
+    description: >
+      Guard list or preset passed to `skeptic run --guards`.
+      Empty uses the CLI default (none).
+    required: false
+    default: ""
+  min-sks:
+    description: Minimum SKS passed to `skeptic gate --min-sks`. The gate exits 10 below this.
+    required: false
+    default: "70"
+  max-cost-usd:
+    description: Budget ceiling passed to `skeptic run --max-cost-usd`.
+    required: false
+    default: "5"
+  upload-report:
+    description: Upload the run directory as the skeptic-report artifact when true.
+    required: false
+    default: "true"
+
+outputs:
+  sks:
+    description: SKS estimate of the first agent in summary.json.
+    value: ${{ steps.publish.outputs.sks }}
+  fsr:
+    description: FSR estimate of the first agent in summary.json.
+    value: ${{ steps.publish.outputs.fsr }}
+  report-path:
+    description: Directory that holds summary.json, results.jsonl, and the generated reports.
+    value: ${{ steps.publish.outputs.report-path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        python-version: "3.12"
+
+    # Pin: install this action ref's tree with uv.lock, not a floating PyPI
+    # release. `uses:` selects the commit. The bench data `skeptic run`
+    # resolves lives next to the source (ADR-0001) and is not in the wheel.
+    - name: Install pinned skeptic-agent
+      shell: bash
+      run: |
+        set -euo pipefail
+        uv sync --locked --project "$GITHUB_ACTION_PATH"
+        installed="$(uv run --project "$GITHUB_ACTION_PATH" skeptic --version)"
+        echo "Installed skeptic-agent ${installed} from ${GITHUB_ACTION_PATH} (uv.lock pin)"
+
+    - name: skeptic run
+      shell: bash
+      env:
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_SUITE: ${{ inputs.suite }}
+        INPUT_AGENT: ${{ inputs.agent }}
+        INPUT_PROFILE: ${{ inputs.profile }}
+        INPUT_GUARDS: ${{ inputs.guards }}
+        INPUT_MAX_COST_USD: ${{ inputs.max-cost-usd }}
+      run: |
+        set -euo pipefail
+        run_dir="${RUNNER_TEMP}/skeptic-run"
+        rm -rf "$run_dir"
+        mkdir -p "$run_dir"
+        ledger="${RUNNER_TEMP}/skeptic-ledger.csv"
+        dest="${GITHUB_ACTION_PATH}/skeptic.yaml"
+        backup=""
+        created=0
+        restore_config() {
+          if [ -n "$backup" ]; then
+            mv "$backup" "$dest"
+          elif [ "$created" = "1" ]; then
+            rm -f "$dest"
+          fi
+        }
+        trap restore_config EXIT
+        if [ -n "$INPUT_CONFIG" ]; then
+          cfg="$INPUT_CONFIG"
+          if [ ! -f "$cfg" ] && [ -f "${GITHUB_WORKSPACE}/${INPUT_CONFIG}" ]; then
+            cfg="${GITHUB_WORKSPACE}/${INPUT_CONFIG}"
+          fi
+          if [ ! -f "$cfg" ]; then
+            echo "error: config file not found: ${INPUT_CONFIG}" >&2
+            exit 2
+          fi
+          if [ -f "$dest" ]; then
+            backup="${RUNNER_TEMP}/skeptic.yaml.bak"
+            cp "$dest" "$backup"
+          else
+            created=1
+          fi
+          cp "$cfg" "$dest"
+        fi
+        args=(
+          run
+          --suite "$INPUT_SUITE"
+          --agent "$INPUT_AGENT"
+          --profile "$INPUT_PROFILE"
+          --max-cost-usd "$INPUT_MAX_COST_USD"
+          --out "$run_dir"
+          --ledger "$ledger"
+        )
+        if [ -n "$INPUT_GUARDS" ]; then
+          args+=(--guards "$INPUT_GUARDS")
+        fi
+        uv run --project "$GITHUB_ACTION_PATH" skeptic "${args[@]}"
+
+    - name: skeptic report
+      shell: bash
+      run: |
+        set -euo pipefail
+        uv run --project "$GITHUB_ACTION_PATH" skeptic report "${RUNNER_TEMP}/skeptic-run"
+
+    - name: Upload report artifact
+      if: inputs.upload-report == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: skeptic-report
+        path: ${{ runner.temp }}/skeptic-run
+        if-no-files-found: error
+
+    - name: Write report.md to the job summary
+      id: publish
+      shell: bash
+      run: |
+        set -euo pipefail
+        report="${RUNNER_TEMP}/skeptic-run/report.md"
+        if [ ! -f "$report" ]; then
+          echo "error: report.md was not generated" >&2
+          exit 1
+        fi
+        cat "$report" >> "$GITHUB_STEP_SUMMARY"
+        uv run --project "$GITHUB_ACTION_PATH" python - <<'PY'
+        import json
+        import os
+        from pathlib import Path
+
+        run_dir = Path(os.environ["RUNNER_TEMP"]) / "skeptic-run"
+        doc = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
+        metrics = doc["agents"][0]["metrics"]
+        with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
+            handle.write(f"sks={metrics['SKS']['estimate']}\n")
+            handle.write(f"fsr={metrics['FSR']['estimate']}\n")
+            handle.write(f"report-path={run_dir}\n")
+        PY
+
+    - name: skeptic gate
+      shell: bash
+      env:
+        INPUT_MIN_SKS: ${{ inputs.min-sks }}
+      run: |
+        set -euo pipefail
+        uv run --project "$GITHUB_ACTION_PATH" skeptic gate \
+          "${RUNNER_TEMP}/skeptic-run" \
+          --min-sks "$INPUT_MIN_SKS"
