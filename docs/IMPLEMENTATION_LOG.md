@@ -4411,3 +4411,7 @@ EXIT=0
 44 passed in 4.33s
 EXIT=0
 ```
+
+## L70fix2 merge (2026-11-10)
+
+- 5e9237b ff-merged to main (L70+L70fix+L70fix2). Claude PASS. Budget reconciled to G53 tokens; S16.2 $1300 ceiling insufficient for Tier 1/2 (bases $2135.10 / $1423.40 / $717.67; recommended caps $2250 / $1520 / $780). matrix max_cost_usd left at 1300 pending H3.
