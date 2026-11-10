@@ -4523,3 +4523,7 @@ EXIT=0
 ```
 
 
+
+## L71fix merge (2026-11-10)
+
+- codex c2eeaf3 ff-merged to main. ff-only after Claude PASS. Episode timeout override for slow free models. No push.
