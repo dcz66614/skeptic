@@ -5,6 +5,7 @@
 - Add the composite GitHub Action (`action.yml`) that runs a suite, publishes the report, and gates on SKS.
 - Add the bilingual MkDocs site (English and Chinese), the docs workflow, and a quickstart that runs on FakeLLM.
 - Add the leaderboard static site generator (`site/build.py`) and the S16.3 pages.
+- Add the R82 launch drafts in `docs/launch/` and the README hero figures from the G53 `compat/hy3` runs.
 - Add the six built-in fault profiles, the `skeptic faults list` command, and the fault and profile methodology docs.
 - Add the fault engine framework: scheduling, profile expansion, JSONPath helpers, and call_index assigned before the fault pre-hook (ADR-0007).
 - Add the interceptor pipeline with fault, guard and recorder mount points, and the per-episode context with pending calls and per-tool call counts.

@@ -4034,6 +4034,18 @@ LangGraph 与 LangChain 是卡片上的同一条，两处都记录，因为 Lang
 工作区原先没有 `.venv`。第一次 `uv run` 只安装了默认依赖，`mypy src` 因此找不到 openai、pydantic_ai、agents、langgraph、crewai 等可选适配器。随后按 CI 执行 `uv sync --locked --all-extras`。本次没有新增或修改测试，所以没有跑 pytest。
 
 ### 验证命令与结果
+## R82 宣发内容包（2026-11-10）
+
+基线 `b1a12e8`，分支 `task/R82`。按任务卡写 `docs/launch/` 宣发稿，并改 README 首屏。测量数字来自 `docs/en/methodology/guards-ab.md` 的 G53 `compat/hy3` 表。十份 summary 在本机 `skeptic_runs/g53_free/out/*/summary.json`（未入库）：每份 482 个回合，`TSR_clean` 为 0，`SKS.partial` 为 true。矩阵三份画像的 `include_clean` 都是 false，所以没有无故障回合；存下来的 SKS 与丢掉 RR 权重后的公式一致。稿件只交 H4 草稿。没有新增依赖。本环境没有 vhs，`demo.gif` 按 `demo.tape` 的三条命令用已捕获的输出渲染，约 11.9 秒。
+
+### 交付
+
+- `docs/launch/hn-show.md`、`x-thread.md`、`reddit-localllama.md`、`blog-en.md`、`zhihu.md`、`juejin.md`、`wechat.md`、`demo.tape`、`demo.gif`
+- `README.md` 与 `README.zh-CN.md` 首屏：演示 GIF、一句话、三个带 run_id 的数字、安装命令
+- `CHANGELOG.md` 的 Unreleased 加了一行
+- `tests/unit/test_launch_r82.py`
+
+### 命令与输出
 
 ```text
 ===== uv run ruff check . =====
@@ -4045,6 +4057,7 @@ EXIT=0
 310 files already formatted
 269 files already formatted
 268 files already formatted
+274 files already formatted
 EXIT=0
 
 ===== uv run mypy src =====
@@ -4105,3 +4118,8 @@ EXIT=0
 ```
 
 测试仅针对 paper（本仓无独立 paper pytest 套件，未跑全量测试套件）。
+===== uv run pytest tests/unit/test_launch_r82.py -q =====
+.........                                                                [100%]
+9 passed in 0.21s
+EXIT=0
+```
