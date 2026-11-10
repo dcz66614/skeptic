@@ -1,0 +1,28 @@
+{% extends "_layout.j2" %}
+{% block main %}
+<p><a href="{{ root }}index.html">Board</a></p>
+<h2>{{ fault.id }} {{ fault.name }}</h2>
+<p>{{ fault.fault_class }} · {{ fault.persistence }}</p>
+{% if fault.correct_behavior %}<p>Correct behavior: {{ fault.correct_behavior }}</p>{% endif %}
+<p>Outcome counts for this fault on each configuration. A zero means the configuration recorded no episode of this fault.</p>
+<div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Rank group</th>
+        <th>Config</th>
+        {% for outcome in outcomes %}<th>{{ outcome }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row.rank_group }}</td>
+        <td><a href="{{ root }}config/{{ row.id }}.html">{{ row.label }}</a></td>
+        {% for cell in row.cells %}<td class="{{ cell.css }}">{{ cell.count }}</td>{% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

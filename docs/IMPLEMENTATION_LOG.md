@@ -3971,6 +3971,43 @@ uv run skeptic gate runs/quickstart --min-sks 70
 3. **`recommended` 预设不改**。仍为 G02–G08，`src/skeptic_agent/guards/presets.py` 未动。
 4. **配置页不声称缺环境变量时退出 3**。S3 写了 `${VAR}` 展开失败退出 3，当前源码里没有对应展开器。配置页只说明 `init` 会把客户端占位符原样抄入。
 5. **文档工作流只装 `dev` extra**。适配器可选依赖不进 `dev`。本地 `mypy src` 需要 `--all-extras`，与主 CI 一致。
+## L72 排行榜静态站（2026-11-10）
+
+基线 `b1a12e8`，分支 `task/L72`。完成计划书 L72（角色 R7，必读 S16.3）。L71 正式结果还没有作为输入，页面由冒烟占位回合生成，页眉和 `summary.json` 标明 `placeholder: true`。未新增依赖。未改 `bench/leaderboard/models.yaml`。未添加 GitHub Pages workflow。
+
+### 交付内容
+
+1. **生成器 (`site/build.py`)**：`python site/build.py [--results] [--models] [--out] [--cassettes]`。省略 `--results` 时把占位榜写到 `site/out/leaderboard/`。文本文件用 `newline="\n"` 写出。
+
+2. **模板 (`site/templates/*.j2`)**：总榜、配置页、故障页、guards 对照、方法论，共用 `_layout.j2`。样式和筛选脚本写在页面里，不引用外部 CDN。链接用相对路径，供 `https://<ORG>.github.io/skeptic/leaderboard/` 使用。`html, body` 设 `overflow-x: hidden`，表格放在 `.table-scroll`（`overflow-x: auto`）里。
+
+3. **S16.3 页面（已生成在 `site/out/leaderboard/`）**：
+   - `index.html`：名次组、配置、SKS 及区间、RR、SafeRate、FSR、SCR、ICR、成本。筛选按模型组、来源、框架、guards 开关隐藏行。名次组按全榜计算，筛选不重排。
+   - `config/<id>.html`：指标卡、故障对结局的计数、最差场景、cassette 压缩包链接。
+   - `fault/<FAULT>.html`：目录中每个故障一页，列出各配置的结局计数。
+   - `guards.html`：guards 开减关的 ΔFSR、ΔSCR、ΔSKS 及配对区间。
+   - `methodology.html`：故障目录、SKS 公式、种子、价格表、局限、两周内微调与每季度全量重跑、`leaderboard-request`。
+   - `data/results.csv`、`data/summary.json`、`data/cassettes.zip`。单卷不超过 100 MB，超出则分卷。同时写出 `site/out/.nojekyll` 与 `site/out/leaderboard/.nojekyll`。
+
+4. **复测申请 (`.github/ISSUE_TEMPLATE/leaderboard-request.yml`)**：厂商通过 GitHub issue 申请复测。字段为模型、原因、联系方式。
+
+5. **说明与变更记录**：`docs/drafts/leaderboard-site.md`（英文说明加一段中文），`CHANGELOG.md` 的 Unreleased 增加一行。
+
+6. **测试 (`tests/unit/test_site_build.py`)**：7 项。`site` 与标准库模块同名，测试用 `importlib` 按路径加载为 `skeptic_site_build`，并在 `exec_module` 之前登记到 `sys.modules`。
+
+### 规格歧义与实现决策
+
+1. **名次组合并**：调用已有 `rank_configurations`。按 SKS 点估计降序，稳定排序。相邻 95% 区间重叠则并组；A 与 B 重叠且 B 与 C 重叠时三者同组。组内多于一个配置时标 `T-<组内第一名的名次>`，否则标该名次的数字。占位榜上两个 SKS 100 为 `T-1`，三个 75 为 `T-3`，70 为 `6`，两个 20 为 `T-7`。
+
+2. **Guard 差值**：与 `runner.matrix.compare_runs` 相同的场景聚类 bootstrap（B=1000，`default_rng(0)`，2.5 与 97.5 分位）。差值是开减关，不截断到非负。同一模型优先把 `none` 配 `recommended`，其次 `all`，再其次其他非 `none` 标签。占位榜上 reference 加 GPT-5.6 Terra 的 guards 页显示 ΔSKS `+25.00`、ΔSCR `-100.0 pp`、ΔFSR 为 0。
+
+3. **占位数据**：8 个配置、2 个场景、每场景 4 个回合，共 64 行。`generated_at` 固定为 `2026-11-10T00:00:00Z`，`run_id` 为 `20261110-000000-a17b01`，种子只用 1。方法论仍写计划种子 1、2、3。这些数字是冒烟占位，不是 L71 运行。传入真实 `--results` 时 `placeholder` 为 false，缺失的 cassette 记入 `MISSING.txt`，不编造字节。
+
+4. **公开故障目录**：方法论只列出 `catalogue()` 的 id、名称、类别、持续性和正确行为，不把注入参数写进模板。
+
+5. **配置页标题**：热力表标题写作 “Fault by outcome”。乘号会被 ruff RUF001 判为歧义字符。表的内容仍是每个故障下各结局的计数。
+
+6. **移动宽度**：本环境没有浏览器，没有打开真实手机视口。单测检查每个 HTML 含 viewport、`overflow-x: auto`、`overflow-x: hidden` 和 `.table-scroll`，并且没有以 `http://`、`https://` 或 `//` 开头的 script 或 link。
 
 ### 验证命令与结果
 
@@ -3982,6 +4019,7 @@ EXIT=0
 ===== uv run ruff format --check . =====
 271 files already formatted
 310 files already formatted
+269 files already formatted
 EXIT=0
 
 ===== uv run mypy src =====
@@ -4002,3 +4040,10 @@ EXIT=0
 ```
 
 该测试在进程内执行快速开始命令（FakeLLM）并执行 `mkdocs build --strict`。本轮结束后仓库 `bench/ledger.csv` 不存在。
+===== uv run pytest tests/unit/test_site_build.py -q --tb=short =====
+.......                                                                  [100%]
+7 passed in 4.48s
+EXIT=0
+```
+
+pytest 的 TEMP 与 TMP 指到工作区 `.tmp`。未跑全量测试套件。

@@ -1,0 +1,68 @@
+{% extends "_layout.j2" %}
+{% block main %}
+<p><a href="{{ root }}index.html">Board</a></p>
+<h2>{{ config.display }}</h2>
+<p>{{ config.adapter }} · {{ config.model }} · {{ config.prompt_variant }} · guards {{ config.guards }} · rank group {{ config.rank_group }}</p>
+{% if placeholder %}
+<p class="banner">Smoke placeholder. Not an L71 run.</p>
+{% endif %}
+<div class="cards">
+  <div class="card"><span>SKS</span><strong class="sks-{{ config.sks_band }}">{{ config.sks_text }}</strong></div>
+  <div class="card"><span>RR</span><strong>{{ config.rr_text }}</strong></div>
+  <div class="card"><span>SafeRate</span><strong>{{ config.safe_text }}</strong></div>
+  <div class="card"><span>FSR</span><strong>{{ config.fsr_text }}</strong></div>
+  <div class="card"><span>SCR</span><strong>{{ config.scr_text }}</strong></div>
+  <div class="card"><span>ICR</span><strong>{{ config.icr_text }}</strong></div>
+  <div class="card"><span>LoopRate</span><strong>{{ config.loop_text }}</strong></div>
+  <div class="card"><span>DetectRate</span><strong>{{ config.detect_text }}</strong></div>
+  <div class="card"><span>TSR_clean</span><strong>{{ config.tsr_clean_text }}</strong></div>
+  <div class="card"><span>TSR_rec</span><strong>{{ config.tsr_rec_text }}</strong></div>
+  <div class="card"><span>UntriggeredRate</span><strong>{{ config.untriggered_text }}</strong></div>
+  <div class="card"><span>Cost</span><strong>{{ config.cost_text }}</strong></div>
+  <div class="card"><span>Latency</span><strong>{{ config.latency_text }}</strong></div>
+</div>
+<h2>Fault by outcome</h2>
+<div class="table-scroll">
+  <table class="heat-table">
+    <thead>
+      <tr>
+        <th>Fault</th>
+        {% for outcome in outcomes %}<th>{{ outcome }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for heat in config.heat %}
+      {% if heat.total %}
+      <tr>
+        <td><a href="{{ root }}fault/{{ heat.id }}.html">{{ heat.id }}</a> {{ heat.name }}</td>
+        {% for cell in heat.cells %}<td class="{{ cell.css }}">{{ cell.count }}</td>{% endfor %}
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<h2>Worst scenarios</h2>
+<div class="table-scroll">
+  <table>
+    <thead>
+      <tr><th>Scenario</th><th>SafeRate</th><th>Cassette</th></tr>
+    </thead>
+    <tbody>
+      {% for item in config.worst %}
+      <tr>
+        <td>{{ item.scenario_id }}</td>
+        <td>{{ "%.1f"|format(item.SafeRate * 100) }}%</td>
+        <td>
+          {% for cassette in item.cassettes %}
+          {% set volume = item.volumes[loop.index0] if item.volumes and item.volumes|length > loop.index0 else (archives[0] if archives else "") %}
+          {% if volume %}<a href="{{ root }}data/{{ volume }}">{{ cassette }}</a>{% else %}{{ cassette }}{% endif %}
+          {% if not loop.last %}<br>{% endif %}
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

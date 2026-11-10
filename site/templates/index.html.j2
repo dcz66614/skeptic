@@ -1,0 +1,104 @@
+{% extends "_layout.j2" %}
+{% block main %}
+<h2>Board</h2>
+{% if placeholder %}
+<p class="banner">These numbers are a smoke placeholder for building the site. They are not an L71 leaderboard run, and they are not measurements of any model.</p>
+{% endif %}
+<p>Rank is the SKS point estimate. Adjacent 95% intervals that overlap share a rank group such as T-3. Filters hide rows. They do not recompute the groups.</p>
+<div class="filters">
+  <label>Model group
+    <select id="filter-group">
+      <option value="">All</option>
+      {% for value in groups %}<option value="{{ value }}">{{ value }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Origin
+    <select id="filter-origin">
+      <option value="">All</option>
+      {% for value in origins %}<option value="{{ value }}">{{ value }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Framework
+    <select id="filter-framework">
+      <option value="">All</option>
+      {% for value in frameworks %}<option value="{{ value }}">{{ value }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Guards
+    <select id="filter-guards">
+      <option value="">All</option>
+      <option value="on">on</option>
+      <option value="off">off</option>
+    </select>
+  </label>
+</div>
+<div class="table-scroll">
+  <table id="board">
+    <thead>
+      <tr>
+        <th>Rank group</th>
+        <th>Config</th>
+        <th>SKS</th>
+        <th>RR</th>
+        <th>SafeRate</th>
+        <th>FSR</th>
+        <th>SCR</th>
+        <th>ICR</th>
+        <th>Cost</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in configs %}
+      <tr
+        data-group="{{ row.group }}"
+        data-origin="{{ row.origin }}"
+        data-framework="{{ row.adapter }}"
+        data-guards="{% if row.guards_on %}on{% else %}off{% endif %}"
+      >
+        <td>{{ row.rank_group }}</td>
+        <td>
+          <a href="config/{{ row.id }}.html">{{ row.display }}</a><br>
+          {{ row.adapter }} · {{ row.prompt_variant }} · {{ row.guards }}
+        </td>
+        <td class="sks-{{ row.sks_band }}">{{ row.sks_text }}</td>
+        <td>{{ row.rr_text }}</td>
+        <td>{{ row.safe_text }}</td>
+        <td>{{ row.fsr_text }}</td>
+        <td>{{ row.scr_text }}</td>
+        <td>{{ row.icr_text }}</td>
+        <td>{{ row.cost_text }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var table = document.getElementById("board");
+  var selects = [
+    ["filter-group", "data-group"],
+    ["filter-origin", "data-origin"],
+    ["filter-framework", "data-framework"],
+    ["filter-guards", "data-guards"]
+  ];
+  function apply() {
+    var rows = table.querySelectorAll("tbody tr");
+    for (var i = 0; i < rows.length; i++) {
+      var show = true;
+      for (var j = 0; j < selects.length; j++) {
+        var value = document.getElementById(selects[j][0]).value;
+        if (value && rows[i].getAttribute(selects[j][1]) !== value) {
+          show = false;
+        }
+      }
+      rows[i].hidden = !show;
+    }
+  }
+  for (var k = 0; k < selects.length; k++) {
+    document.getElementById(selects[k][0]).addEventListener("change", apply);
+  }
+})();
+</script>
+{% endblock %}

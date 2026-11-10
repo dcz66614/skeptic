@@ -1,0 +1,39 @@
+{% extends "_layout.j2" %}
+{% block main %}
+<h2>Guards on and off</h2>
+{% if placeholder %}
+<p class="banner">Smoke placeholder. Not an L71 run.</p>
+{% endif %}
+<p>Each row is one model, framework, and prompt, with guards off against one guards-on setting. Delta is on minus off. A negative ΔFSR or ΔSCR means the guards lowered that rate. Intervals are a paired scenario-cluster bootstrap, same draw as the board (B = 1000, seed 0).</p>
+<div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Model</th>
+        <th>Framework</th>
+        <th>Off</th>
+        <th>On</th>
+        <th>ΔFSR</th>
+        <th>ΔSCR</th>
+        <th>ΔSKS</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in deltas %}
+      <tr>
+        <td>{{ row.display }}</td>
+        <td>{{ row.adapter }}</td>
+        <td><a href="config/{{ row.off_id }}.html">{{ row.off_guards }}</a></td>
+        <td><a href="config/{{ row.on_id }}.html">{{ row.on_guards }}</a></td>
+        <td>{{ row.fsr_text }}</td>
+        <td>{{ row.scr_text }}</td>
+        <td>{{ row.sks_text }}</td>
+      </tr>
+      {% endfor %}
+      {% if not deltas %}
+      <tr><td colspan="7">No guards-off and guards-on pair is in this build.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

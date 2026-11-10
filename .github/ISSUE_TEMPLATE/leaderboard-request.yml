@@ -1,0 +1,24 @@
+name: leaderboard-request
+description: 申请榜单补测或复测
+title: "[leaderboard] "
+body:
+  - type: input
+    id: model
+    attributes:
+      label: 模型
+      description: OpenRouter 或 compat 的模型 id，以及要测的版本。
+      placeholder: openrouter/<vendor>/<model>
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: 原因
+      description: 新版本发布，或需要复测的具体原因。不要粘贴密钥。
+    validations:
+      required: true
+  - type: input
+    id: contact
+    attributes:
+      label: 联系方式
+      description: 可选。Issue 回复地址即可。
