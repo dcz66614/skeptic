@@ -4073,3 +4073,35 @@ EXIT=0
 
 pytest 的 TEMP 与 TMP 指到工作区 `.tmp`。未跑全量测试套件。
 ```
+
+## L73fix
+
+修正 `paper/framework-audit.md` 与 `paper/framework-audit.zh-CN.md` 中五处引用范围没有盖住结论的缺口。对照 `.tmp/audit/` 里与表内 SHA 相同的提交核对行号。未改 `src/`，未新增依赖，未跑全量测试。
+
+1. **OpenAI `prompt` 默认值**（两份审计的第 28 行）。`prompt: Prompt | DynamicPromptFunction | None = None` 在 `agent.py` 第 348–352 行。原先 `#L332-L346` 停在 `instructions` 的文档字符串。改为 `#L332-L352`。
+2. **CrewAI `tool_failure_policy`**（第 56 行）。智能体字段 `#L288-L296` 只有 agent 的 `default=None`。任务字段在 `task.py` `#L293-L299`，`default=None`，文档写 `None inherits.`。补上该链接。
+3. **Pydantic AI 钩子包装**（第 66 行）。`ValidationError` 或 `ModelRetry` 从钩子抛出后，在 `tool_manager.py` 第 771–781 行经 `_check_max_retries` 再 `_wrap_error_as_retry`。原先 `#L756-L763` 是内层 `except`，只把 `ToolFailed` 和 `ModelRetry` 重新抛出。改为 `#L756-L785`。
+4. **FunctionAgent 没有系统提示文本**（第 88 行）。`function_agent.py` `#L19-L196` 是整个类。它继承 `BaseWorkflowAgent`，字段是 `scratchpad_key`、`initial_tool_choice`、`allow_parallel_tool_calls`，类正文没有系统提示字符串。原先没有引用这个文件。
+5. **smolagents 默认提示与 `error:` 键**（第 124 行）。`prompt_templates` 默认 `None` 在 `agents.py` 第 1235 行，加载在第 1241–1243 行。原先只引了 `#L1241-L1243`。`toolcalling_agent.yaml` 的 `system_prompt` 是第 1–119 行，顶层键到文件结尾第 242 行，没有 `error:`。`code_agent.yaml` 的 `system_prompt` 是第 1–174 行，文件到第 313 行，也没有 `error:`。原先只引了开头若干行，盖不住整个文件没有该键。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+319 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 134 source files
+EXIT=0
+
+===== uv run mypy =====
+Success: no issues found in 147 source files
+EXIT=0
+```
+
+测试仅针对 paper（本仓无独立 paper pytest 套件，未跑全量测试套件）。
