@@ -25,6 +25,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "hypothesis",
+    "mkdocs-material",
+    "mkdocs-static-i18n",
     "mypy",
     "pytest",
     "pytest-asyncio",

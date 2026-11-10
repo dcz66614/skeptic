@@ -3918,6 +3918,62 @@ EXIT=0
 
 未跑全量测试（约 19 分钟）。全量由编排者执行。
 
+## D60 MkDocs 中英文档站（2026-11-10）
+
+基线 `b1a12e8`，分支 `task/D60`。交付 MkDocs 文档站（英文 `docs/en`、中文 `docs/zh`）、`.github/workflows/docs.yml`，以及在 CI 里用 FakeLLM 实际执行的快速开始命令。`mkdocs build --strict` 无警告。中英文页面按相对路径一一对应（26 对 26）。
+
+### 交付内容
+
+1. **站点 (`mkdocs.yml`)**:
+   - 主题 Material 9.8.1，插件 `mkdocs-static-i18n` 1.3.1，`docs_structure: folder`，`fallback_to_default: false`（缺译文则构建失败）。
+   - 导航路径不带语言前缀；源文件在 `docs/en/` 与 `docs/zh/`。中文站点名 `Skeptic（较真）`。
+   - `site_dir: build/docs`。`site/` 留给后续榜单生成（L72），本卡不创建该目录。`build/` 已在 `.gitignore`。
+   - `exclude_docs` 排除 `adr/`、`drafts/`、`plan/`、`perf.md`、`IMPLEMENTATION_LOG.md`。主题 `font: false`。
+   - 导航：首页、快速开始、概念（故障、防护、指标）、指南（Claude Code、Codex、Cursor、LangGraph、持续集成、既有适配器五页）、参考（命令行、配置、Schema、故障目录、防护参考）、方法论（既有三页）、榜单、常见问题、变更记录。
+
+2. **页面**:
+   - 新增英文页与对应中文页。既有 `docs/en/methodology/` 与 `docs/en/adapters/` 未改写（英文方法论文件带 UTF-8 BOM，保持原样）。
+   - 补齐中文：`docs/zh/adapters/` 五页与 `docs/zh/methodology/guards-ab.md`。代码、版本、run id 与数值表与英文一致。防护协议返回字符串保持 S11 英文原文。
+   - 榜单页只放计划地址 `https://skeptic-agent.github.io/skeptic/leaderboard/`。
+   - `CHANGELOG.md` Unreleased 增加文档站条目；站内变更记录与之对应。
+
+3. **工作流 (`.github/workflows/docs.yml`)**:
+   - 触发：`push`、`pull_request`、`workflow_dispatch`。
+   - `uv sync --locked --extra dev`，然后 `uv run python scripts/check_docs.py --execute` 与 `uv run mkdocs build --strict`。
+   - 构建任务设置 `NO_MKDOCS_2_WARNING=1`。Material 9.8.1 在未设置该变量时会打印主题 EOL 提示（2027-05-05，指向 Zensical）。该提示不是 MkDocs 的 WARNING 日志，`--strict` 仍然退出 0。
+   - 仅当 `push` 到 `refs/heads/main` 时上传 `build/docs` 并部署 GitHub Pages。
+
+4. **检查脚本与测试 (`scripts/check_docs.py`, `tests/integration/test_docs_site.py`)**:
+   - 比较 `docs/en` 与 `docs/zh` 的相对路径。
+   - 抽出两边 `quickstart.md` 的 `bash` 围栏，要求命令列表相同、以 `uv run skeptic` 开头，且 `skeptic run` / `skeptic bench` 包含 `fake/`。
+   - `--execute` 在仓库根运行这些命令。调用方已设置 `SKEPTIC_LEDGER_PATH` 时沿用（pytest 隔离）；否则写到 `runs/docs-quickstart-tmp/ledger.csv`，不写入 `bench/ledger.csv`。
+   - 集成测试覆盖文件对应、`--execute` 与 `python -m mkdocs build --strict`。
+
+5. **依赖**:
+   - `dev` extra 增加 `mkdocs-material` 与 `mkdocs-static-i18n`。锁文件中的文档栈：mkdocs 1.6.1（BSD-2-Clause）、mkdocs-material 9.8.1（MIT）、mkdocs-static-i18n 1.3.1（MIT）、mkdocs-material-extensions 1.3.1（MIT）、mkdocs-get-deps 0.2.2（MIT）、pymdown-extensions 13.0（MIT）、markdown 3.11.3（BSD-3-Clause）、babel 2.18.0（BSD-3-Clause）、backrefs 8.2（MIT）、paginate 0.5.7（MIT）、watchdog 7.1.0（Apache-2.0）、ghp-import 2.1.0（Apache-2.0）、pyyaml-env-tag 1.1（MIT）、mergedeep 1.3.4（MIT，分类器与 LICENSE 文件；METADATA 的 License 字段为 UNKNOWN）。
+   - 无新的 AGPL 依赖。
+
+### 规格歧义与实现决策
+
+1. **只记录已经实现的命令**。参考页不写 `skeptic faults explain`、`skeptic doctor`，也不写全局 `--verbose` / `--log-file`。退出码按 S2 记录 0、1、2、3、4、5、10。
+2. **快速开始用一条天气场景**。中英文 `bash` 围栏相同：
+
+```bash
+uv run skeptic --version
+uv run skeptic faults list
+uv run skeptic scenario validate bench/scenarios/weather/weather.forecast.paris-max.001.yaml
+uv run skeptic run --scenario bench/scenarios/weather/weather.forecast.paris-max.001.yaml --agent reference:fake/oracle_follower --profile none --seeds 1 --max-cost-usd 0.1 --out runs/quickstart
+uv run skeptic report runs/quickstart
+uv run skeptic gate runs/quickstart --min-sks 70
+```
+
+   代理为 `reference:fake/oracle_follower`，画像为 `none`。先前一次 `--execute` 得到 SKS 100.00，`gate` 通过（SKS=100.00 >= 70.00，FSR=0.0000，ICR=0.0000）。门槛 70 保持不变。持续集成指南里的 smoke 套件是 yaml 围栏，检查脚本不执行它。本卡不添加 K57 的 `action.yml`，也不添加 L72 的 `site/build.py`。
+3. **`recommended` 预设不改**。仍为 G02–G08，`src/skeptic_agent/guards/presets.py` 未动。
+4. **配置页不声称缺环境变量时退出 3**。S3 写了 `${VAR}` 展开失败退出 3，当前源码里没有对应展开器。配置页只说明 `init` 会把客户端占位符原样抄入。
+5. **文档工作流只装 `dev` extra**。适配器可选依赖不进 `dev`。本地 `mypy src` 需要 `--all-extras`，与主 CI 一致。
+
+### 验证命令与结果
+
 ```text
 ===== uv run ruff check . =====
 All checks passed!
@@ -3925,6 +3981,7 @@ EXIT=0
 
 ===== uv run ruff format --check . =====
 271 files already formatted
+310 files already formatted
 EXIT=0
 
 ===== uv run mypy src =====
@@ -3939,3 +3996,9 @@ EXIT=0
 ## K57 merge (2026-11-10)
 
 - codex  ff-merged to main. 
+===== uv run pytest tests/integration/test_docs_site.py -q =====
+3 passed in 28.09s
+EXIT=0
+```
+
+该测试在进程内执行快速开始命令（FakeLLM）并执行 `mkdocs build --strict`。本轮结束后仓库 `bench/ledger.csv` 不存在。

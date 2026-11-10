@@ -1,0 +1,112 @@
+site_name: Skeptic
+docs_dir: docs
+site_dir: build/docs
+
+theme:
+  name: material
+  font: false
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+  language: en
+
+extra:
+  alternate:
+    - name: English
+      link: /
+      lang: en
+    - name: 中文
+      link: /zh/
+      lang: zh
+
+exclude_docs: |
+  adr/**
+  drafts/**
+  plan/**
+  perf.md
+  IMPLEMENTATION_LOG.md
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Concepts:
+      - Faults: concepts/faults.md
+      - Guards: concepts/guards.md
+      - Metrics: concepts/metrics.md
+  - Guides:
+      - Claude Code: guides/claude-code.md
+      - Codex: guides/codex.md
+      - Cursor: guides/cursor.md
+      - LangGraph: guides/langgraph.md
+      - CI: guides/ci.md
+      - Adapters:
+          - Command adapter: adapters/command.md
+          - CrewAI adapter: adapters/crewai.md
+          - LangGraph adapter: adapters/langgraph.md
+          - OpenAI Agents adapter: adapters/openai-agents.md
+          - PydanticAI adapter: adapters/pydantic-ai.md
+  - Reference:
+      - CLI: reference/cli.md
+      - Configuration: reference/config.md
+      - Schemas: reference/schema.md
+      - Fault catalogue: reference/faults.md
+      - Guard reference: reference/guards.md
+  - Methodology:
+      - Fault notes: methodology/faults.md
+      - Realistic profile: methodology/realistic-profile.md
+      - Guards A/B: methodology/guards-ab.md
+  - Leaderboard: leaderboard.md
+  - FAQ: faq.md
+  - Changelog: changelog.md
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: folder
+      fallback_to_default: false
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+          site_name: Skeptic
+        - locale: zh
+          name: 中文
+          build: true
+          site_name: Skeptic（较真）
+          nav_translations:
+            Home: 首页
+            Quickstart: 快速开始
+            Concepts: 概念
+            Faults: 故障
+            Guards: 防护
+            Metrics: 指标
+            Guides: 指南
+            CI: 持续集成
+            Adapters: 适配器
+            Command adapter: 命令行适配器
+            CrewAI adapter: CrewAI 适配器
+            LangGraph adapter: LangGraph 适配器
+            OpenAI Agents adapter: OpenAI Agents 适配器
+            PydanticAI adapter: PydanticAI 适配器
+            Reference: 参考
+            CLI: 命令行
+            Configuration: 配置
+            Schemas: Schema
+            Fault catalogue: 故障目录
+            Guard reference: 防护参考
+            Methodology: 方法论
+            Fault notes: 故障说明
+            Realistic profile: 现实画像
+            Guards A/B: 防护对照
+            Leaderboard: 榜单
+            FAQ: 常见问题
+            Changelog: 变更记录
