@@ -4470,3 +4470,8 @@ EXIT=0
 38 passed in 8.89s
 EXIT=0
 `
+
+## L71 merge (2026-11-10)
+
+- codex 998d1eb ff-merged to main. Reduced free L71 matrix (not official S16.2). Claude review VERDICT: PASS.
+
