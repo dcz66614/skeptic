@@ -44,7 +44,7 @@ uv run skeptic bench run --matrix bench/matrix/guards-ab-free.yaml --count
 
 无防护的一行，run `20261103-155316-3e96a4`，482 个回合。方法学表上 FSR 为 8.54%（95% 区间 3.14% 到 15.58%），SKS 为 93.19（95% 区间 89.71 到 96.00），RR 为 0.0000，ICR 为 0.0000。这份 summary 把 `SKS.partial` 设为 true，`TSR_clean` 为 0，SafeRate 为 86.25%（95% 区间 78.30% 到 92.96%）。
 
-八个防护全开的一行，run `20261103-162358-6c18bb`，482 个回合。FSR 为 7.29%（95% 区间 1.88% 到 14.53%），SKS 为 92.68（95% 区间 88.87 到 95.88%），RR 为 0.0000。summary 同样是 partial，`TSR_clean` 为 0，SafeRate 为 85.83%（95% 区间 77.89% 到 92.72%）。
+八个防护全开的一行，run `20261103-162358-6c18bb`，482 个回合。FSR 为 7.29%（95% 区间 1.88% 到 14.53%），SKS 为 92.68（95% 区间 88.87 到 95.88），RR 为 0.0000。summary 同样是 partial，`TSR_clean` 为 0，SafeRate 为 85.83%（95% 区间 77.89% 到 92.72%）。
 
 三份画像文件都写着 `include_clean: false`，路径在 `src/skeptic_agent/data/profiles/`。矩阵因此不会生成无故障回合，干净集的分母是空的。summary 仍把无故障成功率和 RR 存成 0。S10.3 丢掉 RR 的 0.30 权重，将其余四项重新归一。按这个式子重算，基线的 SKS 是 summary 里的 93.187，表上写成 93.19；全开的 SKS 是 92.682，表上写成 92.68。partial 标在 summary 里。方法学表印的是舍入之后的分数。
 

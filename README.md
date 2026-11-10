@@ -10,7 +10,7 @@ Skeptic is an MCP proxy that injects tool faults and scores whether an agent tre
 | --- | --- | --- |
 | FSR, no guards | 8.54% (95% CI 3.14% to 15.58%) | `20261103-155316-3e96a4` |
 | FSR, all guards | 7.29% (95% CI 1.88% to 14.53%) | `20261103-162358-6c18bb` |
-| SKS, no guards | 93.19 (95% CI 89.71 to 96.00%), partial | `20261103-155316-3e96a4` |
+| SKS, no guards | 93.19 (95% CI 89.71 to 96.00), partial | `20261103-155316-3e96a4` |
 
 Model `compat/hy3`, 482 episodes on each of those runs. The two FSR intervals overlap. The matrix profiles set `include_clean` to false, so the runs have no clean episodes, and both SKS values are partial. Full table: [guards-ab.md](docs/en/methodology/guards-ab.md).
 

@@ -156,3 +156,19 @@ def test_gif_duration_under_30_seconds() -> None:
         index = found + 6
     assert frames >= 5
     assert 3 <= total_cs / 100 < 30
+
+
+def test_sks_ci_bounds_do_not_use_percent() -> None:
+    """SKS is a 0-100 score; confidence interval bounds must not carry % signs."""
+    paths = list(LAUNCH.glob("*.md"))
+    paths.extend([ROOT / "README.md", ROOT / "README.zh-CN.md"])
+    for path in paths:
+        text = path.read_text(encoding="utf-8")
+        for line in text.splitlines():
+            if "SKS" in line:
+                for match in re.finditer(
+                    r"(?:CI|区间)\s*([0-9\.]+)\s*(?:to|到|\u2013|-)\s*([0-9\.]+)(%?)",
+                    line,
+                ):
+                    msg = f"{path.name}: SKS CI bound has % in '{line.strip()}'"
+                    assert not match.group(3), msg

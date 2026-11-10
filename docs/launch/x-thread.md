@@ -10,9 +10,9 @@ Draft for H4. Ten posts. A human posts them, if they choose to.
 
 4/ Published sample: compat/hy3, 30 scenarios, 10 guard configs, 482 episodes each. Table: docs/en/methodology/guards-ab.md.
 
-5/ No guards, 482 episodes. FSR 8.54% (95% CI 3.14% to 15.58%). SKS 93.19 (95% CI 89.71 to 96.00%), partial. Run 20261103-155316-3e96a4.
+5/ No guards, 482 episodes. FSR 8.54% (95% CI 3.14% to 15.58%). SKS 93.19 (95% CI 89.71 to 96.00), partial. Run 20261103-155316-3e96a4.
 
-6/ All guards, 482 episodes. FSR 7.29% (95% CI 1.88% to 14.53%). SKS 92.68 (95% CI 88.87 to 95.88%), partial. Run 20261103-162358-6c18bb.
+6/ All guards, 482 episodes. FSR 7.29% (95% CI 1.88% to 14.53%). SKS 92.68 (95% CI 88.87 to 95.88), partial. Run 20261103-162358-6c18bb.
 
 7/ Those FSR intervals overlap. Closest row drops G01: FSR 8.56% (95% CI 3.09% to 15.87%), SKS 92.19. Run 20261103-165643-d4399c.
 

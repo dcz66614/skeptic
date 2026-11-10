@@ -4123,3 +4123,39 @@ EXIT=0
 9 passed in 0.21s
 EXIT=0
 ```
+
+## R82fix 修正宣发稿与 README 中 SKS 置信区间百分号误标（2026-11-10）
+
+基线 d492918，分支 	ask/R82。按评审意见修正宣发文档与 README 中 SKS 置信区间误标百分号的问题。SKS 是 0-100 的分值指标，区间边界使用纯数字格式如 93.19 (89.71-96.00)，不带 %；FSR 等百分比率指标保留 %。
+
+### 修复内容
+
+1. README.md：修正第 13 行 SKS 置信区间上限误标的百分号，由 (95% CI 89.71 to 96.00%) 改为 (95% CI 89.71 to 96.00)。
+2. docs/launch/hn-show.md：修正第 19、21、25 行三处 SKS 置信区间上限误标的百分号（96.00%、95.88%、95.62%）。
+3. docs/launch/x-thread.md：修正第 13、15 贴两处 SKS 置信区间上限误标的百分号（96.00%、95.88%）。
+4. docs/launch/reddit-localllama.md：修正第 17、19、23 行三处 SKS 置信区间上限误标的百分号（96.00%、95.88%、95.62%）。
+5. docs/launch/juejin.md：修正第 44、46 行两处中文区间上限误标的百分号（95.88%、95.62%）。
+6. docs/launch/zhihu.md：修正第 35、41 行两处中文区间上限误标的百分号（95.88%、95.62%）。
+7. docs/launch/wechat.md：修正第 47 行一处中文区间上限误标的百分号（95.88%）。
+8. 	ests/unit/test_launch_r82.py：新增 	est_sks_ci_bounds_do_not_use_percent 单元测试，静态断言宣发包所有 markdown 文件中 SKS 置信区间边界均不含 %。
+
+### 命令与输出
+
+`	ext
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+274 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 134 source files
+EXIT=0
+
+===== uv run pytest tests/unit/test_launch_r82.py -q =====
+..........                                                               [100%]
+10 passed in 0.29s
+EXIT=0
+`
