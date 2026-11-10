@@ -4008,6 +4008,30 @@ uv run skeptic gate runs/quickstart --min-sks 70
 5. **配置页标题**：热力表标题写作 “Fault by outcome”。乘号会被 ruff RUF001 判为歧义字符。表的内容仍是每个故障下各结局的计数。
 
 6. **移动宽度**：本环境没有浏览器，没有打开真实手机视口。单测检查每个 HTML 含 viewport、`overflow-x: auto`、`overflow-x: hidden` 和 `.table-scroll`，并且没有以 `http://`、`https://` 或 `//` 开头的 script 或 link。
+## L73
+
+基线 `b1a12e87dbe11533b04dc391d2576474373e8543`，分支 `task/L73`。按计划书 L73 审计十个框架在 2026-11-10 公开注册表上的当时最新版本，写成 `paper/framework-audit.md` 与 `paper/framework-audit.zh-CN.md`。每条结论都附该发布提交的 GitHub blob 链接和行号。未改 `src/`，未新增依赖，未改测试。上游源码克隆在 `.tmp/audit/`，不纳入提交。
+
+LangGraph 与 LangChain 是卡片上的同一条，两处都记录，因为 LangGraph 1.2.20 把 `create_react_agent` 标为已迁到 `langchain.agents.create_agent`。AutoGen 与 AG2 是同一条，PyPI 分开发布。Semantic Kernel 只覆盖 Python 包 `semantic-kernel` 1.47.0。
+
+审计的三个问题是：默认系统提示是否提到工具失败；工具抛出异常时框架是重试、把错误交给模型，还是终止；是否有内建输出校验。
+
+| 框架 | 包与版本 | 提交 |
+| --- | --- | --- |
+| OpenAI Agents SDK | openai-agents 0.24.0 | `17d994bd3045dae71acda676a4ef4762ed8ecd94` |
+| LangGraph | langgraph 1.2.20 | `a4d4187e82cdb0a73d68c76d70d655dd73a6db0b` |
+| LangChain | langchain 1.4.9 | `d1d95b79213b0212613ae1aa4fad38bea6f1dccf` |
+| CrewAI | crewai 1.15.39 | `adb4aba6bb72914ba56a1aa414bb768fbae4ebf4` |
+| Pydantic AI | pydantic-ai 2.66.0 | `7d1d3f0191fd5d500b02e58dee2bf6d7adc1b967` |
+| AG2 | ag2 1.3.0 | `1229064a23a1e39a4c3c089bb4643a637117c8a9` |
+| Microsoft AutoGen | autogen-agentchat 0.7.5 | `83afbf5857aac683340d4c692194e548b1e8edda` |
+| LlamaIndex | llama-index 0.14.25 | `f12d46acab73f5b2243ef49c2f00101617b38ce4` |
+| Mastra | @mastra/core 1.82.0 | `6e8dfcb83facb0861ebefa4fee384429a113acf4` |
+| Google ADK | google-adk 2.14.0 | `93814c3475916bf873236f4e30f6915b4b9c8698` |
+| Semantic Kernel (Python) | semantic-kernel 1.47.0 | `d08a482fab9c6980fa50de5eee79895ba702069d` |
+| smolagents | smolagents 1.26.0 | `12c1bc820eca50ace6f80a21d90426d41d74f845` |
+
+工作区原先没有 `.venv`。第一次 `uv run` 只安装了默认依赖，`mypy src` 因此找不到 openai、pydantic_ai、agents、langgraph、crewai 等可选适配器。随后按 CI 执行 `uv sync --locked --all-extras`。本次没有新增或修改测试，所以没有跑 pytest。
 
 ### 验证命令与结果
 
@@ -4020,6 +4044,7 @@ EXIT=0
 271 files already formatted
 310 files already formatted
 269 files already formatted
+268 files already formatted
 EXIT=0
 
 ===== uv run mypy src =====
@@ -4047,3 +4072,4 @@ EXIT=0
 ```
 
 pytest 的 TEMP 与 TMP 指到工作区 `.tmp`。未跑全量测试套件。
+```
