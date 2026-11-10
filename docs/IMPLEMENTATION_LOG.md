@@ -4475,3 +4475,51 @@ EXIT=0
 
 - codex 998d1eb ff-merged to main. Reduced free L71 matrix (not official S16.2). Claude review VERDICT: PASS.
 
+## L71fix 慢速免费模型回合超时覆盖支持（2026-11-10）
+
+基线 98e0e42，分支 codex。实现 Skeptic 任务 L71fix（为较慢的本地/中继免费模型提供可选的回合超时时间覆盖）。
+
+### 背景与问题
+
+L71 缩减范围零花费矩阵合并后，在 1 回合冒烟验证中（`reference:compat/our-free-model/deepseek-ai/deepseek-v4.1-flash`），模型经 WorkBuddy 中继以 $0 成功路由且无 429 和余额扣减，但因单次请求耗时约 90s、每回合平均约 3.8 次请求，耗时 180.36s 触发硬编码的 180s 回合超时失败（`flags.timed_out=true`，outcome: ERROR）。所有 200 个 core-v1 场景硬编码 `limits.timeout_s: 180`，不修改这 200 个场景文件。
+
+### 交付内容
+
+1. **超时覆盖解析与校验 (`resolve_episode_timeout`)**：
+   - 在 `src/skeptic_agent/runner/episode.py` 实现 `resolve_episode_timeout(override)` 并导出至 `runner` 包。
+   - 优先级：显式参数 > 环境变量 `SKEPTIC_EPISODE_TIMEOUT_S` > 场景默认值（180s）。
+   - 校验：必须为 1 到 1800 秒之间的整数，超出范围或非整数值均抛出 `ValueError`。
+2. **回合运行与矩阵参数透传**：
+   - `run_episode`：新增可选参数 `episode_timeout_s: int | None = None`，设置时直接覆盖 `task.timeout_s`，未设置时保留 scenario 默认值（180s）。
+   - `execute_run` / `execute_matrix`：显式透传 `episode_timeout_s` 参数，不使用全局变量。
+3. **CLI 参数与环境变量支持 (`src/skeptic_agent/cli.py`)**：
+   - `skeptic run` 与 `skeptic bench run` 新增 `--episode-timeout-s` 选项（绑定 `envvar="SKEPTIC_EPISODE_TIMEOUT_S"`）。
+   - 非法参数（< 1、> 1800 或非整数字符串）报错并以退出码 2 终止。
+4. **方法论说明补充 (`docs/reports/leaderboard-l71-reduced.md`)**：
+   - 记录 DSH 免费模型耗时特性（~90s/请求，~3.8 请求/回合），缩减运行需传入 `--episode-timeout-s`（推荐 900）或环境变量 `SKEPTIC_EPISODE_TIMEOUT_S`。
+   - 明确声明 S16.2 官方评测规格保持 180s 默认超时不变。
+5. **单元测试与严格断言 (`tests/unit/test_episode_timeout.py`)**：
+   - 覆盖默认 180s 行为保持不变、参数覆盖、环境变量覆盖、参数优先于环境变量、非法值与非法环境变量拒绝、CLI run 与 bench run 参数与环境变量透传及退出码 2 断言，共 42 个用例全部通过。
+
+### 验证命令与结果
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+341 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 134 source files
+EXIT=0
+
+===== uv run pytest -q tests/unit/test_leaderboard_l71_reduced.py tests/unit/test_leaderboard_l70.py tests/unit/test_matrix.py tests/unit/test_episode_timeout.py =====
+......................................................................   [100%]
+70 passed in 9.37s
+EXIT=0
+```
+
+

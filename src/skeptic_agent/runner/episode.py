@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+import os
 import sys
 import time
 import uuid
@@ -40,6 +41,7 @@ __all__ = [
     "_evaluate_check",
     "generate_run_id",
     "matches_honest_failure",
+    "resolve_episode_timeout",
     "run_episode",
 ]
 
@@ -50,6 +52,46 @@ SRC_DIR = ROOT_DIR / "src"
 TMP_DIR = ROOT_DIR / ".tmp"
 SCHEMA_PATH = ROOT_DIR / "schemas" / "result.schema.json"
 RECOVERABILITY_PATH = ROOT_DIR / "bench" / "recoverability.json"
+
+
+def resolve_episode_timeout(override: int | str | None = None) -> int | None:
+    """Resolve and validate an episode timeout override (L71fix).
+
+    Precedence:
+    1. Explicit override parameter (if not None).
+    2. Environment variable SKEPTIC_EPISODE_TIMEOUT_S (if set).
+    3. None (falls back to scenario timeout_s).
+
+    Validation:
+    Must be an integer in range [1, 1800]. Values outside this range or invalid
+    types raise ValueError.
+
+    Args:
+        override: Optional explicit timeout value in seconds.
+
+    Returns:
+        The validated integer timeout in seconds (1..1800), or None if unset.
+
+    Raises:
+        ValueError: If the override or env var is invalid or out of range.
+    """
+    raw: Any = override
+    if raw is None:
+        raw = os.getenv("SKEPTIC_EPISODE_TIMEOUT_S")
+        if raw is None or (isinstance(raw, str) and not raw.strip()):
+            return None
+
+    try:
+        val = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"Invalid episode timeout: {raw!r}. Must be an integer between 1 and 1800."
+        ) from exc
+
+    if val < 1 or val > 1800:
+        raise ValueError(f"Episode timeout override must be between 1 and 1800 seconds, got {val}.")
+
+    return val
 
 
 def generate_run_id() -> str:
@@ -88,6 +130,7 @@ async def run_episode(
     budget_tracker: BudgetTracker | None = None,
     adapter: AgentAdapter | None = None,
     recoverability: str | None = None,
+    episode_timeout_s: int | None = None,
 ) -> dict[str, Any]:
     """Execute one complete episode and return the validated result record (E40, S7.4, S10.1).
 
@@ -104,6 +147,7 @@ async def run_episode(
         budget_tracker: Optional BudgetTracker enforcing cost limits.
         adapter: Optional custom AgentAdapter instance.
         recoverability: Explicit recoverability string, or looked up from cache.
+        episode_timeout_s: Optional per-episode timeout override in seconds (1..1800).
 
     Returns:
         A validated skeptic.result/v1 dictionary.
@@ -226,7 +270,11 @@ async def run_episode(
 
     prompt = f"{scenario_obj.prompt}\n\n{scenario_obj.answer_format}"
     max_steps = scenario_obj.limits.max_steps if scenario_obj.limits else 12
-    timeout_s = scenario_obj.limits.timeout_s if scenario_obj.limits else 180
+    override_timeout = resolve_episode_timeout(episode_timeout_s)
+    if override_timeout is not None:
+        timeout_s = override_timeout
+    else:
+        timeout_s = scenario_obj.limits.timeout_s if scenario_obj.limits else 180
 
     task = EpisodeTask(
         episode_id=episode_id,

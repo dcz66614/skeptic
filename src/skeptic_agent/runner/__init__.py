@@ -15,7 +15,7 @@ from skeptic_agent.runner.budget import (
     BudgetTracker,
     append_ledger_entry,
 )
-from skeptic_agent.runner.episode import run_episode
+from skeptic_agent.runner.episode import resolve_episode_timeout, run_episode
 from skeptic_agent.runner.matrix import (
     ExpandedConfig,
     Matrix,
@@ -49,5 +49,6 @@ __all__ = [
     "gate_check",
     "load_matrix",
     "load_models",
+    "resolve_episode_timeout",
     "run_episode",
 ]

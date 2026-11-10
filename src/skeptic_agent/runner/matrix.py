@@ -615,6 +615,7 @@ async def execute_run(
     project_name: str = "skeptic",
     ledger_path: str | Path | None = None,
     timeout_seconds: float | None = None,
+    episode_timeout_s: int | None = None,
 ) -> dict[str, Any]:
     """Execute a complete run of episodes, write results, and generate summary (E48, S2, K55).
 
@@ -636,6 +637,7 @@ async def execute_run(
         project_name: Project name for report config.
         ledger_path: Path to ledger CSV.
         timeout_seconds: Optional timeout in seconds to abort remaining dispatches.
+        episode_timeout_s: Optional per-episode timeout override in seconds.
 
     Returns:
         The validated summary report dictionary.
@@ -765,6 +767,7 @@ async def execute_run(
                     guards=parsed_guards,
                     out_dir=out_path,
                     budget_tracker=tracker,
+                    episode_timeout_s=episode_timeout_s,
                 )
                 return res
             except BudgetExceededError:
@@ -900,6 +903,7 @@ async def execute_matrix(
     models_path: str | Path | None = None,
     task_id: str = "E48",
     ledger_path: str | Path | None = None,
+    episode_timeout_s: int | None = None,
 ) -> list[dict[str, Any]]:
     """Execute a matrix benchmark suite across all expanded configurations (S16.2, E48).
 
@@ -912,6 +916,7 @@ async def execute_matrix(
         models_path: Path to models.yaml.
         task_id: Task identifier for ledger accounting.
         ledger_path: Ledger file path.
+        episode_timeout_s: Optional per-episode timeout override in seconds.
 
     Returns:
         List of summary report dictionaries, one per expanded configuration.
@@ -956,6 +961,7 @@ async def execute_matrix(
             command_str=cmd_repr,
             project_name=matrix_obj.id,
             ledger_path=ledger_path,
+            episode_timeout_s=episode_timeout_s,
         )
         results.append(summary)
 

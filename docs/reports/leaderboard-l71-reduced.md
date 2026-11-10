@@ -118,6 +118,17 @@ Episode counts are verified statically using `count_matrix_episodes` and CLI dry
 - **Combined Episodes**: $892 + 168 = 1,060$ episodes.
 - In contrast, the full S16.2 leaderboard matrix spans 231,768 episodes (L71 reduced run is ~0.46% of the full official matrix volume).
 
+### 4.4 Execution Latency & Episode Timeout Override
+
+Empirical smoke testing demonstrated that the free DSH workhorse (`compat/our-free-model/deepseek-ai/deepseek-v4.1-flash`) via the WorkBuddy relay is slower than 180s/episode (taking ~90s per LLM generation request, averaging ~3.8 requests/episode). Under the scenario default 180s limit (`limits.timeout_s: 180`), episodes would fail with `flags.timed_out=true` and `outcome: ERROR`.
+
+Therefore, the reduced run must pass an episode timeout override:
+- Via CLI: `--episode-timeout-s` (recommend 900) on `skeptic bench run` or `skeptic run`
+- Or via environment variable: `export SKEPTIC_EPISODE_TIMEOUT_S=900`
+
+> [!NOTE]
+> The official S16.2 run is **NOT** changed; its scenario definitions and specifications retain the default 180s timeout. The episode timeout override is an operational parameter allowing slow free models to be evaluated without modifying scenario files.
+
 ---
 
 ## 5. Cost Accounting & Safeguards

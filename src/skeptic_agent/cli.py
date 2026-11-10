@@ -773,6 +773,14 @@ def run_command(
         Path | None,
         typer.Option("--ledger", help="Path to ledger CSV file."),
     ] = None,
+    episode_timeout_s: Annotated[
+        int | None,
+        typer.Option(
+            "--episode-timeout-s",
+            help="Per-episode timeout override in seconds (1..1800, default from scenario: 180).",
+            envvar="SKEPTIC_EPISODE_TIMEOUT_S",
+        ),
+    ] = None,
 ) -> None:
     """Run an evaluation suite or scenario list and score results (S2, E48)."""
     if not suite and not scenario:
@@ -795,8 +803,15 @@ def run_command(
 
     from skeptic_agent.faults.profiles import ProfileError
     from skeptic_agent.runner.budget import BudgetExceededError
+    from skeptic_agent.runner.episode import resolve_episode_timeout
     from skeptic_agent.runner.matrix import execute_run
     from skeptic_agent.scenario.suites import SuiteError
+
+    try:
+        resolved_episode_timeout_s = resolve_episode_timeout(episode_timeout_s)
+    except ValueError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
 
     cmd_repr = " ".join(sys.argv[1:])
 
@@ -816,6 +831,7 @@ def run_command(
                 resume=resume,
                 command_str=f"skeptic {cmd_repr}",
                 ledger_path=ledger,
+                episode_timeout_s=resolved_episode_timeout_s,
             )
         )
         ag = summary["agents"][0] if summary.get("agents") else {}
@@ -870,11 +886,27 @@ def bench_run(
         bool,
         typer.Option("--count", help="Print total episode count and exit."),
     ] = False,
+    episode_timeout_s: Annotated[
+        int | None,
+        typer.Option(
+            "--episode-timeout-s",
+            help="Per-episode timeout override in seconds (1..1800, default from scenario: 180).",
+            envvar="SKEPTIC_EPISODE_TIMEOUT_S",
+        ),
+    ] = None,
 ) -> None:
     """Run a batch matrix evaluation (S2, S16.2, E48)."""
     if not matrix.is_file():
         typer.echo(f"error: matrix file not found: {matrix}", err=True)
         raise typer.Exit(code=2)
+
+    from skeptic_agent.runner.episode import resolve_episode_timeout
+
+    try:
+        resolved_episode_timeout_s = resolve_episode_timeout(episode_timeout_s)
+    except ValueError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
 
     if dry_run or count:
         from skeptic_agent.runner.matrix import (
@@ -918,6 +950,7 @@ def bench_run(
                 concurrency=concurrency,
                 out_dir=out,
                 ledger_path=ledger,
+                episode_timeout_s=resolved_episode_timeout_s,
             )
         )
         typer.echo(f"Matrix benchmark completed: {len(summaries)} run(s) executed.")
