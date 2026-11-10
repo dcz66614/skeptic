@@ -237,16 +237,24 @@ def expand_matrix_configs(
     mid_models = [
         m["id"]
         for m in all_models
-        if m.get("tier") == "mid" and m.get("supports_tools", True) is not False
+        if (
+            m.get("tier") == "mid" or (m.get("tier") == "experiment" and "terra" in m.get("id", ""))
+        )
+        and m.get("supports_tools", True) is not False
     ]
     free_models = [
         m["id"]
         for m in all_models
         if (
             m.get("tier") == "free"
-            or (m.get("tier") == "dev" and m.get("price_in_per_mtok") == 0.0)
+            or (m.get("tier") in ("dev", "experiment") and m.get("price_in_per_mtok") == 0.0)
         )
         and m.get("supports_tools", True) is not False
+    ]
+    experiment_models = [
+        m["id"]
+        for m in all_models
+        if m.get("tier") == "experiment" and m.get("supports_tools", True) is not False
     ]
 
     expanded: list[ExpandedConfig] = []
@@ -267,6 +275,12 @@ def expand_matrix_configs(
                 target_list = mid_models or ["compat/gpt-5.6-terra"]
             elif models_target == "free":
                 target_list = free_models or ["compat/hy3"]
+            elif models_target == "experiment":
+                target_list = experiment_models or [
+                    "compat/deepseek-v4-pro",
+                    "compat/gpt-5.6-terra",
+                    "compat/hy3",
+                ]
             else:
                 target_list = [models_target]
         elif isinstance(models_target, (list, tuple)):

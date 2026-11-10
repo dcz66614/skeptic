@@ -138,9 +138,9 @@ def test_models_yaml_schema_and_dev_tier() -> None:
     models = data["models"]
     assert len(models) >= 1
 
-    # Check dev tier model
+    # Check dev tier model (S16.1: exactly one official dev-tier model)
     dev_models = [m for m in models if m.get("tier") == "dev"]
-    assert len(dev_models) >= 1, "Must contain at least 1 tier: dev model"
+    assert len(dev_models) == 1, "Must contain exactly 1 tier: dev model (S16.1)"
 
     dev = dev_models[0]
     total_cost_per_mtok = float(dev["price_in_per_mtok"]) + float(dev["price_out_per_mtok"])
@@ -328,7 +328,7 @@ async def test_reference_agent_strips_provider_prefix_for_all_providers(
 
 
 def test_models_yaml_compat_models_present() -> None:
-    """bench/leaderboard/models.yaml contains deepseek-v4-pro and gpt-5.6-terra (G53a)."""
+    """bench/leaderboard/models.yaml contains compat models in experiment tier (L70fix)."""
     repo_root = Path(__file__).resolve().parents[2]
     models_file = repo_root / "bench" / "leaderboard" / "models.yaml"
     data = yaml.safe_load(models_file.read_text(encoding="utf-8"))
@@ -336,23 +336,29 @@ def test_models_yaml_compat_models_present() -> None:
 
     assert "compat/deepseek-v4-pro" in models_by_id
     ds = models_by_id["compat/deepseek-v4-pro"]
-    assert ds["tier"] == "dev"
+    assert ds["tier"] == "experiment"
     assert ds["supports_tools"] is True
     assert ds["price_in_per_mtok"] == 0.6
     assert ds["price_out_per_mtok"] == 2.4
     assert "conservative estimate, verify against 128api billing" in ds["notes"]
+    assert "128api" in ds["notes"] or "WorkBuddy" in ds["notes"]
+    assert "not an OpenRouter slug" in ds["notes"]
 
     assert "compat/gpt-5.6-terra" in models_by_id
     terra = models_by_id["compat/gpt-5.6-terra"]
-    assert terra["tier"] == "mid"
+    assert terra["tier"] == "experiment"
     assert terra["supports_tools"] is True
     assert terra["price_in_per_mtok"] == 2.5
     assert terra["price_out_per_mtok"] == 10.0
     assert "conservative estimate, verify against 128api billing" in terra["notes"]
+    assert "128api" in terra["notes"] or "WorkBuddy" in terra["notes"]
+    assert "not an OpenRouter slug" in terra["notes"]
 
     assert "compat/hy3" in models_by_id
     hy3 = models_by_id["compat/hy3"]
-    assert hy3["tier"] == "dev"
+    assert hy3["tier"] == "experiment"
     assert hy3["supports_tools"] is True
     assert hy3["price_in_per_mtok"] == 0.0
     assert hy3["price_out_per_mtok"] == 0.0
+    assert "128api" in hy3["notes"] or "WorkBuddy" in hy3["notes"]
+    assert "not an OpenRouter slug" in hy3["notes"]

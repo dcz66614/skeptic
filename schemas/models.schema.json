@@ -34,7 +34,7 @@
           "enum": ["closed-frontier", "closed-small", "open-weight"]
         },
         "origin": {"enum": ["us", "cn", "eu", "other"]},
-        "tier": {"enum": ["leaderboard", "dev", "mid", "free"]},
+        "tier": {"enum": ["leaderboard", "dev", "mid", "free", "experiment"]},
         "price_in_per_mtok": {"type": "number", "minimum": 0},
         "price_out_per_mtok": {"type": "number", "minimum": 0},
         "supports_tools": {"type": "boolean"},

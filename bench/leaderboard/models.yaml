@@ -85,26 +85,26 @@ models:
     display: "DeepSeek V4 Pro"
     group: open-weight
     origin: cn
-    tier: dev
+    tier: experiment
     price_in_per_mtok: 0.6
     price_out_per_mtok: 2.4
     supports_tools: true
-    notes: "conservative estimate, verify against 128api billing"
+    notes: "Experimental non-leaderboard endpoint via 128api / WorkBuddy compat proxy; not an OpenRouter slug (conservative estimate, verify against 128api billing)"
   - id: compat/gpt-5.6-terra
     display: "GPT-5.6 Terra"
     group: closed-frontier
     origin: us
-    tier: mid
+    tier: experiment
     price_in_per_mtok: 2.5
     price_out_per_mtok: 10.0
     supports_tools: true
-    notes: "conservative estimate, verify against 128api billing"
+    notes: "Experimental non-leaderboard endpoint via 128api / WorkBuddy compat proxy; not an OpenRouter slug (conservative estimate, verify against 128api billing)"
   - id: compat/hy3
     display: "Hunyuan 3"
     group: open-weight
     origin: cn
-    tier: dev
+    tier: experiment
     price_in_per_mtok: 0.0
     price_out_per_mtok: 0.0
     supports_tools: true
-    notes: "Free dev-tier model via compat proxy (Tencent Hunyuan 3)"
+    notes: "Experimental non-leaderboard endpoint via 128api / WorkBuddy compat proxy (Tencent Hunyuan 3); not an OpenRouter slug"

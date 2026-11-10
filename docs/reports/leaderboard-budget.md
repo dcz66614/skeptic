@@ -51,6 +51,9 @@ The 8 leaderboard models and 1 development model have been registered in `bench/
 
 *\*Unit cost assumes weighted average consumption of $T_{in} = 2,250$ tokens and $T_{out} = 250$ tokens per episode.*
 
+> [!NOTE]
+> **Non-Leaderboard Experiment Tier Split**: Existing compatibility models (`compat/deepseek-v4-pro`, `compat/gpt-5.6-terra`, `compat/hy3`) from G53 experiments are retained in `bench/leaderboard/models.yaml` under `tier: experiment`. They represent 128api / WorkBuddy endpoints rather than OpenRouter slugs and are completely isolated from the official S16.1 leaderboard and dev tiers.
+
 ### 2.2 Verification Against S16.1 Rules
 
 1. **3 Closed-Frontier Models**: Anthropic (`claude-3.5-sonnet`), OpenAI (`gpt-4o`), and Google (`gemini-pro-1.5`) — each vendor's leading flagship model.
@@ -61,8 +64,8 @@ The 8 leaderboard models and 1 development model have been registered in `bench/
    - Meta Llama (`llama-3.3-70b-instruct`, origin: `us`)
    - **Result**: Exactly 2 of 3 open-weight models originate from China (`origin: cn`), satisfying the S16.1 rule.
 4. **Tool Call Verification**: All 8 models confirmed to support function calling / tools on OpenRouter (`supports_tools: true`).
-5. **1 Dev-Tier Model**: `openrouter/openai/gpt-4o-mini` retained as `tier: dev` with total price $0.75/Mtok ($\le \$1.00$/Mtok).
-6. **Backward Compatibility**: Existing compatibility entries (`compat/deepseek-v4-pro`, `compat/gpt-5.6-terra`, `compat/hy3`) preserved.
+5. **1 Dev-Tier Model**: Exactly one official S16.1 dev-tier model `openrouter/openai/gpt-4o-mini` is retained as `tier: dev` with total price $0.75/Mtok ($\le \$1.00$/Mtok).
+6. **Experiment-Tier Split (Backward Compatibility)**: Existing compatibility endpoints (`compat/deepseek-v4-pro`, `compat/gpt-5.6-terra`, `compat/hy3`) are preserved and isolated into `tier: experiment` (128api / WorkBuddy endpoints, distinct from OpenRouter slugs), preventing interference with the S16.1 leaderboard and dev tiers.
 
 ---
 

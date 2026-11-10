@@ -88,12 +88,28 @@ def test_models_yaml_s16_1_model_selection_rules() -> None:
     assert "openrouter/qwen/qwen-2.5-72b-instruct" in ow_ids
     assert "openrouter/meta-llama/llama-3.3-70b-instruct" in ow_ids
 
-    # 4. Dev tier model preserved
+    # 4. Exactly 1 dev-tier model per S16.1
     dev_models = [m for m in models if m.get("tier") == "dev"]
-    assert len(dev_models) >= 1
+    assert len(dev_models) == 1, f"Expected exactly 1 tier: dev model, got {len(dev_models)}"
     dev = dev_models[0]
     assert dev["id"] == "openrouter/openai/gpt-4o-mini"
     assert dev["price_in_per_mtok"] + dev["price_out_per_mtok"] <= 1.0
+
+    # 5. Non-leaderboard experiment-tier models isolated from S16.1 tiers
+    experiment_models = [m for m in models if m.get("tier") == "experiment"]
+    assert len(experiment_models) == 3, (
+        f"Expected 3 experiment tier models, got {len(experiment_models)}"
+    )
+    exp_ids = {m["id"] for m in experiment_models}
+    assert exp_ids == {"compat/deepseek-v4-pro", "compat/gpt-5.6-terra", "compat/hy3"}
+    for m in experiment_models:
+        assert m["id"].startswith("compat/"), f"Experiment model must start with compat/: {m['id']}"
+        assert "128api" in m["notes"] or "WorkBuddy" in m["notes"], (
+            f"Experiment model notes must document 128api or WorkBuddy: {m['id']}"
+        )
+        assert "not an OpenRouter slug" in m["notes"] or "not OpenRouter" in m["notes"], (
+            f"Experiment model notes must clarify it is not an OpenRouter slug: {m['id']}"
+        )
 
 
 def test_leaderboard_v1_matrix_validation_and_expansion() -> None:
@@ -172,6 +188,7 @@ def test_leaderboard_budget_report_contents() -> None:
     assert "Qwen 2.5 72B Instruct" in content
     assert "Llama 3.3 70B Instruct" in content
 
-    # Verify compliance and H3 approval section
+    # Verify compliance, experiment-tier split, and H3 approval section
     assert "Zero Paid Network Calls" in content or "zero paid" in content.lower()
+    assert "experiment" in content.lower()
     assert "H3" in content

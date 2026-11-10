@@ -4270,3 +4270,62 @@ EXIT=0
 44 passed in 5.53s
 EXIT=0
 ```
+
+## L70fix 隔离 compat 模型至 experiment 档位与 S16.1 规则收敛（2026-11-10）
+
+基线 `c1a6252`，分支 `codex`。未推送，未触碰 `main`，未终止任何外部进程。`REVIEW_F20_ref.md` 与 `.tmp` 未暂存。本任务零外部网络调用，实耗 0 美元。
+
+### 修复背景与交付内容
+
+针对 L70 评审 FAIL 意见，保留 G53a 为 128api / WorkBuddy 实验添加的真实 endpoint `compat/*` 模型，不删除任何条目，同时确保 S16.1 榜单与 dev 规则严格契约隔离：
+
+1. **`bench/leaderboard/models.yaml`**：
+   - 保持严格且唯一的 1 个 S16.1 `tier: dev` 官方开发模型：`openrouter/openai/gpt-4o-mini`（合计单价 $0.75/Mtok $\le \$1.00$ 限制）。
+   - 将本地垫片实验模型 `compat/deepseek-v4-pro`、`compat/gpt-5.6-terra`、`compat/hy3` 重新标记为非榜单专属档位 `tier: experiment`。
+   - 明确在 notes 中记录 `compat/*` 为 128api 或 WorkBuddy 实验 endpoint，而非 OpenRouter slug，杜绝与官方选型混淆。
+   - 保持 8 个 OpenRouter `tier: leaderboard` 榜单模型完全不变。
+2. **`schemas/models.schema.json`**：
+   - 将 `tier` 枚举字段扩充为 `["leaderboard", "dev", "mid", "free", "experiment"]`，通过模式校验。
+3. **`src/skeptic_agent/runner/matrix.py`**：
+   - 在 `expand_matrix_configs` 中支持 `experiment_models` 检索与 `models: "experiment"` 配置展开，同时保持对 `free`（含 $0 定价 experiment 模型）与 `mid` 兼容回退。
+4. **`docs/reports/leaderboard-budget.md`**：
+   - 保持 8 个 OpenRouter 榜单模型与 3 档预算测算核心数据不变，增加提示与规则陈述说明实验档位隔离（`tier: experiment`），说明 `compat/*` 仅用于 128api / WorkBuddy 历史对照实验，与 S16.1 榜单及 dev 评测隔离。
+5. **单元测试与断言更新 (`tests/unit/test_leaderboard_l70.py`, `tests/unit/test_runner_llm.py`)**：
+   - `test_models_yaml_s16_1_model_selection_rules`：强化断言 `tier: dev` 模型精确等于 1 个，并断言 3 个 `tier: experiment` 模型均以 `compat/` 开头且 notes 记录 128api / WorkBuddy 与非 OpenRouter 说明。
+   - `test_leaderboard_budget_report_contents`：断言预算报告包含实验档位拆分说明。
+   - `test_models_yaml_compat_models_present`：断言 `compat/deepseek-v4-pro`、`compat/gpt-5.6-terra`、`compat/hy3` 的 `tier == "experiment"` 及其说明。
+   - `test_models_yaml_schema_and_dev_tier`：断言 `tier: dev` 模型精确等于 1 个。
+
+### 规格歧义与实现决策
+
+1. **`compat/*` 模型的保留与档位命名**：
+   - **歧义**：S16.1 原文规范仅定义 `tier: leaderboard` 与 `tier: dev`。G53 引入的 `compat/*` 模型在之前的提交中分别标为 `dev` 和 `mid`，导致 `tier: dev` 出现多个模型且包含非 OpenRouter 模型，违反 S16.1 “选型 8 个 leaderboard + 1 个 dev 模型”的规则。
+   - **决策**：创建合法的非榜单档位 `tier: experiment`，将 `compat/deepseek-v4-pro`、`compat/gpt-5.6-terra`、`compat/hy3` 统一归入 `experiment`，在 Schema 中显式允许，并在 `matrix.py` 中支持 `models: experiment`。如此既不破坏 G53a/wrap 的历史矩阵可重放性，又使 S16.1 的 dev 与 leaderboard 选型处于纯净状态。
+
+### 验证命令与结果
+
+未跑全量测试（约 19 分钟）。全量由编排者执行。
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+338 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 134 source files
+EXIT=0
+
+===== uv run pytest tests/unit/test_leaderboard_l70.py -q =====
+.....                                                                    [100%]
+5 passed in 2.83s
+EXIT=0
+
+===== uv run pytest tests/unit/test_leaderboard_l70.py tests/unit/test_matrix.py tests/unit/test_runner_llm.py tests/unit/test_site_build.py -q =====
+............................................                             [100%]
+44 passed in 4.69s
+EXIT=0
+```
