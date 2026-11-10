@@ -1,0 +1,38 @@
+{
+  "mcpServers": {
+    "weather": {
+      "command": "skeptic",
+      "args": [
+        "proxy",
+        "stdio",
+        "--profile",
+        "silent-core",
+        "--guards",
+        "recommended",
+        "--record",
+        ".skeptic/cassettes",
+        "--",
+        "python",
+        "-m",
+        "skeptic_agent.sandboxes.sb_weather"
+      ]
+    },
+    "files": {
+      "command": "skeptic",
+      "args": [
+        "proxy",
+        "stdio",
+        "--profile",
+        "silent-core",
+        "--guards",
+        "recommended",
+        "--record",
+        ".skeptic/cassettes",
+        "--",
+        "python",
+        "-m",
+        "skeptic_agent.sandboxes.sb_files"
+      ]
+    }
+  }
+}

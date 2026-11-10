@@ -4099,6 +4099,47 @@ pytest 的 TEMP 与 TMP 指到工作区 `.tmp`。未跑全量测试套件。
 
 ### 验证命令与结果
 
+
+
+## D61 示例仓库（2026-11-10）
+
+基线 `4de969c`，分支 `codex`。未推送，未触碰 `main`，未终止任何外部进程。`REVIEW_F20_ref.md` 与 `.tmp` 未暂存。
+
+### 交付内容
+
+1. `examples/01-claude-code`:
+   - 包含 Claude Code 项目级配置 `.mcp.json`，以及 wrap 改写前后的对照文件 `.mcp.json.before` 与 `.mcp.json.after`。
+   - 包含可运行脚本 `run.py`，完整演示配置读取、`skeptic wrap` 透明改写为 `skeptic proxy stdio`、输出配置 diff、向代理发送 MCP initialize 握手探针、以及 `skeptic wrap --undo` 逐字节精准恢复。
+   - 包含详尽说明文档 `README.md`（含中英文双语对照与参数解析）。
+2. `examples/02-langgraph`:
+   - 包含最小 LangGraph ReAct 智能体 `agent.py`，基于 `langgraph.prebuilt.create_react_agent` 构建，支持 FakeLLM 离线运行与真实模型路由。
+   - 包含适配配置 `skeptic.yaml`。
+   - 包含可运行评测脚本 `run.py`，串联智能体独立执行、`skeptic run` 无故障基线（`profile: none`，SKS 100，SUCCESS）、故障注入运行（`profile: silent-core`）、`skeptic report` 报告生成以及 `skeptic gate` 质量门禁断言（70 分放行，101 分阻断）。
+   - 包含 CI 工作流 `workflow.yml` 与 `.github/workflows/example-langgraph.yml` 字节级镜像对齐。
+   - 包含使用文档 `README.md`。
+3. `examples/03-github-action`:
+   - 扩展 K57 已交付的 `workflow.yml` 与 `README.md`，新增本地模拟运行脚本 `run.py`，无需 GitHub Runner 即可在本地无网络执行动作的全部 5 个核心步骤（`run` -> `report` -> `outputs` -> `gate pass` -> `gate fail red check`）。
+   - 更新 `README.md` 补全 `run.py` 的用法说明与示例。
+4. CI 与测试套件:
+   - 单元测试 `tests/unit/test_examples.py`：核验 3 个示例目录的文件规范、Claude Code wrap 参数结构、LangGraph 与 GitHub Action 的工作流一致性。
+   - 集成测试 `tests/integration/test_examples_run.py`：使用 FakeLLM 实际运行 01、02、03 的可运行脚本，确保在 CI 中均能自动化跑通。
+
+### 规格歧义与实现决策
+
+1. **CI 跑通 02 和 03 的执行载体**：
+   - **歧义**：D61 验收要求“CI 跑通 02 和 03（FakeLLM）”。本仓库 GitHub Actions 仅自动调度 `.github/workflows/` 下的配置，而常规 CI 测试门禁通过 `pytest -m "not live"` 驱动。
+   - **决策**：双重覆盖——一方面新增 `.github/workflows/example-langgraph.yml` 与 `examples/02-langgraph/workflow.yml` 字节对齐，作为独立 Actions 工作流；另一方面在 `tests/integration/test_examples_run.py` 中将 01、02、03 的可运行脚本接入集成测试套件，在 `ci.yml` 的多平台、多 Python 版本矩阵中自动执行。
+2. **LangGraph MCP 兼容性与预置 Agent 的导入**：
+   - **歧义**：LangGraph 最新版本中 `create_react_agent` 提示弃用警告，且 `langchain-mcp-adapters 0.3.1` 与 `mcp 2.3+` 存在内部属性不一致。
+   - **决策**：严格复用已在 E43 中验证的 `_ensure_mcp_compat()` 兼容垫片机制，并显式过滤弃用警告，使 `agent.py` 既能原生作为独立模块运行，又能无缝接受 Skeptic 的 `langgraph` 框架适配器驱动。
+3. **02 评测脚本的运行效率与完整性**：
+   - **歧义**：Skeptic 内置的 `silent-core` 故障画像包含 9 种故障，对单场景展开后需运行多条 Episode，在快速回归时开销较高。
+   - **决策**：在 `examples/02-langgraph/run.py` 中默认执行完整 5 步流程（涵盖 clean 与 silent-core），同时提供 `--quick` 开关供单元测试与快速巡检调用，兼顾教学展示的完整性与日常开发的速度。
+
+### 验证命令与结果
+
+未跑全量测试（约 19 分钟）。全量由编排者执行。
+
 ```text
 ===== uv run ruff check . =====
 All checks passed!
@@ -4106,6 +4147,7 @@ EXIT=0
 
 ===== uv run ruff format --check . =====
 319 files already formatted
+279 files already formatted
 EXIT=0
 
 ===== uv run mypy src =====
@@ -4159,3 +4201,7 @@ EXIT=0
 10 passed in 0.29s
 EXIT=0
 `
+===== uv run pytest -q tests/unit/test_examples.py tests/integration/test_examples_run.py tests/unit/test_github_action.py tests/integration/test_github_action_run.py =====
+11 passed in 65.68s
+EXIT=0
+```

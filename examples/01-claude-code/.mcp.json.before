@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "weather": {
+      "command": "python",
+      "args": [
+        "-m",
+        "skeptic_agent.sandboxes.sb_weather"
+      ]
+    },
+    "files": {
+      "command": "python",
+      "args": [
+        "-m",
+        "skeptic_agent.sandboxes.sb_files"
+      ]
+    }
+  }
+}

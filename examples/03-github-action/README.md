@@ -33,6 +33,25 @@ The action's default profile is `silent-core`. This example sets `none` so the F
 
 The install step is `uv sync --locked` on the action directory. The caller pins the version by pinning `uses:` to a ref. The bench files the CLI loads sit next to the source and are not inside the wheel.
 
+## Local Execution (`run.py`)
+
+You can simulate and verify the exact GitHub Action workflow locally using `run.py` without pushing to GitHub or needing runner infrastructure:
+
+```bash
+# Run local workflow simulation with FakeLLM
+uv run python examples/03-github-action/run.py
+
+# Or run against the full 20-episode smoke suite
+uv run python examples/03-github-action/run.py --smoke
+```
+
+The script runs the complete sequence:
+1. `skeptic run` with FakeLLM (`reference:fake/oracle_follower`, profile `none`).
+2. `skeptic report` generating Markdown and HTML summaries.
+3. Output assertions (`sks`, `fsr`, `report-path`).
+4. Passing gate check (`--min-sks 70` returning exit code 0).
+5. Failing gate check (`--min-sks 101` returning exit code 10, confirming expected red check behavior).
+
 ## 示例说明
 
-`pass` 用 FakeLLM 跑 smoke 套件，画像 `none`，门禁 70，应当通过。`gate-fail` 把 `min-sks` 设为 101，`skeptic gate` 以退出码 10 失败，该 job 显示为红，并且不把整个工作流打红。动作的默认画像仍是 `silent-core`。
+`pass` 用 FakeLLM 跑 smoke 套件，画像 `none`，门禁 70，应当通过。`gate-fail` 把 `min-sks` 设为 101，`skeptic gate` 以退出码 10 失败，该 job 显示为红，并且不把整个工作流打红。动作的默认画像仍是 `silent-core`。本地可直接通过 `uv run python examples/03-github-action/run.py` 执行完整的动作步骤模拟与门禁验证。
