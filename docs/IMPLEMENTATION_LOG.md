@@ -3908,7 +3908,7 @@ EXIT=0
 
 1. **固定版本装在哪里**。卡片要求安装固定版本的 `skeptic-agent`。当前版本是 `0.0.0`，PyPI 发布在 K58，而且 ADR-0001 规定 `bench/` 不进 wheel。`skeptic run --suite smoke` 从源码树旁的 `bench/suites` 解析套件。决定：不执行不带 pin 的 `pip install skeptic-agent`。`uv sync --locked --project "$GITHUB_ACTION_PATH"` 安装调用方用 `uses:` 钉住的那棵树及其 `uv.lock`。
 2. **`config` 输入没有对应的 CLI 参数**。S2 的 `skeptic run` 不接受 `--config`。`build_config_doc` 只读动作树根上的 `skeptic.yaml`。决定：`config` 非空时，run 步骤把该文件复制到 `$GITHUB_ACTION_PATH/skeptic.yaml`，步骤退出时用 trap 恢复或删除。`skeptic gate` 始终收到输入里的 `min-sks`，因此它覆盖 yaml 里的 `min_sks`。`max_fsr` 与 `max_icr` 仍走 `summary.json` 里的 `config.gate`（来自这份 yaml，否则是 S3 默认 0.10 与 0.00）。
-3. **示例工作流必须进本仓库 CI，GitHub 只运行 `.github/workflows`**。决定：示例目录与 `.github/workflows/example-github-action.yml` 放同一份文件，单元测试断言字节相同。
+3. **示例工作流必须进本仓库 CI，GitHub 只运行 `.github/workflows`**。决定：示例目录与 `.github/workflows/example-github-action.yml` 放同一份文件。单元测试按 LF 归一化后比较，避免 Windows checkout 把 LF 写成 CRLF 时误报。
 4. **门禁失败要显示为红，又不能让每次 CI 都红**。SKS 的范围是 0–100，`min-sks: 101` 一定让 `skeptic gate` 退出 10。失败的 job 带 `continue-on-error: true`，检查是红的，工作流在后续确认 job 通过时仍为绿。确认 job 只接受动作步骤的 `outcome == failure`。
 5. **示例画像用 `none`，动作默认仍是 `silent-core`**。smoke × silent-core 是 158 个 episode。示例要在 CI 里用 FakeLLM 跑通并越过 70 分，所以显式传入 `profile: none`（20 个干净 episode）。动作默认值不改。
 6. **账本路径**。`skeptic run` 默认追加 `bench/ledger.csv`。动作把 `--ledger` 指到 `$RUNNER_TEMP`，避免 CI 改写动作检出里的账本。运行目录同样在 `$RUNNER_TEMP/skeptic-run`。

@@ -115,11 +115,13 @@ def test_action_steps_follow_the_card() -> None:
     assert "--min-sks" in gate
 
 
+def _lf(path: Path) -> bytes:
+    return path.read_bytes().replace(b"\r\n", b"\n")
+
+
 def test_example_workflow_is_the_ci_workflow() -> None:
-    example = EXAMPLE_WORKFLOW.read_bytes()
-    ci = CI_WORKFLOW.read_bytes()
-    assert example == ci
-    assert b"\r\n" not in example
+    # Checkout on Windows may rewrite LF as CRLF. Compare the text either way.
+    assert _lf(EXAMPLE_WORKFLOW) == _lf(CI_WORKFLOW)
 
     workflow = _load(EXAMPLE_WORKFLOW)
     jobs = workflow["jobs"]
