@@ -3935,3 +3935,7 @@ EXIT=0
 4 passed in 53.06s
 EXIT=0
 ```
+
+## K57 merge (2026-11-10)
+
+- codex  ff-merged to main. 
