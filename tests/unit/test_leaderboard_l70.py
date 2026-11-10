@@ -168,10 +168,27 @@ def test_leaderboard_budget_report_contents() -> None:
     assert "Tier 2: 节省方案" in content or "节省方案" in content
     assert "Tier 3: 最低方案" in content or "最低方案" in content
 
-    # Verify budget caps
-    assert "1,300.00" in content
-    assert "880.00" in content
-    assert "450.00" in content
+    # Verify budget caps (reconciled in L70fix2)
+    assert "2,250.00" in content
+    assert "1,520.00" in content
+    assert "780.00" in content
+    # S16.2 original ceiling discussed as insufficient at empirical token rates
+    assert "1,300" in content
+    assert "insufficient" in content.lower()
+
+    # Verify reconciled base totals
+    assert "2,135.10" in content
+    assert "1,423.40" in content
+    assert "717.67" in content
+
+    # Verify reconciled smoke suite total
+    assert "70.31" in content
+
+    # Verify empirical token averages and unit costs
+    assert "3,736" in content or "3736" in content
+    assert "453" in content or "453.57" in content
+    assert "0.018012" in content
+    assert "0.013876" in content
 
     # Verify episode counts
     assert "231,768" in content

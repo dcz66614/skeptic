@@ -4329,3 +4329,85 @@ EXIT=0
 44 passed in 4.69s
 EXIT=0
 ```
+
+
+## L70fix2 基于 G53 真实账本对齐榜单预算与 H3 审批上限决策（2026-11-10）
+
+基线 `c115e0d`，分支 `codex`。未推送，未触碰 `main`，未终止任何外部进程。`REVIEW_F20_ref.md` 与 `.tmp` 未暂存。本任务零外部网络付费调用，实耗 0 美元。
+
+### 修复背景与交付内容
+
+修复 Copilot review FAIL 指出的阻塞性问题：`docs/reports/leaderboard-budget.md` 第 4.1 节存在内在矛盾（声称由 2100/230 在 $0.60/$2.40 单价得出 $0.002407，但实际相乘为 $0.001812），且低估的 token 消耗严重低估了整体预算。
+
+1. **审计 G53 真实消融实验账本并对齐实测数据**：
+   - 深入审查真实账本记录（`C:\Users\Du200\Projects\skeptic_runs\g53_free\ledger.csv`，仅读取，未复制/提交进仓库）：
+     - `guards: none`（run_id `20261103-155316-3e96a4`）：482 episodes，tokens_in=1,685,280，tokens_out=211,034，ledger cost_usd=1.159186。单回合：$T_{in}=3,496.43$，$T_{out}=437.83$，$0.002405/ep。
+     - `guards: all`（run_id `20261103-162358-6c18bb`）：482 episodes，tokens_in=2,032,003，tokens_out=233,799，ledger cost_usd=1.366695。单回合：$T_{in}=4,215.77$，$T_{out}=485.06$，$0.002835/ep。
+   - 彻底澄清账本总价计费来源：运行当时 `compat/hy3` 尚未录入 `models.yaml`，实际计价采用 `src/skeptic_agent/runner/llm.py` 中 `DEFAULT_PRICE_IN/OUT_PER_MTOK = $0.50 / $1.50` 兜底默认值（$1,685,280 \times 0.50/1e6 + 211,034 \times 1.50/1e6 = \$1.159191$）。旧版报告将此误记为 $0.60 / $2.40 并在 token 上臆测 2,100 / 230，导致算式自相矛盾（评审 FAIL）。
+
+2. **按 16-none + 8-recommended 矩阵加权平均重算**：
+   - 使用真实的 16 组 none + 8 组 recommended 加权平均（其中 recommended 开销如实说明由 G53 `all` 作为 proxy）：
+     $$T_{in} = \frac{16 \times 3,496.431535 + 8 \times 4,215.773859}{24} = 3,736.212310$$
+     $$T_{out} = \frac{16 \times 437.829876 + 8 \times 485.060166}{24} = 453.573306$$
+   - 精确更新全模型单回合单价（保留 6 位小数）：
+     - Claude 3.5 Sonnet: $0.018012
+     - GPT-4o: $0.013876
+     - Gemini 1.5 Pro: $0.006938
+     - Claude 3.5 Haiku: $0.004803
+     - Qwen 2.5 72B: $0.001489
+     - DeepSeek V3: $0.000650
+     - Llama 3.3 70B: $0.000584
+     - Gemini 1.5 Flash: $0.000416
+     - gpt-4o-mini: $0.000833
+
+3. **对齐重算 3 档预算与 Smoke 烟测总价**：
+   - **Tier 1 (完整方案，231,768 回合)**：Sonnet $1,043.67、GPT-4o $804.02、Pro $134.00、Haiku $92.77、Qwen $28.76、DeepSeek $12.56、Llama $11.29、Flash $8.04，**BASE TOTAL $2,135.10**，建议批准上限 **$2,250.00**（缓冲 +5.4%）。
+   - **Tier 2 (节省方案，154,512 回合)**：Sonnet $695.78、GPT-4o $536.01、Pro $89.34、Haiku $61.85、Qwen $19.17、DeepSeek $8.37、Llama $7.52、Flash $5.36，**BASE TOTAL $1,423.40**，建议批准上限 **$1,520.00**（缓冲 +6.8%）。
+   - **Tier 3 (最低方案，77,904 回合)**：Sonnet $350.81、GPT-4o $270.25、Pro $45.04、Haiku $31.18、Qwen $9.67、DeepSeek $4.22、Llama $3.79、Flash $2.70，**BASE TOTAL $717.67**，建议批准上限 **$780.00**（缓冲 +8.7%）。
+   - **Smoke (7,632 回合)**：ref $29.75 + frameworks $40.56 = **$70.31**。明确披露当前全矩阵付费烟测需 $70.31，超出 L70 任务卡 $40 预算，故 L70 阶段严格执行零付费调用（实耗 $0.00）。
+
+4. **坦诚披露并直面 H3 决策边界**：
+   - 明确指出 S16.2 规格预设的 $1,300 顶层上限无法覆盖真实 token 速率下的 Tier 1 甚至 Tier 2。旧版 $1,247.66 / $831.77 / $419.38 源于错误的 2,250/250 token 臆想。
+   - 坦诚向 H3 呈报抉择方案：H3 必须要么追加预算调高上限（Tier 1 至 $2,250，Tier 2 至 $1,520），要么选用 Tier 3（$780）或接受进一步压缩的缩水矩阵。
+   - 严格遵守配置治理契约，**未擅自修改** `bench/matrix/leaderboard-v1.yaml` 中的 `max_cost_usd: 1300`，待 H3 批准后再做调整。
+
+5. **更新单元测试 (`tests/unit/test_leaderboard_l70.py`)**：
+   - 更新断言以校验新的对齐额度（$2,250.00 / $1,520.00 / $780.00）、基准费用（$2,135.10 / $1,423.40 / $717.67）、真实加权 token 经验值（3,736 / 453）、烟测总费用（$70.31）以及 S16.2 $1,300 原上限不足之说明。
+   - 保持 8 个 OpenRouter 榜单模型、1 个官方 dev 模型和 3 个隔离的 `tier: experiment` compat 模型之断言完全有效。
+
+### 规格歧义与实现决策
+
+1. **真实账本 token 与计费单价的追溯对齐**：
+   - **歧义**：G53 账本中的实测金额与旧版报告的 2,100 / 230 在 $0.60 / $2.40 下的算式存在算术断裂。
+   - **决策**：严格以 G53 真实账本 CSV 原始记录（$T_{in}=3,496.43/4,215.77$，$T_{out}=437.83/485.06$）为准，查明其计价源自 runner 默认的 $0.50/$1.50 兜底，并彻底替换报告中所有臆造数字。
+2. **S16.2 矩阵文件中的 `max_cost_usd` 是否修改**：
+   - **歧义**：既然 Tier 1 预算上升至 $2,250，是否应直接同步修改 `leaderboard-v1.yaml` 中的 `max_cost_usd: 1300`？
+   - **决策**：坚决不静默修改。矩阵文件的 `max_cost_usd: 1300` 是上游 S16.2 的正式规格，L70 的职责是提出估算方案呈交 H3 人类审批。未经 H3 批准前，代码与矩阵必须维持原规格，并在报告与测试中显式记录 $1,300 不足的现状。
+
+### 验证命令与结果
+
+未跑全量测试（约 19 分钟）。全量由编排者执行。
+
+```text
+===== uv run ruff check . =====
+All checks passed!
+EXIT=0
+
+===== uv run ruff format --check . =====
+338 files already formatted
+EXIT=0
+
+===== uv run mypy src =====
+Success: no issues found in 134 source files
+EXIT=0
+
+===== uv run pytest tests/unit/test_leaderboard_l70.py -q =====
+.....                                                                    [100%]
+5 passed in 2.08s
+EXIT=0
+
+===== uv run pytest tests/unit/test_leaderboard_l70.py tests/unit/test_matrix.py tests/unit/test_runner_llm.py tests/unit/test_site_build.py -q =====
+............................................                             [100%]
+44 passed in 4.33s
+EXIT=0
+```

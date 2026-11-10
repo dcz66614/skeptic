@@ -1,6 +1,6 @@
-# Leaderboard Model Selection and Budget Estimate (L70)
+# Leaderboard Model Selection and Budget Estimate (L70 / L70fix2)
 
-- **Task**: L70 榜单模型选定与试跑估价
+- **Task**: L70 榜单模型选定与试跑估价 (L70fix2 Reconciled)
 - **Roles**: R8 (Research & Analysis) + R0 (Architect)
 - **Dependencies**: E48 (Batch Benchmark Runner), G53 (Guards A/B Control Experiment)
 - **Target Audience / Gate**: Human Reviewer (H3 Approval Gate for L71 Official Benchmark Execution)
@@ -12,9 +12,9 @@
 
 ## 1. Executive Summary & Recommended Budget Tiers
 
-Per task card **L70** and specifications **S16.1** and **S16.2**, this report establishes the definitive model selection for the Skeptic Leaderboard and presents a rigorous empirical budget extrapolation across three operational tiers.
+Per task card **L70** and specifications **S16.1** and **S16.2**, this report establishes the definitive model selection for the Skeptic Leaderboard and presents a reconciled empirical budget extrapolation across three operational tiers following the L70fix2 empirical audit.
 
-All estimates are grounded in actual empirical token counts observed during the **G53** benchmark runs (4,820 episodes on `compat/hy3`) and exact episode expansions calculated by `count_matrix_episodes` from `src/skeptic_agent/runner/matrix.py`.
+All estimates are grounded in actual empirical token counts observed during the **G53** benchmark runs (482 episodes under `guards: none` and 482 episodes under `guards: all`, proxied for `recommended`, on `compat/hy3` in `C:\Users\Du200\Projects\skeptic_runs\g53_free\ledger.csv`) and exact episode expansions calculated by `count_matrix_episodes` from `src/skeptic_agent/runner/matrix.py`.
 
 In compliance with project directives, **zero paid API calls or 128api billable requests were executed** during this estimation phase. The $40 allocation for L70 remains unspent ($0.00 actual expenditure).
 
@@ -22,12 +22,19 @@ In compliance with project directives, **zero paid API calls or 128api billable 
 
 | Tier | Seeds | Scenarios | Expanded Configs | Total Episodes | Base Extrapolated Cost | Safety Buffer | Recommended Cap (`--max-cost-usd`) | Key Trade-off / Statistical Validity |
 |---|---|---|---|---|---|---|---|---|
-| **Tier 1: 完整方案 (Full)** | 3 (`[1, 2, 3]`) | 200 (`core-v1`) | 24 | **231,768** | **$1,247.66** | +4.2% | **$1,300.00** | **Full Statistical Power**: 3 seeds enable robust paired bootstrap confidence intervals (B=1000) for SKS/FSR/ICR without overlapping seed artifacts. Perfectly matches S16.2 specification ceiling ($1,300). |
-| **Tier 2: 节省方案 (Save)** | 2 (`[1, 2]`) | 200 (`core-v1`) | 24 | **154,512** | **$831.77** | +5.8% | **$880.00** | **Cost-Effective Balance**: Retains 100% scenario coverage (all 200 scenarios across 10 sandboxes) while reducing episode count and cost by **33.3%**. 2 seeds still provide variance estimation. |
-| **Tier 3: 最低方案 (Min)** | 2 (`[1, 2]`) | 100 (50% sample) | 24 | **77,904** | **$419.38** | +7.3% | **$450.00** | **Budget-Constrained Minimum**: Reduces cost by **66.4%** while preserving all 8 models and 4 framework adapters across 10 scenarios per sandbox with 2 seeds. |
+| **Tier 1: 完整方案 (Full)** | 3 (`[1, 2, 3]`) | 200 (`core-v1`) | 24 | **231,768** | **$2,135.10** | +5.4% | **$2,250.00** | **Full Statistical Power**: 3 seeds enable robust paired bootstrap confidence intervals (B=1000) for SKS/FSR/ICR without overlapping seed artifacts. **Exceeds original S16.2 ceiling ($1,300)**; requires H3 approval to raise ceiling to $2,250. |
+| **Tier 2: 节省方案 (Save)** | 2 (`[1, 2]`) | 200 (`core-v1`) | 24 | **154,512** | **$1,423.40** | +6.8% | **$1,520.00** | **Cost-Effective Balance**: Retains 100% scenario coverage (all 200 scenarios across 10 sandboxes) while reducing episode count and cost by **33.3%**. 2 seeds still provide variance estimation. **Exceeds original S16.2 ceiling ($1,300)**; requires H3 approval to raise ceiling to $1,520. |
+| **Tier 3: 最低方案 (Min)** | 2 (`[1, 2]`) | 100 (50% sample) | 24 | **77,904** | **$717.67** | +8.7% | **$780.00** | **Budget-Constrained Minimum**: Reduces cost by **66.4%** while preserving all 8 models and 4 framework adapters across 10 scenarios per sandbox with 2 seeds. **Fits within original S16.2 ceiling ($1,300)** without requiring additional budget. |
 
 > [!IMPORTANT]
-> **R0 Recommendation**: If funding allows, approve **Tier 1 ($1,300.00)** to ensure definitive ranking stability and non-overlapping confidence intervals across leaderboard entries. If constrained, **Tier 2 ($880.00)** maintains complete scenario diversity across all 10 sandboxes without compromising failure coverage.
+> **Honest H3 Budget Implication & Decision Gate**:
+> Empirical token counts from G53 reveal that single-episode token consumption is significantly higher than the earlier speculative assumption ($T_{in} \approx 2,250, T_{out} \approx 250$). Under empirical consumption ($T_{in} \approx 3,736.21, T_{out} \approx 453.57$), the previous estimates ($1,247.66 / $831.77 / $419.38) severely understated the true cost.
+> **Critical Reality**: S16.2's original **$1,300.00** ceiling cannot cover Tier 1 ($2,135.10 base, $2,250.00 cap) or even Tier 2 ($1,423.40 base, $1,520.00 cap) at empirical token rates.
+> H3 must make an explicit choice:
+> 1. **Option A (Raise Ceiling — Recommended for Research Quality)**: Approve **Tier 1 ($2,250.00)** or **Tier 2 ($1,520.00)**, formally raising the budget ceiling beyond the original $1,300.
+> 2. **Option B (Strict Budget Limit)**: If the $1,300 budget ceiling is non-negotiable, H3 must approve **Tier 3 ($780.00 cap)** or accept a further-reduced evaluation matrix.
+> 
+> *Governance Note*: In accordance with change-control discipline, `bench/matrix/leaderboard-v1.yaml` leaves `max_cost_usd: 1300` unchanged until H3 formally issues written approval for a revised ceiling.
 
 ---
 
@@ -39,17 +46,17 @@ The 8 leaderboard models and 1 development model have been registered in `bench/
 
 | Model ID (`openrouter/slug`) | Display Name | Group (`group`) | Origin (`origin`) | Tier (`tier`) | Price In ($/Mtok) | Price Out ($/Mtok) | Unit Cost ($/ep)* | Selection Rationale & Tool Calling Status |
 |---|---|---|---|---|---|---|---|---|
-| `openrouter/anthropic/claude-3.5-sonnet` | Claude 3.5 Sonnet | `closed-frontier` | `us` | `leaderboard` | $3.00 | $15.00 | $0.010500 | Anthropic flagship; industry state-of-the-art for coding and tool reasoning; benchmark baseline. |
-| `openrouter/openai/gpt-4o` | GPT-4o | `closed-frontier` | `us` | `leaderboard` | $2.50 | $10.00 | $0.008125 | OpenAI flagship omni model; high tool-calling precision and strict JSON-RPC schema compliance. |
-| `openrouter/google/gemini-pro-1.5` | Gemini 1.5 Pro | `closed-frontier` | `us` | `leaderboard` | $1.25 | $5.00 | $0.004063 | Google flagship frontier model; 2M token context; verified function calling on OpenRouter. |
-| `openrouter/anthropic/claude-3.5-haiku` | Claude 3.5 Haiku | `closed-small` | `us` | `leaderboard` | $0.80 | $4.00 | $0.002800 | Anthropic high-speed compact model; low latency and reliable multi-step tool execution. |
-| `openrouter/google/gemini-flash-1.5` | Gemini 1.5 Flash | `closed-small` | `us` | `leaderboard` | $0.075 | $0.30 | $0.000244 | Google lightweight high-throughput model; highly cost-effective native tool calling. |
-| `openrouter/deepseek/deepseek-chat` | DeepSeek V3 | `open-weight` | `cn` | `leaderboard` | $0.14 | $0.28 | $0.000385 | DeepSeek open-weight MoE flagship; exceptional open-source agentic performance. |
-| `openrouter/qwen/qwen-2.5-72b-instruct` | Qwen 2.5 72B Instruct | `open-weight` | `cn` | `leaderboard` | $0.35 | $0.40 | $0.000887 | Alibaba Qwen 2.5 flagship 72B dense open-weight model; strong Chinese/English tool use. |
-| `openrouter/meta-llama/llama-3.3-70b-instruct` | Llama 3.3 70B Instruct | `open-weight` | `us` | `leaderboard` | $0.12 | $0.30 | $0.000345 | Meta open-weight flagship; broad community adoption and verified OpenRouter tools routing. |
-| `openrouter/openai/gpt-4o-mini` | GPT-4o mini | `closed-small` | `us` | `dev` | $0.15 | $0.60 | $0.000488 | Default dev-tier model ($0.75/Mtok total $\le \$1.00$ requirement); used for local dev and CI. |
+| `openrouter/anthropic/claude-3.5-sonnet` | Claude 3.5 Sonnet | `closed-frontier` | `us` | `leaderboard` | $3.00 | $15.00 | $0.018012 | Anthropic flagship; industry state-of-the-art for coding and tool reasoning; benchmark baseline. |
+| `openrouter/openai/gpt-4o` | GPT-4o | `closed-frontier` | `us` | `leaderboard` | $2.50 | $10.00 | $0.013876 | OpenAI flagship omni model; high tool-calling precision and strict JSON-RPC schema compliance. |
+| `openrouter/google/gemini-pro-1.5` | Gemini 1.5 Pro | `closed-frontier` | `us` | `leaderboard` | $1.25 | $5.00 | $0.006938 | Google flagship frontier model; 2M token context; verified function calling on OpenRouter. |
+| `openrouter/anthropic/claude-3.5-haiku` | Claude 3.5 Haiku | `closed-small` | `us` | `leaderboard` | $0.80 | $4.00 | $0.004803 | Anthropic high-speed compact model; low latency and reliable multi-step tool execution. |
+| `openrouter/google/gemini-flash-1.5` | Gemini 1.5 Flash | `closed-small` | `us` | `leaderboard` | $0.075 | $0.30 | $0.000416 | Google lightweight high-throughput model; highly cost-effective native tool calling. |
+| `openrouter/deepseek/deepseek-chat` | DeepSeek V3 | `open-weight` | `cn` | `leaderboard` | $0.14 | $0.28 | $0.000650 | DeepSeek open-weight MoE flagship; exceptional open-source agentic performance. |
+| `openrouter/qwen/qwen-2.5-72b-instruct` | Qwen 2.5 72B Instruct | `open-weight` | `cn` | `leaderboard` | $0.35 | $0.40 | $0.001489 | Alibaba Qwen 2.5 flagship 72B dense open-weight model; strong Chinese/English tool use. |
+| `openrouter/meta-llama/llama-3.3-70b-instruct` | Llama 3.3 70B Instruct | `open-weight` | `us` | `leaderboard` | $0.12 | $0.30 | $0.000584 | Meta open-weight flagship; broad community adoption and verified OpenRouter tools routing. |
+| `openrouter/openai/gpt-4o-mini` | GPT-4o mini | `closed-small` | `us` | `dev` | $0.15 | $0.60 | $0.000833 | Default dev-tier model ($0.75/Mtok total $\le \$1.00$ requirement); used for local dev and CI. |
 
-*\*Unit cost assumes weighted average consumption of $T_{in} = 2,250$ tokens and $T_{out} = 250$ tokens per episode.*
+*\*Unit cost assumes weighted average empirical consumption of $T_{in} = 3,736.2123$ tokens and $T_{out} = 453.5733$ tokens per episode, based on the 16-none + 8-recommended configuration mix from the G53 empirical ledger (with recommended proxied by G53 'all'). $\text{unit} = T_{in}/10^6 \times \text{price\_in} + T_{out}/10^6 \times \text{price\_out}$.*
 
 > [!NOTE]
 > **Non-Leaderboard Experiment Tier Split**: Existing compatibility models (`compat/deepseek-v4-pro`, `compat/gpt-5.6-terra`, `compat/hy3`) from G53 experiments are retained in `bench/leaderboard/models.yaml` under `tier: experiment`. They represent 128api / WorkBuddy endpoints rather than OpenRouter slugs and are completely isolated from the official S16.1 leaderboard and dev tiers.
@@ -125,28 +132,44 @@ Across seeds and scenarios:
 
 ## 4. Empirical Cost Estimation Basis
 
-### 4.1 Token Distribution from G53 Empirical Runs
+### 4.1 Token Distribution from G53 Empirical Runs & Reconciliation
 
-During the **G53** Guards A/B experiment on `compat/hy3` (4,820 total episodes):
-- **Unprotected runs (`guards: none`)**:
-  - 482 episodes recorded total cost of **$1.16** under dev pricing ($0.60 in / $2.40 out).
-  - Derived tokens per episode: $T_{in} \approx 2,100$ tokens, $T_{out} \approx 230$ tokens.
-  - Effective baseline cost: **$0.002407 / episode**.
-- **Protected runs (`guards: all` / `guards: recommended`)**:
-  - 482 episodes recorded total cost of **$1.37** (+18.1% cost increase).
-  - Additional consumption stems from retry guard (G05) re-invocations, evidence contract (G01) framing, and schema validation turns.
-  - Derived tokens per episode: $T_{in} \approx 2,450$ tokens, $T_{out} \approx 270$ tokens.
-  - Effective protected cost: **$0.002842 / episode**.
-- **Matrix Weighted Average**:
-  - In `leaderboard-v1`, 16 of 24 configs run without guards (`none`) and 8 of 24 run with guards (`recommended`).
-  - Weighted average consumption: **$T_{in} = 2,250$ tokens** ($0.00225$ Mtok) and **$T_{out} = 250$ tokens** ($0.00025$ Mtok).
+The empirical token baseline is established directly from the real G53 free run ledger (`C:\Users\Du200\Projects\skeptic_runs\g53_free\ledger.csv`, on `compat/hy3`):
+
+1. **Unprotected Runs (`guards: none`, run_id `20261103-155316-3e96a4`)**:
+   - 482 episodes recorded `tokens_in = 1,685,280`, `tokens_out = 211,034`, with recorded ledger cost of **$1.159186**.
+   - Per episode consumption: $T_{in} = 1,685,280 / 482 \approx 3,496.4315$ tokens, $T_{out} = 211,034 / 482 \approx 437.8299$ tokens.
+   - Per episode ledger cost: **$0.002405 / episode**.
+
+2. **Protected Runs (`guards: all`, run_id `20261103-162358-6c18bb`)**:
+   - 482 episodes recorded `tokens_in = 2,032,003`, `tokens_out = 233,799`, with recorded ledger cost of **$1.366695**.
+   - Per episode consumption: $T_{in} = 2,032,003 / 482 \approx 4,215.7739$ tokens, $T_{out} = 233,799 / 482 \approx 485.0602$ tokens.
+   - Per episode ledger cost: **$0.002835 / episode**.
+
+3. **Ledger Pricing Fallback & Prior Review FAIL Root Cause**:
+   - The ledger USD totals were priced at the runner fallback defaults `DEFAULT_PRICE_IN_PER_MTOK = $0.50` and `DEFAULT_PRICE_OUT_PER_MTOK = $1.50` from `src/skeptic_agent/runner/llm.py`, because `compat/hy3` was not yet registered in `models.yaml` at the time of the G53 run (it is now registered as `tier: experiment` at $0.00).
+   - Verification:
+     $$1,685,280 \times \frac{\$0.50}{10^6} + 211,034 \times \frac{\$1.50}{10^6} = \$0.842640 + \$0.316551 = \$1.159191 \approx \$1.159186$$
+   - The ledger totals were **NOT** priced at $\$0.60\text{ in} / \$2.40\text{ out}$. The earlier draft reported speculative figures of $T_{in} \approx 2,100 / T_{out} \approx 230$ and claimed $\$0.002407$ came from $2,100 / 230$ at $\$0.60 / \$2.40$; in reality, $2,100 \times 0.60/10^6 + 230 \times 2.40/10^6 = \$0.001812$, which was mathematically inconsistent and caused the Copilot review FAIL. Those understated token counts drastically understated the entire benchmark budget.
+
+4. **Matrix Weighted Average (16-none + 8-recommended)**:
+   - In `leaderboard-v1`, 16 of the 24 configurations run without guards (`guards: none`) and 8 run with guards (`guards: recommended`).
+   - Guard token overhead for `recommended` is proxied by G53 `guards: all`.
+   - Weighted average token consumption per episode:
+     $$T_{in} = \frac{16 \times 3,496.431535 + 8 \times 4,215.773859}{24} = 3,736.212310\text{ tokens}$$
+     $$T_{out} = \frac{16 \times 437.829876 + 8 \times 485.060166}{24} = 453.573306\text{ tokens}$$
+   - Unit cost formula for each model:
+     $$\text{unit} = \frac{T_{in}}{10^6} \times \text{price\_in} + \frac{T_{out}}{10^6} \times \text{price\_out}$$
 
 ### 4.2 Smoke Suite Extrapolation Reference (318 Episodes / Seed)
 
 A single-seed dry run on the 20-scenario `smoke` suite produces **318 episodes / config** (7,632 episodes across 24 configs). The extrapolated smoke cost across all 24 configs is:
-- Reference models (`none` + `recommended`, 16 configs): **$17.38**
-- Framework adapters (8 configs): **$23.70**
-- **Total Smoke Matrix Cost**: **$41.08** (closely aligning with the $40 L70 card budget).
+- Reference models (`none` + `recommended`, 16 configs; $2 \times 318 = 636$ eps per model): **$29.75**
+- Framework adapters (8 configs; $4 \times 318 = 1,272$ eps each for Sonnet and GPT-4o): **$40.56**
+- **Total Smoke Matrix Cost**: **$70.31**
+
+> [!NOTE]
+> **Budget Disclosure**: The extrapolated smoke cost of **$70.31** exceeds the original $40 L70 card budget. A live paid smoke across all 24 configurations of the smoke suite cannot fit within $40. However, L70 itself spent **$0.00** and made zero paid calls, preserving 100% of the project funds.
 
 ---
 
@@ -155,69 +178,73 @@ A single-seed dry run on the 20-scenario `smoke` suite produces **318 episodes /
 ### 5.1 Tier 1: 完整方案 (Full — 3 Seeds, 200 Scenarios)
 
 - **Total Episodes**: $24 \times 9,657 = \mathbf{231,768\text{ episodes}}$
-- **Recommended Cap**: **$1,300.00**
+- **Recommended Cap**: **$2,250.00** (Buffer +5.4% over base $2,135.10; original S16.2 ceiling $1,300 is insufficient)
 
 | Model | Config Count | Episodes / Model | Unit Cost ($/ep) | Model Total ($) | % of Budget |
 |---|---|---|---|---|---|
-| Claude 3.5 Sonnet | 6 (2 ref + 4 frameworks) | 57,942 | $0.010500 | $608.39 | 48.8% |
-| GPT-4o | 6 (2 ref + 4 frameworks) | 57,942 | $0.008125 | $470.78 | 37.7% |
-| Gemini 1.5 Pro | 2 (ref none + ref rec) | 19,314 | $0.004063 | $78.46 | 6.3% |
-| Claude 3.5 Haiku | 2 (ref none + ref rec) | 19,314 | $0.002800 | $54.08 | 4.3% |
-| Qwen 2.5 72B Instruct | 2 (ref none + ref rec) | 19,314 | $0.000887 | $17.14 | 1.4% |
-| DeepSeek V3 | 2 (ref none + ref rec) | 19,314 | $0.000385 | $7.44 | 0.6% |
-| Llama 3.3 70B Instruct | 2 (ref none + ref rec) | 19,314 | $0.000345 | $6.66 | 0.5% |
-| Gemini 1.5 Flash | 2 (ref none + ref rec) | 19,314 | $0.000244 | $4.71 | 0.4% |
-| **Total Base** | **24** | **231,768** | — | **$1,247.66** | **100.0%** |
-| **With Safety Buffer (+4.2%)** | | | | **$1,300.00** | |
+| Claude 3.5 Sonnet | 6 (2 ref + 4 frameworks) | 57,942 | $0.018012 | $1043.67 | 48.9% |
+| GPT-4o | 6 (2 ref + 4 frameworks) | 57,942 | $0.013876 | $804.02 | 37.7% |
+| Gemini 1.5 Pro | 2 (ref none + ref rec) | 19,314 | $0.006938 | $134.00 | 6.3% |
+| Claude 3.5 Haiku | 2 (ref none + ref rec) | 19,314 | $0.004803 | $92.77 | 4.3% |
+| Qwen 2.5 72B Instruct | 2 (ref none + ref rec) | 19,314 | $0.001489 | $28.76 | 1.3% |
+| DeepSeek V3 | 2 (ref none + ref rec) | 19,314 | $0.000650 | $12.56 | 0.6% |
+| Llama 3.3 70B Instruct | 2 (ref none + ref rec) | 19,314 | $0.000584 | $11.29 | 0.5% |
+| Gemini 1.5 Flash | 2 (ref none + ref rec) | 19,314 | $0.000416 | $8.04 | 0.4% |
+| **Total Base** | **24** | **231,768** | — | **$2135.10** | **100.0%** |
+| **With Safety Buffer (+5.4%)** | | | | **$2,250.00** | |
 
 ### 5.2 Tier 2: 节省方案 (Save — 2 Seeds, 200 Scenarios)
 
 - **Total Episodes**: $24 \times 6,438 = \mathbf{154,512\text{ episodes}}$
-- **Recommended Cap**: **$880.00**
+- **Recommended Cap**: **$1,520.00** (Buffer +6.8% over base $1,423.40; exceeds original S16.2 ceiling $1,300)
 
 | Model | Config Count | Episodes / Model | Unit Cost ($/ep) | Model Total ($) |
 |---|---|---|---|---|
-| Claude 3.5 Sonnet | 6 | 38,628 | $0.010500 | $405.59 |
-| GPT-4o | 6 | 38,628 | $0.008125 | $313.85 |
-| Gemini 1.5 Pro | 2 | 12,876 | $0.004063 | $52.31 |
-| Claude 3.5 Haiku | 2 | 12,876 | $0.002800 | $36.05 |
-| Qwen 2.5 72B Instruct | 2 | 12,876 | $0.000887 | $11.43 |
-| DeepSeek V3 | 2 | 12,876 | $0.000385 | $4.96 |
-| Llama 3.3 70B Instruct | 2 | 12,876 | $0.000345 | $4.44 |
-| Gemini 1.5 Flash | 2 | 12,876 | $0.000244 | $3.14 |
-| **Total Base** | **24** | **154,512** | — | **$831.77** |
-| **With Safety Buffer (+5.8%)** | | | | **$880.00** |
+| Claude 3.5 Sonnet | 6 | 38,628 | $0.018012 | $695.78 |
+| GPT-4o | 6 | 38,628 | $0.013876 | $536.01 |
+| Gemini 1.5 Pro | 2 | 12,876 | $0.006938 | $89.34 |
+| Claude 3.5 Haiku | 2 | 12,876 | $0.004803 | $61.85 |
+| Qwen 2.5 72B Instruct | 2 | 12,876 | $0.001489 | $19.17 |
+| DeepSeek V3 | 2 | 12,876 | $0.000650 | $8.37 |
+| Llama 3.3 70B Instruct | 2 | 12,876 | $0.000584 | $7.52 |
+| Gemini 1.5 Flash | 2 | 12,876 | $0.000416 | $5.36 |
+| **Total Base** | **24** | **154,512** | — | **$1423.40** |
+| **With Safety Buffer (+6.8%)** | | | | **$1,520.00** |
 
 ### 5.3 Tier 3: 最低方案 (Min — 2 Seeds, 100 Scenarios)
 
 - **Total Episodes**: $24 \times 3,246 = \mathbf{77,904\text{ episodes}}$
-- **Recommended Cap**: **$450.00**
+- **Recommended Cap**: **$780.00** (Buffer +8.7% over base $717.67; fits within original S16.2 ceiling $1,300)
 
 | Model | Config Count | Episodes / Model | Unit Cost ($/ep) | Model Total ($) |
 |---|---|---|---|---|
-| Claude 3.5 Sonnet | 6 | 19,476 | $0.010500 | $204.50 |
-| GPT-4o | 6 | 19,476 | $0.008125 | $158.24 |
-| Gemini 1.5 Pro | 2 | 6,492 | $0.004063 | $26.37 |
-| Claude 3.5 Haiku | 2 | 6,492 | $0.002800 | $18.18 |
-| Qwen 2.5 72B Instruct | 2 | 6,492 | $0.000887 | $5.76 |
-| DeepSeek V3 | 2 | 6,492 | $0.000385 | $2.50 |
-| Llama 3.3 70B Instruct | 2 | 6,492 | $0.000345 | $2.24 |
-| Gemini 1.5 Flash | 2 | 6,492 | $0.000244 | $1.58 |
-| **Total Base** | **24** | **77,904** | — | **$419.38** |
-| **With Safety Buffer (+7.3%)** | | | | **$450.00** |
+| Claude 3.5 Sonnet | 6 | 19,476 | $0.018012 | $350.81 |
+| GPT-4o | 6 | 19,476 | $0.013876 | $270.25 |
+| Gemini 1.5 Pro | 2 | 6,492 | $0.006938 | $45.04 |
+| Claude 3.5 Haiku | 2 | 6,492 | $0.004803 | $31.18 |
+| Qwen 2.5 72B Instruct | 2 | 6,492 | $0.001489 | $9.67 |
+| DeepSeek V3 | 2 | 6,492 | $0.000650 | $4.22 |
+| Llama 3.3 70B Instruct | 2 | 6,492 | $0.000584 | $3.79 |
+| Gemini 1.5 Flash | 2 | 6,492 | $0.000416 | $2.70 |
+| **Total Base** | **24** | **77,904** | — | **$717.67** |
+| **With Safety Buffer (+8.7%)** | | | | **$780.00** |
 
 ---
 
 ## 6. Budget Drivers & Cost Sensitivity Analysis
 
 1. **Frontier Model Dominance**:
-   - The two frontier models (Claude 3.5 Sonnet and GPT-4o) account for **86.5%** ($1,079.17 of $1,247.66) of the total budget in Tier 1.
+   - The two frontier models (Claude 3.5 Sonnet and GPT-4o) account for **86.5%** ($1,847.69 of $2,135.10) of the total budget in Tier 1.
    - This asymmetry arises because Sonnet and GPT-4o serve dual roles: evaluating model capability (reference agent) AND evaluating framework robustness (4 adapters $\times$ 2 models).
 2. **Open-Weight & Small Model Economy**:
-   - The remaining 6 models (Gemini Pro, Haiku, Flash, DeepSeek, Qwen, Llama) combined cost only **$168.49** (13.5% of total budget) for 115,884 episodes.
-   - DeepSeek V3, Qwen 2.5, and Llama 3.3 provide exceptional cost efficiency ($0.12–$0.35/Mtok in), demonstrating that expanding open-weight evaluations incurs negligible budget impact.
-3. **Safety Buffer Justification**:
-   - A 4–8% safety margin is incorporated into each tier to accommodate:
+   - The remaining 6 models (Gemini Pro, Haiku, Flash, DeepSeek, Qwen, Llama) combined cost only **$287.41** (13.5% of total budget) for 115,884 episodes in Tier 1.
+   - DeepSeek V3, Qwen 2.5, and Llama 3.3 provide exceptional cost efficiency ($0.12–$0.35/Mtok in), demonstrating that expanding open-weight evaluations incurs minimal budget impact.
+3. **S16.2 Ceiling Inadequacy & Honest Dilemma**:
+   - The original S16.2 specification postulated a ceiling of `max_cost_usd: 1300`. This assumed speculative token averages of $T_{in} \approx 2,250, T_{out} \approx 250$ (yielding earlier figures of $1,247.66 / $831.77 / $419.38).
+   - Under real empirical token rates ($T_{in} \approx 3,736.21, T_{out} \approx 453.57$), the true base cost of Tier 1 is $2,135.10 and Tier 2 is $1,423.40.
+   - Consequently, the S16.2 $1,300 ceiling is **insufficient** to cover Tier 1 or even Tier 2. H3 must either formally raise the ceiling ($2,250 for Tier 1, $1,520 for Tier 2) or choose Tier 3 ($780) / a further-reduced matrix to stay within $1,300.
+4. **Safety Buffer Justification**:
+   - A modest 5–8% safety margin is incorporated into each tier (Tier 1: $2,250 / +5.4%; Tier 2: $1,520 / +6.8%; Tier 3: $780 / +8.7%) to accommodate:
      - Scenarios triggering multi-turn retry loops under L01/L05.
      - Prompt inflation in adversarial injection tasks (A01–A03).
      - Token count variance across different natural language tokenizers.
@@ -226,7 +253,7 @@ A single-seed dry run on the 20-scenario `smoke` suite produces **318 episodes /
 
 ## 7. Compliance & Integrity Disclosure
 
-- **Zero Paid Network Calls**: As instructed, no paid API tokens or 128api calls were made during L70. All numbers are derived from static profile expansion on actual scenarios and empirical G53 token distributions.
+- **Zero Paid Network Calls**: As instructed, no paid API tokens or 128api calls were made during L70 / L70fix2. All numbers are derived from static profile expansion on actual scenarios and empirical G53 token distributions.
 - **Dry-run Validated**: The full matrix `leaderboard-v1` was verified with `skeptic bench run --matrix bench/matrix/leaderboard-v1.yaml --dry-run` and `--count`, matching the 231,768 episode calculation exactly.
 - **Reproducibility**: All calculations are reproducible via standard CLI commands and unit tests.
 
@@ -237,10 +264,13 @@ A single-seed dry run on the 20-scenario `smoke` suite produces **318 episodes /
 R0 hereby submits this document to the Human Project Sponsor for **H3 Approval**:
 
 ```text
-Action Required: Human reviewer to approve one budget tier in GitHub Issue:
-  - "批准 完整" (Tier 1, Cap $1,300.00)
-  - "批准 节省" (Tier 2, Cap $880.00)
-  - "批准 最低" (Tier 3, Cap $450.00)
+Action Required: Human reviewer to approve budget decision in GitHub Issue:
+  - "批准 完整" (Tier 1, Cap $2,250.00 — requires raising S16.2 $1,300 ceiling)
+  - "批准 节省" (Tier 2, Cap $1,520.00 — requires raising S16.2 $1,300 ceiling)
+  - "批准 最低" (Tier 3, Cap $780.00 — fits within original S16.2 $1,300 ceiling)
+
+Note: S16.2's original $1,300 ceiling is insufficient to cover Tier 1 or even Tier 2 at empirical token rates. If H3 cannot raise the ceiling beyond $1,300, H3 should approve Tier 3 ($780.00 cap) or request a further-reduced matrix.
+bench/matrix/leaderboard-v1.yaml retains max_cost_usd: 1300 until H3 formally approves the new cap.
 
 Upon receipt of approval, Role R4 will proceed with Task L71:
   skeptic bench run --matrix bench/matrix/leaderboard-v1.yaml --max-cost-usd <批准额度>
