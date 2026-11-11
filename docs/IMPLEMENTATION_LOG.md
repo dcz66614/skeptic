@@ -4532,3 +4532,7 @@ EXIT=0
 
 - Added `bench/matrix/leaderboard-v1-reduced-flash.yaml` (892 episodes, `compat/deepseek-v4.1-flash-sg`) and registered the WorkBuddy paid flash-sg experiment model. Official S16.2 and the free DSH / hy3 matrices are unchanged. Default episode timeout remains 180s.
 - The gemini-3.8-flash-high builder hung twice for ~15-18 minutes on enabled Playwright / Playwright-CDP MCP (no repo changes). Session `--settings disabledMcpServers` was rejected as an unknown key. The specified small config/docs/tests change was applied to this spec and is sent for independent Claude review. No GitHub push.
+
+## L71ds merge (2026-11-11)
+
+- codex 4bc8cc9 ff-merged to main. ff-only after Claude PASS. Paid WorkBuddy flash-sg reduced matrix. No push.
