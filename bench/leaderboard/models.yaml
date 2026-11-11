@@ -117,3 +117,12 @@ models:
     price_out_per_mtok: 0.0
     supports_tools: true
     notes: "Experimental non-leaderboard DSH our-free-model route via WorkBuddy OpenAI-compat relay (http://127.0.0.1:5390/v1), priced $0; not an OpenRouter slug, not WorkBuddy paid deepseek-v4.1-flash / deepseek-v4.1-flash-sg, and not opencode/*"
+  - id: compat/deepseek-v4.1-flash-sg
+    display: "DeepSeek V4.1 Flash (WorkBuddy sg)"
+    group: open-weight
+    origin: cn
+    tier: experiment
+    price_in_per_mtok: 0.0
+    price_out_per_mtok: 0.0
+    supports_tools: true
+    notes: "Experimental non-leaderboard WorkBuddy-direct model via the OpenAI-compat relay (http://127.0.0.1:5390/v1); not an OpenRouter slug, not 128api, not DSH our-free-model, not opencode/*, and not the non-sg deepseek-v4.1-flash id. Off-peak WorkBuddy credit rates are 14.29 in / 0.29 cached / 57.1 out per MTok; price fields stay 0.0 so credits are not labelled as USD."

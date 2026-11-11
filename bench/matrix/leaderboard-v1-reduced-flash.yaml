@@ -1,0 +1,17 @@
+schema: skeptic.matrix/v1
+id: leaderboard-v1-reduced-flash
+suite: core-v1-l71-reduced
+profiles: [silent-core]
+seeds: [1]
+max_cost_usd: 150.0
+configs:
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards: none
+    models:
+      - compat/deepseek-v4.1-flash-sg
+  - agent: "reference:${model}"
+    prompt_variant: plain
+    guards: recommended
+    models:
+      - compat/deepseek-v4.1-flash-sg

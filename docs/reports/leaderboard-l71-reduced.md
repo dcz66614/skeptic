@@ -149,7 +149,7 @@ Both models are explicitly declared with zero rates in `bench/leaderboard/models
 ### 5.3 Fail-Closed Provider Cost Policy
 
 > [!CAUTION]
-> If any execution monitoring or provider accounting indicates WorkBuddy balance deductions, credit consumption, or non-zero billing, the run **MUST BE IMMEDIATELY HALTED**. Under no circumstances may an agent switch to paid endpoints.
+> For the **free DSH** reduced run only: if monitoring indicates unexpected WorkBuddy credit consumption or non-zero cash billing, the run **MUST BE IMMEDIATELY HALTED**, and an agent must not silently switch endpoints. The paid `compat/deepseek-v4.1-flash-sg` rerun in Section 7 is an explicit, separate authorization with its own credit cap.
 
 ---
 
@@ -163,3 +163,15 @@ Because this is a reduced-scope verification experiment, its statistical power i
 4. **Experimental Models Only**: Results reflect local relay and experimental endpoints, not public commercial frontier models.
 
 **Conclusion**: Data from L71 cannot be merged into or cited as official Skeptic Leaderboard standings.
+
+---
+
+## 7. Paid WorkBuddy flash-sg rerun (L71ds)
+
+On 2026-11-11 Cd authorized a **separate** reduced-scope rerun on WorkBuddy paid `compat/deepseek-v4.1-flash-sg` via the same OpenAI-compat relay (`http://127.0.0.1:5390/v1`). This is **not** official S16.2, **not** the free DSH run, and must not be mixed with `skeptic_runs/l71_free/dsh`.
+
+- Matrix: `bench/matrix/leaderboard-v1-reduced-flash.yaml` (same 56-scenario suite, silent-core, seed `[1]`, guards none + recommended, 892 episodes).
+- Default episode timeout remains 180s (this model is ~1.5–1.8s/call).
+- WorkBuddy off-peak credit rates (in / cached / out) are documented on the model entry as 14.29 / 0.29 / 57.1 per MTok. `price_*` in `models.yaml` stay 0.0 so credits are not relabelled as USD. Expected usage is on the order of ~71 credits; the operational hard stop is ~150 credits, enforced by the launch wrapper. `max_cost_usd: 150` on the matrix is only a loose safety cap.
+- The existing hy3 slice remains free (`leaderboard-v1-reduced-free-hy3.yaml`) and is run into a separate output directory alongside this campaign.
+- Section 5.3 (halt on any WorkBuddy credit use) applies to the **free DSH** experiment only. It does not forbid this explicitly authorized paid flash-sg run.

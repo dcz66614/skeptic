@@ -226,12 +226,12 @@ def test_experiment_models_registration_and_pricing() -> None:
     assert "deepseek-v4.1-flash" in notes
     assert "opencode" in notes
 
-    # Confirm no paid deepseek or opencode models were added
+    # Confirm no opencode models were added. Paid flash-sg is an L71ds experiment.
     for m in models:
         mid = m["id"]
         assert not mid.startswith("opencode/"), f"Unauthorized opencode model found: {mid}"
-        if "deepseek-v4.1-flash-sg" in mid:
-            pytest.fail(f"Paid WorkBuddy model deepseek-v4.1-flash-sg registered: {mid}")
+        # L71ds registers compat/deepseek-v4.1-flash-sg separately;
+        # that model is covered by tests/unit/test_leaderboard_l71_ds.py.
 
     # Check hy3 model
     assert "compat/hy3" in by_id
