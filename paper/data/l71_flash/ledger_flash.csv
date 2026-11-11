@@ -1,0 +1,7 @@
+timestamp,task_id,agent_name,run_id,model,episodes,tokens_in,tokens_out,cost_usd
+2026-11-11T20:41:18Z,E48,reference:compat/deepseek-v4.1-flash-sg,20261111-202444-07a2ff,compat/deepseek-v4.1-flash-sg,446,1729518,161712,0.000000
+2026-11-11T20:58:16Z,E48,reference:compat/deepseek-v4.1-flash-sg,20261111-204118-1d7e2e,compat/deepseek-v4.1-flash-sg,446,1754548,159631,0.000000
+2026-11-11T20:59:04Z,E48,reference:compat/deepseek-v4.1-flash-sg,20261111-202444-07a2ff,compat/deepseek-v4.1-flash-sg,446,1729518,161712,0.000000
+2026-11-11T20:59:05Z,E48,reference:compat/deepseek-v4.1-flash-sg,20261111-204118-1d7e2e,compat/deepseek-v4.1-flash-sg,446,1754548,159631,0.000000
+2026-11-11T20:59:56Z,E48,reference:compat/deepseek-v4.1-flash-sg,20261111-202444-07a2ff,compat/deepseek-v4.1-flash-sg,446,1729518,161712,0.000000
+2026-11-11T20:59:57Z,E48,reference:compat/deepseek-v4.1-flash-sg,20261111-204118-1d7e2e,compat/deepseek-v4.1-flash-sg,446,1754548,159631,0.000000
