@@ -4536,3 +4536,7 @@ EXIT=0
 ## L71ds merge (2026-11-11)
 
 - codex 4bc8cc9 ff-merged to main. ff-only after Claude PASS. Paid WorkBuddy flash-sg reduced matrix. No push.
+
+## L74 merge (2026-11-11)
+
+- codex 5557388 ff-merged to main. Reduced-scope write-up of L71 flash-sg run (paper/make_numbers.py, numbers.json, docs/reports/leaderboard-l74-reduced-flash.md). Not S16.2; LaTeX tech report/PDF deferred (no toolchain). agy Claude review: all content checks PASS, sole blocker (CRLF on numbers.json under autocrlf) fixed in 5557388 and verified by orchestrator on a fresh checkout (6/6 tests). No push.
