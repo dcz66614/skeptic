@@ -1,2 +1,5 @@
 # Keep Markdown stored with LF line endings in the repo (K54 rewrote IMPLEMENTATION_LOG.md as CRLF)
 *.md text eol=lf
+paper/numbers.json text eol=lf
+paper/make_numbers.py text eol=lf
+paper/data/** text eol=lf
