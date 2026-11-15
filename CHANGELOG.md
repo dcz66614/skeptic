@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add the reduced-scope L74 LaTeX technical report and PDF under paper/.
 - Add the composite GitHub Action (`action.yml`) that runs a suite, publishes the report, and gates on SKS.
 - Add the bilingual MkDocs site (English and Chinese), the docs workflow, and a quickstart that runs on FakeLLM.
 - Add the leaderboard static site generator (`site/build.py`) and the S16.3 pages.

@@ -1,0 +1,17 @@
+# L74 build: official acceptance command is `latexmk -pdf main.tex`.
+# Debian apt repos were returning HTTP 500 / unsigned at build time, so
+# this project uses the CTAN latexmk 4.89 driver plus Tectonic 0.17.0
+# (XeTeX-compatible) as the PDF engine. Tectonic itself resolves
+# bibliography passes, so latexmk is told not to invoke bibtex separately.
+$pdf_mode = 1;
+$pdflatex = 'tectonic-pdflatex %O %S';
+$bibtex_use = 0;
+$max_repeat = 5;
+$pdf_update_method = 0;
+$silent = 0;
+
+# Tectonic does not write a latexmk .fls recorder file.
+$recorder = 0;
+
+# Tectonic's log originally reports an .xdv; the wrapper rewrites it to .pdf.
+# Prevent latexmk from looking for a missing kpsewhich / separate bibtex pass.

@@ -3,3 +3,8 @@
 paper/numbers.json text eol=lf
 paper/make_numbers.py text eol=lf
 paper/data/** text eol=lf
+paper/numbers.tex text eol=lf
+paper/make_figures.py text eol=lf
+paper/main.tex text eol=lf
+paper/refs.bib text eol=lf
+paper/latexmkrc text eol=lf
