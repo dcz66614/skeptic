@@ -4547,3 +4547,7 @@ EXIT=0
 ## EXP-hy merge (2026-11-15)
 
 - task/EXP-hy 5921e14 ff-merged to main. agy gemini-3.8-flash-high build; agy claude-sonnet-4-6 review VERDICT: PASS. Free hy3/hy4free contrast config and write-up (experiment, not S16.2). Full pytest 1424 passed, 6 skipped, 12 deselected. No push.
+
+## R80 merge (2026-11-15)
+
+- task/R80 cd15e7a ff-merged to main. agy gemini-3.8-flash-high build; independent review: agy claude-sonnet-4-6 quota exhausted, fallback WorkBuddy deepseek-v4.1-flash VERDICT: PASS. Gitleaks SKC-CANARY allowlist (full history clean), wheel schema packaging via importlib.resources, policy docs, pip-audit, P17 retest, Windows+Linux clean-wheel Quickstart, mkdocs --strict. macOS waived pending R1. Human gates K58/R81/R83 listed, not completed. No push.
