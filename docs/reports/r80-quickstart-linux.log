@@ -1,8 +1,10 @@
+=== python ===
+Python 3.12.15
 === which skeptic ===
-/workspace/r80/clean/bin/skeptic
+/workspace/r80-a663957/clean/bin/skeptic
 === version ===
 0.0.0
-=== faults list (head) ===
+=== faults list ===
 L01  loud         timeout                   transient    tools/call response
 L02  loud         jsonrpc_error             permanent    tools/call response
 L03  loud         tool_error                transient    tools/call response
@@ -24,99 +26,10 @@ A01  adversarial  output_injection          permanent    tools/call response
 A02  adversarial  description_poisoning     permanent    tools/list
 A03  adversarial  rug_pull                  permanent    tools/list (second time and later)
 === scenario validate ===
-╭───────────────────── Traceback (most recent call last) ──────────────────────╮
-│ /workspace/r80/clean/lib/python3.12/site-packages/skeptic_agent/cli.py:553   │
-│ in scenario_validate                                                         │
-│                                                                              │
-│    550 │   """                                                               │
-│    551 │   from skeptic_agent.scenario.validate import validate_paths        │
-│    552 │                                                                     │
-│ ❱  553 │   report = validate_paths(paths)                                    │
-│    554 │   if as_json:                                                       │
-│    555 │   │   payload = {                                                   │
-│    556 │   │   │   "valid": report.valid,                                    │
-│                                                                              │
-│ /workspace/r80/clean/lib/python3.12/site-packages/skeptic_agent/scenario/val │
-│ idate.py:614 in validate_paths                                               │
-│                                                                              │
-│   611 │   known_ids: set[str] = set()                                        │
-│   612 │                                                                      │
-│   613 │   for f in unique_files:                                             │
-│ ❱ 614 │   │   errs = validate_scenario_file(f, known_ids=known_ids)          │
-│   615 │   │   all_errors.extend(errs)                                        │
-│   616 │                                                                      │
-│   617 │   return ValidationReport(                                           │
-│                                                                              │
-│ /workspace/r80/clean/lib/python3.12/site-packages/skeptic_agent/scenario/val │
-│ idate.py:574 in validate_scenario_file                                       │
-│                                                                              │
-│   571 │   │   │   )                                                          │
-│   572 │   │   ]                                                              │
-│   573 │                                                                      │
-│ ❱ 574 │   return validate_scenario_data(raw, known_ids=known_ids,            │
-│       file_path=str(file_path))                                              │
-│   575                                                                        │
-│   576                                                                        │
-│   577 def validate_paths(paths: Sequence[Path | str]) -> ValidationReport:   │
-│                                                                              │
-│ /workspace/r80/clean/lib/python3.12/site-packages/skeptic_agent/scenario/val │
-│ idate.py:493 in validate_scenario_data                                       │
-│                                                                              │
-│   490 │   errors: list[ValidationError] = []                                 │
-│   491 │                                                                      │
-│   492 │   # 1. JSON Schema validation                                        │
-│ ❱ 493 │   validator = _get_validator()                                       │
-│   494 │   schema_errs = sorted(validator.iter_errors(data), key=lambda e:    │
-│       e.path)                                                                │
-│   495 │   if schema_errs:                                                    │
-│   496 │   │   for err in schema_errs:                                        │
-│                                                                              │
-│ /workspace/r80/clean/lib/python3.12/site-packages/skeptic_agent/scenario/val │
-│ idate.py:71 in _get_validator                                                │
-│                                                                              │
-│    68 │   """Return a cached Draft202012Validator for scenario schemas."""   │
-│    69 │   global _VALIDATOR                                                  │
-│    70 │   if _VALIDATOR is None:                                             │
-│ ❱  71 │   │   schema = _load_json_schema()                                   │
-│    72 │   │   _VALIDATOR = Draft202012Validator(schema,                      │
-│       format_checker=FormatChecker())                                        │
-│    73 │   return _VALIDATOR                                                  │
-│    74                                                                        │
-│                                                                              │
-│ /workspace/r80/clean/lib/python3.12/site-packages/skeptic_agent/scenario/val │
-│ idate.py:58 in _load_json_schema                                             │
-│                                                                              │
-│    55                                                                        │
-│    56 def _load_json_schema() -> dict[str, Any]:                             │
-│    57 │   """Load the Draft 2020-12 scenario schema from disk."""            │
-│ ❱  58 │   text = SCHEMA_FILE.read_text(encoding="utf-8")                     │
-│    59 │   data = json.loads(text)                                            │
-│    60 │   assert isinstance(data, dict)                                      │
-│    61 │   return data                                                        │
-│                                                                              │
-│ /home/box/.local/share/uv/python/cpython-3.12.15-linux-x86_64-gnu/lib/python │
-│ 3.12/pathlib.py:1027 in read_text                                            │
-│                                                                              │
-│   1024 │   │   Open the file in text mode, read it, and close the file.      │
-│   1025 │   │   """                                                           │
-│   1026 │   │   encoding = io.text_encoding(encoding)                         │
-│ ❱ 1027 │   │   with self.open(mode='r', encoding=encoding, errors=errors) as │
-│        f:                                                                    │
-│   1028 │   │   │   return f.read()                                           │
-│   1029 │                                                                     │
-│   1030 │   def write_bytes(self, data):                                      │
-│                                                                              │
-│ /home/box/.local/share/uv/python/cpython-3.12.15-linux-x86_64-gnu/lib/python │
-│ 3.12/pathlib.py:1013 in open                                                 │
-│                                                                              │
-│   1010 │   │   """                                                           │
-│   1011 │   │   if "b" not in mode:                                           │
-│   1012 │   │   │   encoding = io.text_encoding(encoding)                     │
-│ ❱ 1013 │   │   return io.open(self, mode, buffering, encoding, errors,       │
-│        newline)                                                              │
-│   1014 │                                                                     │
-│   1015 │   def read_bytes(self):                                             │
-│   1016 │   │   """                                                           │
-╰──────────────────────────────────────────────────────────────────────────────╯
-FileNotFoundError: [Errno 2] No such file or directory: 
-'/workspace/r80/clean/lib/python3.12/schemas/scenario.schema.json'
+PASS: 1 scenario(s) passed validation.
+=== run (FakeLLM oracle_follower) ===
+Run completed. SKS: 100.00, Episodes: 1
+=== report ===
+Generated 6 report(s) in /workspace/r80-a663957/runs/quickstart: report.json, report.md, report.html, junit.xml, skeptic.sarif, badge.svg
+=== gate ===
+Gate check PASSED: SKS=100.00 >= 70.00, FSR=0.0000 <= 0.1000, ICR=0.0000 <= 0.0000
