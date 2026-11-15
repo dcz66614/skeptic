@@ -10,8 +10,16 @@ from pydantic import BaseModel, ConfigDict, Field
 from skeptic_agent.scenario.model import Scenario, load_scenario
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-DEFAULT_SUITES_DIR = ROOT_DIR / "bench" / "suites"
-DEFAULT_SCENARIOS_DIR = ROOT_DIR / "bench" / "scenarios"
+DEFAULT_SUITES_DIR = (
+    Path.cwd() / "bench" / "suites"
+    if (Path.cwd() / "bench" / "suites").is_dir()
+    else ROOT_DIR / "bench" / "suites"
+)
+DEFAULT_SCENARIOS_DIR = (
+    Path.cwd() / "bench" / "scenarios"
+    if (Path.cwd() / "bench" / "scenarios").is_dir()
+    else ROOT_DIR / "bench" / "scenarios"
+)
 
 
 class SuiteError(ValueError):

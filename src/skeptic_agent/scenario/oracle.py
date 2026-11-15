@@ -5,6 +5,7 @@ import contextlib
 import json
 import os
 import sys
+import tempfile
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass, field
@@ -21,7 +22,11 @@ from skeptic_agent.scenario.model import Scenario, ScenarioStep, load_scenario
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 SRC_DIR = ROOT_DIR / "src"
-TMP_DIR = ROOT_DIR / ".tmp"
+TMP_DIR = (
+    Path.cwd() / ".tmp"
+    if (Path.cwd() / "bench").is_dir()
+    else Path(tempfile.gettempdir()) / "skeptic"
+)
 
 
 @dataclass
@@ -227,17 +232,23 @@ async def _run_steps_sequence(
         args += ["--", sys.executable, "-m", f"skeptic_agent.sandboxes.{scenario.sandbox}"]
 
         env = dict(os.environ)
-        env["PYTHONPATH"] = str(SRC_DIR.resolve())
+        if SRC_DIR.is_dir():
+            env["PYTHONPATH"] = str(SRC_DIR.resolve())
         if scenario.frozen_now:
             env["SKEPTIC_FROZEN_NOW"] = scenario.frozen_now
         if temp_state_path:
             env["SKEPTIC_STATE_FILE"] = str(temp_state_path)
 
+        exec_cwd = (
+            str(ROOT_DIR)
+            if ROOT_DIR.is_dir() and (ROOT_DIR / "bench").is_dir()
+            else str(Path.cwd())
+        )
         params = StdioServerParameters(
             command=sys.executable,
             args=args,
             env=env,
-            cwd=str(ROOT_DIR),
+            cwd=exec_cwd,
         )
 
         results: list[OracleStepResult] = []

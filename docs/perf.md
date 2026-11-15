@@ -92,6 +92,27 @@ The card's acceptance was written for `ubuntu-latest`. This machine is Windows
 the limits is large on both transports, and the Windows relay is the slower of
 the two platforms for stdio pipes.
 
+## Results on this machine (2026-11-15, R80 release hardening)
+
+Machine: Windows 11 Home 10.0.26200, 13th Gen Intel Core i7-13650HX, Python 3.12.13, MCP SDK 2.3.0, Starlette 1.10.0, httpx 0.28.1.
+
+Command: `uv run python tests/perf/bench_proxy.py --report docs/reports/r80-perf.json`
+(5,000 latency samples per transport, 3 warm-up calls per session):
+
+| Transport | Added latency p50 | p90 | p99 | mean | max | Acceptance |
+| --- | --- | --- | --- | --- | --- | --- |
+| stdio | 0.306 ms | 0.366 ms | 0.488 ms | 0.299 ms | 1.937 ms | PASS |
+| HTTP | 3.169 ms | 3.710 ms | 5.280 ms | 3.287 ms | 52.075 ms | PASS |
+
+Concurrency (50 clients x 100 calls = 5,000 calls per transport):
+
+| Transport | Calls | Errors | Mismatches |
+| --- | --- | --- | --- |
+| stdio | 5,000 | 0 | 0 |
+| HTTP | 5,000 | 0 | 0 |
+
+Acceptance check: PASS (stdio p50=0.306 ms < 5.0 ms, p99=0.488 ms < 30.0 ms; HTTP p50=3.169 ms < 5.0 ms, p99=5.280 ms < 30.0 ms; 0 concurrency errors).
+
 ## Reading the numbers
 
 - HTTP carries about 2 ms more than stdio per message with these samples. On HTTP

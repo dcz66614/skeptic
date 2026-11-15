@@ -11,6 +11,7 @@ from typing import Any
 import yaml
 from jsonschema import Draft202012Validator
 
+from skeptic_agent.data import get_schema_path
 from skeptic_agent.faults.schedule import (
     CONFLICT_B,
     PERSISTENCE_MODES,
@@ -19,7 +20,7 @@ from skeptic_agent.faults.schedule import (
     CallIndex,
 )
 
-SCHEMA_PATH = Path(__file__).resolve().parents[3] / "schemas" / "profile.schema.json"
+SCHEMA_PATH = get_schema_path("profile.schema.json")
 """The frozen ``skeptic.profile/v1`` JSON Schema."""
 
 

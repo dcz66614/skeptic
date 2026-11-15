@@ -12,9 +12,10 @@ from typing import Any
 import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 
+from skeptic_agent.data import get_schema_path
 from skeptic_agent.scenario.model import Check, Scenario
 
-SCHEMA_FILE = Path(__file__).resolve().parents[3] / "schemas" / "scenario.schema.json"
+SCHEMA_FILE = get_schema_path("scenario.schema.json")
 """Path to the frozen skeptic.scenario/v1 JSON Schema."""
 
 ID_PATTERN = re.compile(r"^[a-z]+\.[a-z0-9-]+\.[a-z0-9-]+\.[0-9]{3}$")

@@ -12,6 +12,7 @@ import contextlib
 import json
 import os
 import sys
+import tempfile
 import time
 import uuid
 from collections.abc import Sequence
@@ -22,6 +23,7 @@ from typing import Any, Literal, cast
 import jsonschema
 import yaml
 
+from skeptic_agent.data import get_recoverability_path, get_schema_path
 from skeptic_agent.faults.catalog import catalogue
 from skeptic_agent.record.cassette import cassette_path
 from skeptic_agent.runner.adapters import get_adapter
@@ -49,9 +51,13 @@ _evaluate_check = evaluate_check
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 SRC_DIR = ROOT_DIR / "src"
-TMP_DIR = ROOT_DIR / ".tmp"
-SCHEMA_PATH = ROOT_DIR / "schemas" / "result.schema.json"
-RECOVERABILITY_PATH = ROOT_DIR / "bench" / "recoverability.json"
+TMP_DIR = (
+    Path.cwd() / ".tmp"
+    if (Path.cwd() / "bench").is_dir()
+    else Path(tempfile.gettempdir()) / "skeptic"
+)
+SCHEMA_PATH = get_schema_path("result.schema.json")
+RECOVERABILITY_PATH = get_recoverability_path()
 
 
 def resolve_episode_timeout(override: int | str | None = None) -> int | None:
@@ -214,9 +220,10 @@ async def run_episode(
     ]
 
     server_env: dict[str, str] = {
-        "PYTHONPATH": str(SRC_DIR.resolve()),
         "SKEPTIC_STATE_FILE": str(state_file),
     }
+    if SRC_DIR.is_dir():
+        server_env["PYTHONPATH"] = str(SRC_DIR.resolve())
     if scenario_obj.frozen_now:
         server_env["SKEPTIC_FROZEN_NOW"] = scenario_obj.frozen_now
 
@@ -257,9 +264,10 @@ async def run_episode(
             f"skeptic_agent.sandboxes.{extra_sandbox}",
         ]
         extra_env = {
-            "PYTHONPATH": str(SRC_DIR.resolve()),
             "SKEPTIC_STATE_FILE": str(extra_state),
         }
+        if SRC_DIR.is_dir():
+            extra_env["PYTHONPATH"] = str(SRC_DIR.resolve())
         if scenario_obj.frozen_now:
             extra_env["SKEPTIC_FROZEN_NOW"] = scenario_obj.frozen_now
         servers.append(McpServerSpec(name=extra_name, command=extra_cmd, env=extra_env))

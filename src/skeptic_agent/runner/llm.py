@@ -12,7 +12,12 @@ from openai import AsyncOpenAI
 
 from skeptic_agent.runner.fake_llm import FakeLLM
 
-MODELS_YAML_PATH = Path(__file__).resolve().parents[3] / "bench" / "leaderboard" / "models.yaml"
+_CHECKOUT_MODELS = Path(__file__).resolve().parents[3] / "bench" / "leaderboard" / "models.yaml"
+MODELS_YAML_PATH = (
+    _CHECKOUT_MODELS
+    if _CHECKOUT_MODELS.is_file()
+    else Path.cwd() / "bench" / "leaderboard" / "models.yaml"
+)
 
 DEFAULT_PRICE_IN_PER_MTOK: float = 0.50
 DEFAULT_PRICE_OUT_PER_MTOK: float = 1.50

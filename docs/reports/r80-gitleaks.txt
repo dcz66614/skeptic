@@ -1,0 +1,26 @@
+# Gitleaks Scan Report - R80 Release Hardening
+
+Date: 2026-11-15
+Tool: Gitleaks 8.30.1
+
+## Initial Scan Finding
+- File: tests/unit/test_outcome.py
+- Line: 81
+- RuleID: generic-api-key
+- Commit: 63bd2ee21c42c4005affb8abf007dc06b8f085d0
+- Triage: Project synthetic canary token fixture (`SKC-CANARY-*`) used by outcome leak scorer unit tests. Not a real credential.
+
+## Resolution
+- Added `.gitleaks.toml` extending default config (`[extend] useDefault = true`) with global allowlist regex `(?i)SKC-CANARY-[A-Za-z0-9_-]+` to allowlist synthetic Skeptic canary fixtures without path-wide exemptions.
+- Added `.gitleaksignore` recording the specific finding fingerprint (`63bd2ee21c42c4005affb8abf007dc06b8f085d0:tests/unit/test_outcome.py:generic-api-key:81`).
+
+## Re-scan
+Command:
+gitleaks detect --source . --redact
+
+Output:
+INF 142 commits scanned.
+INF scanned ~8401826 bytes (8.40 MB)
+INF no leaks found
+
+Full history scan is clean.

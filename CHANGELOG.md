@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Release hardening (R80): package schemas in wheel via hatch force-include, resolve resources via importlib.resources, allowlist synthetic test canaries in gitleaks, and verify clean-venv quickstart and performance.
 - Add the reduced-scope L74 LaTeX technical report and PDF under paper/.
 - Add the composite GitHub Action (`action.yml`) that runs a suite, publishes the report, and gates on SKS.
 - Add the bilingual MkDocs site (English and Chinese), the docs workflow, and a quickstart that runs on FakeLLM.

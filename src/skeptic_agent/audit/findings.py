@@ -17,6 +17,7 @@ from jinja2 import Environment, FileSystemLoader
 from jsonschema import Draft202012Validator
 
 from skeptic_agent.audit.discover import classify_tool_kind
+from skeptic_agent.data import get_recoverability_path, get_schema_path
 from skeptic_agent.report.loader import RunData, load_run_data
 from skeptic_agent.report.sarif_report import generate_sarif_report
 from skeptic_agent.scenario.recoverability import (
@@ -25,7 +26,7 @@ from skeptic_agent.scenario.recoverability import (
 )
 from skeptic_agent.scenario.validate import get_sandbox_tool_specs
 
-FINDINGS_SCHEMA_PATH = Path(__file__).resolve().parents[3] / "schemas" / "findings.schema.json"
+FINDINGS_SCHEMA_PATH = get_schema_path("findings.schema.json")
 
 
 def _load_findings_validator() -> Draft202012Validator:
@@ -207,6 +208,7 @@ def summarize_findings(
     recov_cache: RecoverabilityCache = {}
     for candidate_path in [
         output_path / "recoverability.json",
+        get_recoverability_path(),
         Path("bench/recoverability.json"),
         Path(__file__).resolve().parents[3] / "bench" / "recoverability.json",
     ]:

@@ -30,6 +30,7 @@ from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
 from skeptic_agent import __version__
+from skeptic_agent.data import get_schema_path, get_schemas_dir
 from skeptic_agent.faults.engine import load_profile_source
 from skeptic_agent.faults.profiles import Episode, Profile, expand
 from skeptic_agent.guards.presets import ALL_GUARDS, resolve_guards
@@ -49,9 +50,9 @@ from skeptic_agent.scoring.metrics import (
 )
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
-SCHEMAS_DIR = ROOT_DIR / "schemas"
-MATRIX_SCHEMA_PATH = SCHEMAS_DIR / "matrix.schema.json"
-REPORT_SCHEMA_PATH = SCHEMAS_DIR / "report.schema.json"
+SCHEMAS_DIR = get_schemas_dir()
+MATRIX_SCHEMA_PATH = get_schema_path("matrix.schema.json")
+REPORT_SCHEMA_PATH = get_schema_path("report.schema.json")
 MODELS_YAML_PATH = ROOT_DIR / "bench" / "leaderboard" / "models.yaml"
 
 VALID_FAULT_REGEX = re.compile(r"^(L0[1-7]|S0[1-9]|S10|A0[1-3])$")
@@ -200,7 +201,11 @@ def load_models(models_path: str | Path | None = None) -> list[dict[str, Any]]:
     """Load model declarations from bench/leaderboard/models.yaml (S16.1)."""
     path = Path(models_path) if models_path is not None else MODELS_YAML_PATH
     if not path.is_file():
-        return []
+        cwd_cand = Path.cwd() / "bench" / "leaderboard" / "models.yaml"
+        if cwd_cand.is_file():
+            path = cwd_cand
+        else:
+            return []
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         if isinstance(data, dict) and "models" in data and isinstance(data["models"], list):

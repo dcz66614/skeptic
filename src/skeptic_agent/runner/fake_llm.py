@@ -20,9 +20,10 @@ from openai.types.chat.chat_completion_message_tool_call import (
     Function,
 )
 
+from skeptic_agent.data import get_fake_scripts_dir
 from skeptic_agent.jsonsel import get_first
 
-FIXTURES_DIR = Path(__file__).resolve().parents[3] / "tests" / "fixtures" / "fake_scripts"
+FIXTURES_DIR = get_fake_scripts_dir()
 
 
 class FakeRawResponse:
