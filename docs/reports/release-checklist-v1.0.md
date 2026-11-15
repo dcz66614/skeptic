@@ -17,7 +17,7 @@ Release Milestone: R80 (Release Hardening) / Base: d879d4c / Branch: task/R80
 
 ## 3. Platform Verification & Quickstart
 - [x] **Windows Wheel Quickstart**: Fresh wheel built (`skeptic_agent-0.0.0-py3-none-any.whl`) and installed in clean virtual environment (`$TEMP\clean-skeptic-venv`). All 6 Quickstart commands (`--version`, `faults list`, `scenario validate`, `run`, `report`, `gate`) passed. Record: `docs/reports/r80-quickstart-windows.log`.
-- [ ] **Linux Wheel Quickstart**: Pending orchestrator box re-run after packaging fix (initial d879d4c run failed due to missing wheel schemas; packaging fix is now in place).
+- [x] **Linux Wheel Quickstart**: Fresh wheel of a663957 built on the Linux box (CPython 3.12.15), installed in a clean venv with only the wheel. All 6 Quickstart commands passed (`--version` 0.0.0, `faults list` 20 faults, `scenario validate` PASS, FakeLLM `run` SKS 100.00 / 1 episode, `report` 6 files, `gate` PASSED). Earlier d879d4c run had failed on missing packaged schemas. Record: `docs/reports/r80-quickstart-linux.log` and `docs/reports/r80-quickstart-linux-notes.md`.
 - [x] **macOS Wheel Quickstart**: WAIVED pending R1 approval (reason: no macOS hardware available in this execution environment).
 
 ## 4. Performance & Reliability
