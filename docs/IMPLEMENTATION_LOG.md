@@ -4540,3 +4540,7 @@ EXIT=0
 ## L74 merge (2026-11-11)
 
 - codex 5557388 ff-merged to main. Reduced-scope write-up of L71 flash-sg run (paper/make_numbers.py, numbers.json, docs/reports/leaderboard-l74-reduced-flash.md). Not S16.2; LaTeX tech report/PDF deferred (no toolchain). agy Claude review: all content checks PASS, sole blocker (CRLF on numbers.json under autocrlf) fixed in 5557388 and verified by orchestrator on a fresh checkout (6/6 tests). No push.
+
+## L74pdf merge (2026-11-15)
+
+- task/L74pdf 428086a ff-merged to main. agy gemini-3.8-flash-high build; agy claude-sonnet-4-6 review VERDICT: PASS. Reduced-scope L74 LaTeX technical report and PDF added under paper/ (macros from numbers.json; not S16.2). No push.
