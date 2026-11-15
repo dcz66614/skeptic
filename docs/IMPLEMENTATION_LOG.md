@@ -4544,3 +4544,6 @@ EXIT=0
 ## L74pdf merge (2026-11-15)
 
 - task/L74pdf 428086a ff-merged to main. agy gemini-3.8-flash-high build; agy claude-sonnet-4-6 review VERDICT: PASS. Reduced-scope L74 LaTeX technical report and PDF added under paper/ (macros from numbers.json; not S16.2). No push.
+## EXP-hy merge (2026-11-15)
+
+- task/EXP-hy 5921e14 ff-merged to main. agy gemini-3.8-flash-high build; agy claude-sonnet-4-6 review VERDICT: PASS. Free hy3/hy4free contrast config and write-up (experiment, not S16.2). Full pytest 1424 passed, 6 skipped, 12 deselected. No push.
