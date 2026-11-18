@@ -4555,3 +4555,7 @@ EXIT=0
 ## CI313 merge (2026-11-18)
 
 - task/CI313 a18a538 ff-merged to main. Python 3.13 CI fix: tests/fixtures/echo_server.py relied on the docstring as the tool description, which 3.13 dedents at compile time and 3.12 does not; the description is now explicit and identical on both (faulty_echo_server and the test constant aligned). Added .tmp/ to .gitignore; episode and oracle scratch root now resolve_tmp_dir() (SKEPTIC_TMP, default system temp/skeptic, no longer cwd/.tmp) with unit test and docs; docs workflow skips Pages upload and deploy on a private repo, mkdocs --strict build still runs. Built by orchestrator (small edits); reviewed PASS by agy claude-sonnet-4-6. Targeted tests pass on 3.12 and 3.13.
+
+## PREVIEW merge (2026-11-18)
+
+- codex 6d7c6a6 ff-merged to main. Public preview prep: README/docs preview banners (en/zh), version 0.1.0a1 (pyproject, __init__, uv.lock, tests, snapshot), CHANGELOG Unreleased/preview, docs.yml Pages gated on vars.ENABLE_PAGES, SECURITY private vulnerability reporting. Built by orchestrator; reviewed PASS by agy claude-sonnet-4-6 (two rounds). No PyPI, no tag, no release, no Pages. S16.2 not claimed.
