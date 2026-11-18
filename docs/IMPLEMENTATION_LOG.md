@@ -4551,3 +4551,7 @@ EXIT=0
 ## R80 merge (2026-11-15)
 
 - task/R80 cd15e7a ff-merged to main. agy gemini-3.8-flash-high build; independent review: agy claude-sonnet-4-6 quota exhausted, fallback WorkBuddy deepseek-v4.1-flash VERDICT: PASS. Gitleaks SKC-CANARY allowlist (full history clean), wheel schema packaging via importlib.resources, policy docs, pip-audit, P17 retest, Windows+Linux clean-wheel Quickstart, mkdocs --strict. macOS waived pending R1. Human gates K58/R81/R83 listed, not completed. No push.
+
+## CI313 merge (2026-11-18)
+
+- task/CI313 a18a538 ff-merged to main. Python 3.13 CI fix: tests/fixtures/echo_server.py relied on the docstring as the tool description, which 3.13 dedents at compile time and 3.12 does not; the description is now explicit and identical on both (faulty_echo_server and the test constant aligned). Added .tmp/ to .gitignore; episode and oracle scratch root now resolve_tmp_dir() (SKEPTIC_TMP, default system temp/skeptic, no longer cwd/.tmp) with unit test and docs; docs workflow skips Pages upload and deploy on a private repo, mkdocs --strict build still runs. Built by orchestrator (small edits); reviewed PASS by agy claude-sonnet-4-6. Targeted tests pass on 3.12 and 3.13.
