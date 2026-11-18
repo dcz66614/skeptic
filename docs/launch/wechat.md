@@ -76,4 +76,4 @@ G01 证据契约在每次工具结果末尾追加一段文字，要求先核对�
 
 这篇文章里的跑分，是这一批免费模型样本：一个模型 id，30 个场景，4,820 个回合，十组配置。`bench/leaderboard/` 目录里是 `models.yaml`，没有后续榜单的结果目录。93.19 这个数是丢掉 RR 之后的 partial 分数，对应 run `20261103-155316-3e96a4`。它旁边的 SafeRate 是 86.25%，FSR 是 8.54%，都在同一次 run 上。全开那次是 run `20261103-162358-6c18bb`，SafeRate 85.83%，FSR 7.29%。
 
-仓库版本是 0.0.0。在检出目录执行 `uv sync`，再执行 `uv run skeptic --version`。短演示在 `docs/launch/demo.gif`，对应的 VHS 脚本是 `docs/launch/demo.tape`。这篇是草稿。数字以 `docs/en/methodology/guards-ab.md` 和各个 run_id 的 summary 为准。
+仓库版本是 0.1.0a1。在检出目录执行 `uv sync`，再执行 `uv run skeptic --version`。短演示在 `docs/launch/demo.gif`，对应的 VHS 脚本是 `docs/launch/demo.tape`。这篇是草稿。数字以 `docs/en/methodology/guards-ab.md` 和各个 run_id 的 summary 为准。

@@ -4,7 +4,7 @@
 
 If you discover a security vulnerability in Skeptic, please do not disclose it publicly.
 
-GitHub Private Vulnerability Reporting will be enabled once the public repository is created (pending human release gate R81). Once enabled, please submit vulnerability reports via GitHub's private vulnerability reporting interface on the repository's Security tab.
+Please report vulnerabilities privately through GitHub's private vulnerability reporting: open the repository's **Security** tab and choose **Report a vulnerability** (https://github.com/dcz66614/skeptic/security/advisories/new). Do not open a public issue for a security problem. This is an early preview, so reports are handled on a best-effort basis.
 
 When reporting, please include:
 - A description of the vulnerability and its potential impact.

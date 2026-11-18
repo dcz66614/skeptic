@@ -26,7 +26,7 @@ On the run summary for `20261103-155316-3e96a4`, SafeRate is 86.25% (95% CI 78.3
 
 The methodology table lists $1.16 on run `20261103-155316-3e96a4` and $1.37 on run `20261103-162358-6c18bb`. The registry price for this id is $0 per million tokens.
 
-Version in this tree is 0.0.0. From a checkout:
+Version in this tree is 0.1.0a1. From a checkout:
 
 ```bash
 uv sync

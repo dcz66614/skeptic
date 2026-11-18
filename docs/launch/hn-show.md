@@ -26,6 +26,6 @@ The two FSR intervals overlap, and the two SKS intervals overlap. No guard met t
 
 The methodology table lists $1.16 on run `20261103-155316-3e96a4` and $1.37 on run `20261103-162358-6c18bb`. The registry line for `compat/hy3` is $0 per million tokens. This comment quotes both.
 
-This tree is version 0.0.0. From a checkout: `uv sync`, then `uv run skeptic --version`. `bench/leaderboard/` holds `models.yaml` and no leaderboard result directory.
+This tree is version 0.1.0a1. From a checkout: `uv sync`, then `uv run skeptic --version`. `bench/leaderboard/` holds `models.yaml` and no leaderboard result directory.
 
 I can walk through a scenario file or a cassette if that is useful.

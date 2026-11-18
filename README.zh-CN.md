@@ -2,6 +2,8 @@
 
 对工具层做混沌测试，抓住相信坏数据的智能体。
 
+> **预览版（0.1.0a1）。** 这是早期的开源预览，不是 v1.0.0。目前未发布到 PyPI，请从 GitHub 安装：`pip install git+https://github.com/dcz66614/skeptic`。官方 S16.2 榜单评测尚未进行，因此这里不宣称任何官方榜单结果；下面的数字只来自单一模型（`compat/hy3`），且是部分结果。欢迎通过 [issues](https://github.com/dcz66614/skeptic/issues) 反馈。
+
 ![演示：版本号、静默故障列表、回合计数](docs/launch/demo.gif)
 
 Skeptic 是一个 MCP 代理。它给工具调用注入故障，并记录智能体是否把坏结果当成成功。
@@ -16,11 +18,17 @@ Skeptic 是一个 MCP 代理。它给工具调用注入故障，并记录智能�
 
 ## 安装
 
-这个仓库的版本是 0.0.0。在检出目录里：
+这个仓库的版本是 0.1.0a1（预览版），未发布到 PyPI。在检出目录里：
 
 ```bash
 uv sync
 uv run skeptic --version
+```
+
+或者直接从 GitHub 安装：
+
+```bash
+pip install git+https://github.com/dcz66614/skeptic
 ```
 
 本仓库是 `skeptic-agent` 包（导入名 `skeptic_agent`）。

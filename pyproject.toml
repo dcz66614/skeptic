@@ -1,6 +1,6 @@
 [project]
 name = "skeptic-agent"
-version = "0.0.0"
+version = "0.1.0a1"
 description = "Chaos-test the tool layer. Catch agents that believe bad data."
 readme = "README.md"
 license = "Apache-2.0"

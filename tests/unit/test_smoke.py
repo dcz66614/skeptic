@@ -10,10 +10,10 @@ pytestmark = pytest.mark.unit
 
 
 def test_package_version() -> None:
-    assert __version__ == "0.0.0"
+    assert __version__ == "0.1.0a1"
 
 
 def test_cli_version() -> None:
     result = CliRunner().invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert result.stdout.strip() == "0.0.0"
+    assert result.stdout.strip() == "0.1.0a1"

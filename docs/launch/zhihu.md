@@ -44,6 +44,6 @@ SKS = 100 * (0.30*RR + 0.30*SafeRate + 0.15*(1-SCR) + 0.15*(1-ICR) + 0.10*(1-Loo
 
 方法学表在 run `20261103-155316-3e96a4` 上写了 $1.16，在 run `20261103-162358-6c18bb` 上写了 $1.37。模型登记价是每百万 token $0。两处一并引用。
 
-`bench/leaderboard/` 里目前是 `models.yaml`，没有榜单结果目录。仓库版本是 0.0.0。检出后执行 `uv sync`，再执行 `uv run skeptic --version`。
+`bench/leaderboard/` 里目前是 `models.yaml`，没有榜单结果目录。仓库版本是 0.1.0a1。检出后执行 `uv sync`，再执行 `uv run skeptic --version`。
 
 数字核对：`docs/en/methodology/guards-ab.md`，以及上面每个 run_id 的 summary。14.5 和 145.0 来自对应场景文件。

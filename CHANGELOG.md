@@ -1,7 +1,10 @@
 # Changelog
 
-## Unreleased
+## Unreleased / preview
 
+- Preview release 0.1.0a1: early open-source preview on GitHub only, not v1.0.0, not on PyPI, no tag or GitHub Release. The official S16.2 leaderboard run has not been done and no official leaderboard results are claimed.
+- Docs workflow: Pages deploy is gated on the repository variable `ENABLE_PAGES == 'true'` (not set; Pages is not enabled). `mkdocs build --strict` always runs.
+- SECURITY.md points to GitHub private vulnerability reporting.
 - Release hardening (R80): package schemas in wheel via hatch force-include, resolve resources via importlib.resources, allowlist synthetic test canaries in gitleaks, and verify clean-venv quickstart and performance.
 - Add the reduced-scope L74 LaTeX technical report and PDF under paper/.
 - Add the composite GitHub Action (`action.yml`) that runs a suite, publishes the report, and gates on SKS.

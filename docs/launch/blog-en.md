@@ -4,7 +4,7 @@ Draft for H4. A human reviews this file before it goes anywhere.
 
 Skeptic is an MCP proxy and a scenario suite. The proxy stands between an agent and its tools. A fault profile can change a tool payload while the call still looks successful. Each scenario carries an answer an oracle can check. The scorer writes down what the agent did with that payload, including a false success: the agent stated the corrupted value as if it were the answer.
 
-The version field in this tree is 0.0.0. The commands below run from a checkout. This pack does not ship a PyPI release.
+The version field in this tree is 0.1.0a1. The commands below run from a checkout. This pack does not ship a PyPI release.
 
 ## A single weather item
 

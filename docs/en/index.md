@@ -4,6 +4,8 @@ Chaos-test the tool layer. Catch agents that believe bad data.
 
 Skeptic is a proxy and benchmark for MCP tool calls. It records traffic, injects loud, silent, and adversarial faults, scores what the agent does with the result, and can rewrite tool output through guards.
 
+> **Preview release (0.1.0a1).** Early open-source preview, not v1.0.0, not on PyPI yet (`pip install git+https://github.com/dcz66614/skeptic`). The official S16.2 leaderboard run has not been done, so no official leaderboard results are claimed.
+
 The package name is `skeptic-agent`. The command is `skeptic`.
 
 ## Start here

@@ -20,4 +20,4 @@ Draft for H4. Ten posts. A human posts them, if they choose to.
 
 9/ Matrix profiles set include_clean to false, so these runs have no clean episodes. Summaries still print RR 0 and mark SKS partial. Run 20261103-155316-3e96a4.
 
-10/ Version 0.0.0. From a checkout: uv sync, then uv run skeptic --version. Episode total, no model call: skeptic bench run --matrix bench/matrix/guards-ab-free.yaml --count
+10/ Version 0.1.0a1. From a checkout: uv sync, then uv run skeptic --version. Episode total, no model call: skeptic bench run --matrix bench/matrix/guards-ab-free.yaml --count
