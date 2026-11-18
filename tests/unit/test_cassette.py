@@ -170,7 +170,7 @@ def test_header_validates_and_carries_the_s5_fields() -> None:
     header = _header()
     _validator().validate(header)
     assert header["schema"] == SCHEMA_ID
-    assert header["skeptic_version"] == "0.0.0"
+    assert header["skeptic_version"] == "0.1.0a1"
     assert header["era"] == "2026-07-28"
     assert header["upstream"] == {"command": ["python", "-m", "skeptic_agent.sandboxes.sb_weather"]}
     assert header["fault_plan"] == []

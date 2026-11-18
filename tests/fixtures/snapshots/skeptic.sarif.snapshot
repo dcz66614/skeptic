@@ -6,7 +6,7 @@
       "tool": {
         "driver": {
           "name": "skeptic",
-          "version": "0.0.0",
+          "version": "0.1.0a1",
           "rules": [
             {
               "id": "SKEPTIC-L01",
