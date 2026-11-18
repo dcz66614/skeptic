@@ -48,3 +48,9 @@ judge:
 | Gemini CLI | `./.gemini/settings.json`、`~/.gemini/settings.json` | `mcpServers`。HTTP 的 URL 字段是 `url` 或 `httpUrl`。 |
 
 `skeptic wrap` 改的是客户端文件，不是 `skeptic.yaml`。HTTP 包装会把上游 URL 记进 `skeptic.yaml`。见 [Claude Code](../guides/claude-code.md)、[Codex](../guides/codex.md) 和 [Cursor](../guides/cursor.md) 指南。
+
+## 环境变量
+
+| 变量 | 默认值 | 含义 |
+|---|---|---|
+| `SKEPTIC_TMP` | `<系统临时目录>/skeptic` | 每个 episode 工作目录（`ep_*`）和 oracle 临时文件的根目录。默认不会指向项目检出目录，所以运行不会把仓库塞满临时目录。目录在首次使用时创建。 |

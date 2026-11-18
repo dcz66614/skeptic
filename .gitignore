@@ -3,6 +3,7 @@
 runs/
 .skeptic/
 .orchestra/
+.tmp/
 .serena/
 *_report.md
 

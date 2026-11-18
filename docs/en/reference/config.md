@@ -48,3 +48,9 @@ The same server name in a later project file replaces a user-level entry. Missin
 | Gemini CLI | `./.gemini/settings.json`, `~/.gemini/settings.json` | `mcpServers`. HTTP URL field is `url` or `httpUrl`. |
 
 `skeptic wrap` edits the client file, not `skeptic.yaml`, except that an HTTP wrap records the upstream URL in `skeptic.yaml`. See the [Claude Code](../guides/claude-code.md), [Codex](../guides/codex.md), and [Cursor](../guides/cursor.md) guides.
+
+## Environment variables
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `SKEPTIC_TMP` | `<system temp dir>/skeptic` | Scratch root for per-episode work directories (`ep_*`) and oracle scratch files. It never defaults to the project checkout, so a run does not fill the repository with temporary directories. The directory is created on first use. |

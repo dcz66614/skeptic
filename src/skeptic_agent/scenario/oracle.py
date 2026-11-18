@@ -5,7 +5,6 @@ import contextlib
 import json
 import os
 import sys
-import tempfile
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass, field
@@ -19,14 +18,10 @@ from mcp.shared.exceptions import MCPError
 
 from skeptic_agent.jsonsel import get_first
 from skeptic_agent.scenario.model import Scenario, ScenarioStep, load_scenario
+from skeptic_agent.tmpdir import resolve_tmp_dir
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 SRC_DIR = ROOT_DIR / "src"
-TMP_DIR = (
-    Path.cwd() / ".tmp"
-    if (Path.cwd() / "bench").is_dir()
-    else Path(tempfile.gettempdir()) / "skeptic"
-)
 
 
 @dataclass
@@ -201,10 +196,11 @@ async def _run_steps_sequence(
     Returns:
         (all_passed, step_results)
     """
-    TMP_DIR.mkdir(parents=True, exist_ok=True)
+    tmp_dir = resolve_tmp_dir()
+    tmp_dir.mkdir(parents=True, exist_ok=True)
     session_id = uuid.uuid4().hex[:8]
-    temp_scenario_path = TMP_DIR / f"scen_{session_id}.yaml"
-    temp_state_path = state_file or (TMP_DIR / f"state_{session_id}.json")
+    temp_scenario_path = tmp_dir / f"scen_{session_id}.yaml"
+    temp_state_path = state_file or (tmp_dir / f"state_{session_id}.json")
 
     try:
         # Write scenario YAML so proxy stdio can read it

@@ -28,11 +28,10 @@ def describe() -> str:
     """
     return (
         "Return the text unchanged.\n\n"
-        "    Args:\n"
-        "        text: The text to echo.\n\n"
-        "    Returns:\n"
-        "        A tool result whose only content block is the same text.\n"
-        "    "
+        "Args:\n"
+        "    text: The text to echo.\n\n"
+        "Returns:\n"
+        "    A tool result whose only content block is the same text.\n"
     )
 
 

@@ -33,7 +33,7 @@ jobs:
         run: uv run mkdocs build --strict
 
       - name: Upload Pages artifact
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && !github.event.repository.private
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/docs
@@ -41,7 +41,7 @@ jobs:
   deploy:
     name: deploy
     needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && !github.event.repository.private
     runs-on: ubuntu-latest
     permissions:
       pages: write

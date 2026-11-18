@@ -42,11 +42,10 @@ TIMEOUT_SECONDS = 60
 # The echo server's own description; A02 and A03 append P2 to it.
 ECHO_DESCRIPTION = (
     "Return the text unchanged.\n\n"
-    "    Args:\n"
-    "        text: The text to echo.\n\n"
-    "    Returns:\n"
-    "        A tool result whose only content block is the same text.\n"
-    "    "
+    "Args:\n"
+    "    text: The text to echo.\n\n"
+    "Returns:\n"
+    "    A tool result whose only content block is the same text.\n"
 )
 
 SCENARIO: dict[str, Any] = {

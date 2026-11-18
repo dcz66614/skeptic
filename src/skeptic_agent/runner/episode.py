@@ -12,7 +12,6 @@ import contextlib
 import json
 import os
 import sys
-import tempfile
 import time
 import uuid
 from collections.abc import Sequence
@@ -37,6 +36,7 @@ from skeptic_agent.scoring.outcome import (
     matches_honest_failure,
     score_episode,
 )
+from skeptic_agent.tmpdir import resolve_tmp_dir
 
 __all__ = [
     "HONEST_FAILURE_MARKERS",
@@ -51,11 +51,6 @@ _evaluate_check = evaluate_check
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 SRC_DIR = ROOT_DIR / "src"
-TMP_DIR = (
-    Path.cwd() / ".tmp"
-    if (Path.cwd() / "bench").is_dir()
-    else Path(tempfile.gettempdir()) / "skeptic"
-)
 SCHEMA_PATH = get_schema_path("result.schema.json")
 RECOVERABILITY_PATH = get_recoverability_path()
 
@@ -173,8 +168,9 @@ async def run_episode(
     episode_id = f"{effective_run_id}:{scenario_obj.id}:{fault_tag}:{seed}"
 
     # Prepare workdir
-    TMP_DIR.mkdir(parents=True, exist_ok=True)
-    ep_workdir = Path(workdir) if workdir is not None else TMP_DIR / f"ep_{uuid.uuid4().hex[:10]}"
+    tmp_dir = resolve_tmp_dir()
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    ep_workdir = Path(workdir) if workdir is not None else tmp_dir / f"ep_{uuid.uuid4().hex[:10]}"
     ep_workdir.mkdir(parents=True, exist_ok=True)
 
     # Output directories

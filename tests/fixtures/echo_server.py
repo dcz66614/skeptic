@@ -13,17 +13,23 @@ from mcp.types import CallToolResult, TextContent
 
 server: MCPServer[Any] = MCPServer("echo")
 
+ECHO_DESCRIPTION = (
+    "Return the text unchanged.\n\n"
+    "Args:\n"
+    "    text: The text to echo.\n\n"
+    "Returns:\n"
+    "    A tool result whose only content block is the same text.\n"
+)
+"""The ``echo`` tool description, written out so it is identical on every Python.
 
-@server.tool()
+Python 3.13 strips the indentation of a docstring at compile time and 3.12 does
+not, and the SDK reads ``__doc__`` as is. An explicit description keeps the text
+the proxy sees, and the tests assert on, the same on both.
+"""
+
+
+@server.tool(description=ECHO_DESCRIPTION)
 def echo(text: str) -> CallToolResult:
-    """Return the text unchanged.
-
-    Args:
-        text: The text to echo.
-
-    Returns:
-        A tool result whose only content block is the same text.
-    """
     return CallToolResult(content=[TextContent(type="text", text=text)])
 
 
